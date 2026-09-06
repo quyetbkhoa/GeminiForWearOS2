@@ -9,6 +9,7 @@ import android.os.VibrationEffect
 import android.os.Vibrator
 import android.view.MotionEvent
 import android.widget.FrameLayout
+import android.widget.ScrollView
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
@@ -20,7 +21,9 @@ class MainActivity : AppCompatActivity() {
     private lateinit var pttContainer: FrameLayout
     private lateinit var tvStatus: TextView
     private lateinit var tvResult: TextView
-    private lateinit var scrollResult: android.widget.ScrollView
+    private lateinit var scrollResult: ScrollView
+
+    private var touchDownTime = 0L
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -32,11 +35,8 @@ class MainActivity : AppCompatActivity() {
         tvResult = findViewById(R.id.tv_result)
         scrollResult = findViewById(R.id.scroll_result)
 
-        checkMicrophonePermission()
         setupPttListener()
-    }
 
-    private fun checkMicrophonePermission() {
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO)
             != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(
@@ -44,6 +44,25 @@ class MainActivity : AppCompatActivity() {
                 arrayOf(Manifest.permission.RECORD_AUDIO),
                 101
             )
+        }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        // Khi mở app: Tự động vào chế độ lắng nghe ngay lập tức
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO)
+            == PackageManager.PERMISSION_GRANTED && !recorderHelper.isRecording) {
+            startVoiceRecording()
+        }
+    }
+
+    override fun onPause() {
+        super.onPause()
+        if (recorderHelper.isRecording) {
+            recorderHelper.stopRecording()
+            pttContainer.setBackgroundResource(R.drawable.bg_ptt_idle)
+            tvStatus.text = "NHẤN ĐỂ NÓI"
+            tvStatus.setTextColor(resources.getColor(R.color.gold_light))
         }
     }
 
@@ -55,7 +74,7 @@ class MainActivity : AppCompatActivity() {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         if (requestCode == 101) {
             if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                tvStatus.text = "NHẤN GIỮ ĐỂ NÓI"
+                startVoiceRecording()
             } else {
                 tvStatus.text = "CẦN CẤP QUYỀN MICRO"
             }
@@ -66,17 +85,32 @@ class MainActivity : AppCompatActivity() {
         pttContainer.setOnTouchListener { _, event ->
             when (event.action) {
                 MotionEvent.ACTION_DOWN -> {
+                    touchDownTime = System.currentTimeMillis()
                     if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO)
                         != PackageManager.PERMISSION_GRANTED) {
-                        checkMicrophonePermission()
-                        tvStatus.text = "CẦN CẤP QUYỀN MICRO"
+                        ActivityCompat.requestPermissions(
+                            this,
+                            arrayOf(Manifest.permission.RECORD_AUDIO),
+                            101
+                        )
                         return@setOnTouchListener true
                     }
-                    startVoiceRecording()
+                    if (!recorderHelper.isRecording) {
+                        startVoiceRecording()
+                    }
                     true
                 }
-                MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
-                    finishVoiceRecording()
+                MotionEvent.ACTION_UP -> {
+                    if (recorderHelper.isRecording) {
+                        // Nhấn giữ nhả ra HOẶC chạm vào khi đang tự động lắng nghe đều gửi câu hỏi
+                        finishVoiceRecording()
+                    }
+                    true
+                }
+                MotionEvent.ACTION_CANCEL -> {
+                    if (recorderHelper.isRecording) {
+                        finishVoiceRecording()
+                    }
                     true
                 }
                 else -> false
@@ -89,7 +123,7 @@ class MainActivity : AppCompatActivity() {
         pttContainer.setBackgroundResource(R.drawable.bg_ptt_recording)
         tvStatus.text = "🔴 ĐANG LẮNG NGHE..."
         tvStatus.setTextColor(resources.getColor(R.color.red_recording))
-        tvResult.text = "Đang lắng nghe câu hỏi của bạn..."
+        tvResult.text = "Đang lắng nghe câu hỏi của bạn...\n(Chạm vào micro bên dưới để gửi)"
 
         val started = recorderHelper.startRecording()
         if (!started) {
@@ -110,9 +144,9 @@ class MainActivity : AppCompatActivity() {
 
         val audioBase64 = recorderHelper.stopRecording()
         if (audioBase64.isNullOrEmpty()) {
-            tvStatus.text = "NHẤN GIỮ ĐỂ NÓI"
+            tvStatus.text = "NHẤN ĐỂ NÓI"
             tvStatus.setTextColor(resources.getColor(R.color.gold_light))
-            tvResult.text = "Chưa thu được âm thanh. Hãy nhấn giữ lâu hơn."
+            tvResult.text = "Chưa thu được âm thanh. Hãy nhấn giữ hoặc chạm để nói lại."
             return
         }
 
@@ -125,7 +159,7 @@ class MainActivity : AppCompatActivity() {
 
                 if (success) {
                     vibrateTick(180, 200)
-                    // Push structured JSON payload to paired phone for Bluetooth TTS & History
+                    // Gửi JSON cấu trúc sang điện thoại để phát TTS và lưu lịch sử
                     val payload = org.json.JSONObject().apply {
                         put("question", question)
                         put("answer", answer)

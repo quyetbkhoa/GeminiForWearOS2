@@ -48,4 +48,8 @@ dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
     implementation(libs.play.services.wearable)
+    implementation("androidx.wear.tiles:tiles:1.1.0")
+    implementation("androidx.wear.tiles:tiles-material:1.1.0")
+    implementation("com.google.guava:guava:33.3.1-android")
+    implementation("androidx.concurrent:concurrent-futures:1.2.0")
 }

@@ -1,4 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Gemini Voice</string>
+    <string name="tile_name">Gemini Voice</string>
+    <string name="tile_description">Hỏi nhanh trợ lý Gemini bằng giọng nói</string>
 </resources>

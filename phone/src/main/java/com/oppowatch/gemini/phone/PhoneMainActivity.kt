@@ -12,11 +12,9 @@ import android.os.Build
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
-import android.view.ViewGroup
-import android.widget.ArrayAdapter
 import android.widget.Button
-import android.widget.CheckBox
-import android.widget.ListView
+import android.widget.LinearLayout
+import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
@@ -26,21 +24,21 @@ import androidx.core.content.ContextCompat
 class PhoneMainActivity : AppCompatActivity() {
 
     private lateinit var filterManager: BluetoothFilterManager
-    private lateinit var lvDevices: ListView
+    private lateinit var llBluetoothDevices: LinearLayout
     private lateinit var tvEmptyDevices: TextView
     private lateinit var btnReloadBluetooth: Button
     private lateinit var btnTestTts: Button
 
     // Q&A History
     private lateinit var qaHistoryManager: QaHistoryManager
-    private lateinit var lvQaHistory: ListView
+    private lateinit var llQaHistory: LinearLayout
     private lateinit var tvEmptyHistory: TextView
     private lateinit var btnClearHistory: Button
 
     // Các thành phần Cập nhật GitHub
     private lateinit var tvAppVersion: TextView
     private lateinit var tvUpdateStatus: TextView
-    private lateinit var pbUpdateProgress: android.widget.ProgressBar
+    private lateinit var pbUpdateProgress: ProgressBar
     private lateinit var btnCheckUpdate: Button
 
     private val receiver = object : BroadcastReceiver() {
@@ -72,18 +70,19 @@ class PhoneMainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        supportActionBar?.hide()
         setContentView(R.layout.activity_phone_main)
 
         filterManager = BluetoothFilterManager(this)
         qaHistoryManager = QaHistoryManager(this)
         TtsSpeaker.init(this)
 
-        lvDevices = findViewById(R.id.lv_bluetooth_devices)
+        llBluetoothDevices = findViewById(R.id.ll_bluetooth_devices_list)
         tvEmptyDevices = findViewById(R.id.tv_empty_devices)
         btnReloadBluetooth = findViewById(R.id.btn_reload_bluetooth)
         btnTestTts = findViewById(R.id.btn_test_tts)
 
-        lvQaHistory = findViewById(R.id.lv_qa_history)
+        llQaHistory = findViewById(R.id.ll_qa_history_list)
         tvEmptyHistory = findViewById(R.id.tv_empty_history)
         btnClearHistory = findViewById(R.id.btn_clear_history)
 
@@ -125,42 +124,38 @@ class PhoneMainActivity : AppCompatActivity() {
 
     private fun loadQaHistory() {
         val history = qaHistoryManager.getHistory()
+        llQaHistory.removeAllViews()
+
         if (history.isEmpty()) {
             tvEmptyHistory.visibility = View.VISIBLE
-            lvQaHistory.adapter = null
             return
         }
 
         tvEmptyHistory.visibility = View.GONE
 
-        val adapter = object : ArrayAdapter<QaItem>(this, 0, history) {
-            override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
-                val view = convertView ?: LayoutInflater.from(context).inflate(
-                    R.layout.item_qa_history,
-                    parent,
-                    false
-                )
-                val item = getItem(position) ?: return view
+        for (item in history) {
+            val itemView = LayoutInflater.from(this).inflate(
+                R.layout.item_qa_history,
+                llQaHistory,
+                false
+            )
 
-                val tvTime = view.findViewById<TextView>(R.id.tv_qa_time)
-                val tvQuestion = view.findViewById<TextView>(R.id.tv_qa_question)
-                val tvAnswer = view.findViewById<TextView>(R.id.tv_qa_answer)
-                val btnReplay = view.findViewById<Button>(R.id.btn_replay_tts)
+            val tvTime = itemView.findViewById<TextView>(R.id.tv_qa_time)
+            val tvQuestion = itemView.findViewById<TextView>(R.id.tv_qa_question)
+            val tvAnswer = itemView.findViewById<TextView>(R.id.tv_qa_answer)
+            val btnReplay = itemView.findViewById<Button>(R.id.btn_replay_tts)
 
-                tvTime.text = "🕒 ${item.getFormattedTime()}"
-                tvQuestion.text = item.question
-                tvAnswer.text = item.answer
+            tvTime.text = "🕒 ${item.getFormattedTime()}"
+            tvQuestion.text = item.question
+            tvAnswer.text = item.answer
 
-                btnReplay.setOnClickListener {
-                    TtsSpeaker.speak(context, item.answer)
-                    Toast.makeText(context, "Đang phát lại câu trả lời...", Toast.LENGTH_SHORT).show()
-                }
-
-                return view
+            btnReplay.setOnClickListener {
+                TtsSpeaker.speak(this, item.answer)
+                Toast.makeText(this, "Đang phát lại câu trả lời...", Toast.LENGTH_SHORT).show()
             }
-        }
 
-        lvQaHistory.adapter = adapter
+            llQaHistory.addView(itemView)
+        }
     }
 
     private fun setupUpdateSection() {
@@ -344,6 +339,8 @@ class PhoneMainActivity : AppCompatActivity() {
 
     private fun loadPairedBluetoothDevices(userInitiated: Boolean = false) {
         val adapter = BluetoothAdapter.getDefaultAdapter()
+        llBluetoothDevices.removeAllViews()
+
         if (adapter == null) {
             tvEmptyDevices.text = "Thiết bị này không hỗ trợ Bluetooth."
             tvEmptyDevices.visibility = View.VISIBLE
@@ -353,7 +350,6 @@ class PhoneMainActivity : AppCompatActivity() {
         if (!adapter.isEnabled) {
             tvEmptyDevices.text = "Bluetooth trên điện thoại đang TẮT.\nVui lòng bật Bluetooth và bấm '🔄 LÀM MỚI'."
             tvEmptyDevices.visibility = View.VISIBLE
-            lvDevices.adapter = null
             if (userInitiated) {
                 Toast.makeText(this, "Vui lòng bật Bluetooth!", Toast.LENGTH_SHORT).show()
             }
@@ -370,7 +366,6 @@ class PhoneMainActivity : AppCompatActivity() {
         if (paired.isEmpty()) {
             tvEmptyDevices.text = "Chưa tìm thấy thiết bị Bluetooth nào đã ghép nối.\nHãy vào Cài đặt điện thoại kết nối tai nghe, sau đó bấm '🔄 LÀM MỚI'."
             tvEmptyDevices.visibility = View.VISIBLE
-            lvDevices.adapter = null
             if (userInitiated) {
                 Toast.makeText(this, "Chưa tìm thấy thiết bị Bluetooth nào!", Toast.LENGTH_SHORT).show()
             }
@@ -379,27 +374,26 @@ class PhoneMainActivity : AppCompatActivity() {
 
         tvEmptyDevices.visibility = View.GONE
 
-        val listAdapter = object : ArrayAdapter<BluetoothDevice>(this, 0, paired) {
-            override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
-                val view = convertView ?: LayoutInflater.from(context).inflate(
-                    R.layout.item_bluetooth_device,
-                    parent,
-                    false
-                )
-                val device = getItem(position) ?: return view
-                val name = try { device.name ?: "Thiết bị không tên" } catch (_: SecurityException) { "Thiết bị Bluetooth" }
-                val mac = device.address
+        for (device in paired) {
+            val itemView = LayoutInflater.from(this).inflate(
+                R.layout.item_bluetooth_device,
+                llBluetoothDevices,
+                false
+            )
 
-                val tvName = view.findViewById<TextView>(R.id.tv_device_name)
-                val tvMac = view.findViewById<TextView>(R.id.tv_device_mac)
-                val tvSwitch = view.findViewById<TextView>(R.id.tv_switch_status)
-                val tvIcon = view.findViewById<TextView>(R.id.tv_device_icon)
+            val name = try { device.name ?: "Thiết bị không tên" } catch (_: SecurityException) { "Thiết bị Bluetooth" }
+            val mac = device.address
 
-                tvName.text = name
-                tvMac.text = mac
+            val tvName = itemView.findViewById<TextView>(R.id.tv_device_name)
+            val tvMac = itemView.findViewById<TextView>(R.id.tv_device_mac)
+            val tvSwitch = itemView.findViewById<TextView>(R.id.tv_switch_status)
+            val tvIcon = itemView.findViewById<TextView>(R.id.tv_device_icon)
 
-                val isChecked = filterManager.isDeviceSelected(mac)
-                if (isChecked) {
+            tvName.text = name
+            tvMac.text = mac
+
+            fun updateSwitchUi(isSelected: Boolean) {
+                if (isSelected) {
                     tvSwitch.text = "BẬT"
                     tvSwitch.setTextColor(0xFFFFFFFF.toInt())
                     tvSwitch.setBackgroundResource(R.drawable.bg_switch_on)
@@ -408,34 +402,31 @@ class PhoneMainActivity : AppCompatActivity() {
                     tvSwitch.setTextColor(0xFF94A3B8.toInt())
                     tvSwitch.setBackgroundResource(R.drawable.bg_switch_off)
                 }
-
-                val lowerName = name.lowercase()
-                tvIcon.text = when {
-                    lowerName.contains("watch") -> "⌚"
-                    lowerName.contains("soundcore") || lowerName.contains("buds") || lowerName.contains("ear") || lowerName.contains("headphone") -> "🎧"
-                    lowerName.contains("speaker") || lowerName.contains("loa") -> "🔊"
-                    else -> "📻"
-                }
-
-                return view
             }
-        }
 
-        lvDevices.choiceMode = ListView.CHOICE_MODE_NONE
-        lvDevices.adapter = listAdapter
+            updateSwitchUi(filterManager.isDeviceSelected(mac))
 
-        lvDevices.setOnItemClickListener { _, _, position, _ ->
-            val device = paired[position]
-            val wasChecked = filterManager.isDeviceSelected(device.address)
-            val newChecked = !wasChecked
-            filterManager.setDeviceSelected(device.address, newChecked)
-            listAdapter.notifyDataSetChanged()
-            val name = try { device.name ?: "Thiết bị" } catch (_: SecurityException) { "Thiết bị" }
-            Toast.makeText(
-                this,
-                "${if (newChecked) "Đã bật phát TTS" else "Đã tắt phát TTS"}: $name",
-                Toast.LENGTH_SHORT
-            ).show()
+            val lowerName = name.lowercase()
+            tvIcon.text = when {
+                lowerName.contains("watch") -> "⌚"
+                lowerName.contains("soundcore") || lowerName.contains("buds") || lowerName.contains("ear") || lowerName.contains("headphone") -> "🎧"
+                lowerName.contains("speaker") || lowerName.contains("loa") -> "🔊"
+                else -> "📻"
+            }
+
+            itemView.setOnClickListener {
+                val wasSelected = filterManager.isDeviceSelected(mac)
+                val newSelected = !wasSelected
+                filterManager.setDeviceSelected(mac, newSelected)
+                updateSwitchUi(newSelected)
+                Toast.makeText(
+                    this,
+                    "${if (newSelected) "Đã bật phát TTS" else "Đã tắt phát TTS"}: $name",
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+
+            llBluetoothDevices.addView(itemView)
         }
 
         if (userInitiated) {
