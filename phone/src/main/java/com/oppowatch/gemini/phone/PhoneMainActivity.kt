@@ -45,6 +45,12 @@ class PhoneMainActivity : AppCompatActivity() {
     private lateinit var btnThemeGlass: Button
     private lateinit var btnThemeMaterial: Button
 
+    // Watch Color Theme Controls
+    private lateinit var cardWatchTheme: LinearLayout
+    private lateinit var tvWatchColorLabel: TextView
+    private lateinit var btnWatchThemeDark: Button
+    private lateinit var btnWatchThemeLight: Button
+
     // Title Elements
     private lateinit var tvMainTitle: TextView
     private lateinit var tvMainSubtitle: TextView
@@ -156,6 +162,11 @@ class PhoneMainActivity : AppCompatActivity() {
         btnThemeGlass = findViewById(R.id.btn_theme_glass)
         btnThemeMaterial = findViewById(R.id.btn_theme_material)
 
+        cardWatchTheme = findViewById(R.id.card_watch_theme)
+        tvWatchColorLabel = findViewById(R.id.tv_watch_color_label)
+        btnWatchThemeDark = findViewById(R.id.btn_watch_theme_dark)
+        btnWatchThemeLight = findViewById(R.id.btn_watch_theme_light)
+
         tvMainTitle = findViewById(R.id.tv_main_title)
         tvMainSubtitle = findViewById(R.id.tv_main_subtitle)
 
@@ -187,6 +198,7 @@ class PhoneMainActivity : AppCompatActivity() {
     private fun setupThemeEngine() {
         currentThemeMode = ThemeManager.getTheme(this)
         applyTheme(currentThemeMode)
+        setupWatchThemeSection()
 
         btnThemeSkeuo.setOnClickListener {
             applyTheme(ThemeManager.ThemeMode.SKEUOMORPHISM)
@@ -196,6 +208,55 @@ class PhoneMainActivity : AppCompatActivity() {
         }
         btnThemeMaterial.setOnClickListener {
             applyTheme(ThemeManager.ThemeMode.MATERIAL)
+        }
+    }
+
+    private fun setupWatchThemeSection() {
+        val currentWatchTheme = ThemeManager.getWatchColorTheme(this)
+        updateWatchThemeButtonsUi(currentWatchTheme)
+
+        btnWatchThemeDark.setOnClickListener {
+            setAndSyncWatchColorTheme("dark")
+        }
+        btnWatchThemeLight.setOnClickListener {
+            setAndSyncWatchColorTheme("light")
+        }
+    }
+
+    private fun updateWatchThemeButtonsUi(watchTheme: String) {
+        val config = ThemeManager.getConfig(currentThemeMode)
+        if (watchTheme == "light") {
+            btnWatchThemeLight.setBackgroundResource(config.btnGoldDrawable)
+            btnWatchThemeDark.setBackgroundResource(config.btnPrimaryDrawable)
+        } else {
+            btnWatchThemeDark.setBackgroundResource(config.btnGoldDrawable)
+            btnWatchThemeLight.setBackgroundResource(config.btnPrimaryDrawable)
+        }
+    }
+
+    private fun setAndSyncWatchColorTheme(watchTheme: String) {
+        ThemeManager.setWatchColorTheme(this, watchTheme)
+        updateWatchThemeButtonsUi(watchTheme)
+
+        Wearable.getNodeClient(this).connectedNodes.addOnSuccessListener { nodes ->
+            if (nodes.isEmpty()) {
+                Toast.makeText(this, "Đã lưu cài đặt. Đang chờ kết nối đồng hồ...", Toast.LENGTH_SHORT).show()
+            } else {
+                for (node in nodes) {
+                    Wearable.getMessageClient(this).sendMessage(
+                        node.id,
+                        "/watch_color_theme",
+                        watchTheme.toByteArray(Charsets.UTF_8)
+                    )
+                }
+                Toast.makeText(
+                    this,
+                    "✓ Đã đổi màu đồng hồ sang ${if (watchTheme == "light") "TRẮNG (Ceramic Light)" else "ĐEN (OLED Dark)"}!",
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+        }.addOnFailureListener {
+            Toast.makeText(this, "Đã lưu cài đặt trên máy.", Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -209,6 +270,7 @@ class PhoneMainActivity : AppCompatActivity() {
 
         // Cards & Containers
         cardThemeSelector.setBackgroundResource(config.cardDrawable)
+        cardWatchTheme.setBackgroundResource(config.cardDrawable)
         cardTitlePlate.setBackgroundResource(config.cardDrawable)
         cardApiKey.setBackgroundResource(config.cardDrawable)
         cardBluetoothRack.setBackgroundResource(config.bezelDrawable)
@@ -226,6 +288,7 @@ class PhoneMainActivity : AppCompatActivity() {
 
         // Typography Colors
         tvThemeLabel.setTextColor(config.titleTextColor)
+        tvWatchColorLabel.setTextColor(config.headerBluetoothColor)
         tvMainTitle.setTextColor(config.titleTextColor)
         tvApiKeyHeader.setTextColor(config.headerApiKeyColor)
         tvBluetoothHeader.setTextColor(config.headerBluetoothColor)
@@ -241,6 +304,8 @@ class PhoneMainActivity : AppCompatActivity() {
         btnThemeMaterial.setBackgroundResource(
             if (mode == ThemeManager.ThemeMode.MATERIAL) config.btnGoldDrawable else config.btnPrimaryDrawable
         )
+
+        updateWatchThemeButtonsUi(ThemeManager.getWatchColorTheme(this))
 
         // Refresh dynamic device & history views to adopt new theme drawables
         loadPairedBluetoothDevices(userInitiated = false)

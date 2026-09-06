@@ -119,6 +119,19 @@ class WatchUpdateReceiverService : WearableListenerService() {
                 Log.d(TAG, "Đã xóa custom Gemini API Key, khôi phục mặc định!")
             }
             notifyVibrate(longArrayOf(0, 100, 80, 120))
+        } else if (messageEvent.path == "/watch_color_theme") {
+            val theme = String(messageEvent.data, Charsets.UTF_8).trim()
+            getSharedPreferences("gemini_prefs", Context.MODE_PRIVATE)
+                .edit()
+                .putString("watch_color_theme", theme)
+                .apply()
+            Log.d(TAG, "Đã nhận lệnh đổi màu đồng hồ: $theme")
+            val intent = Intent("com.oppowatch.gemini.WATCH_THEME_CHANGED").apply {
+                putExtra("theme", theme)
+                setPackage(packageName)
+            }
+            sendBroadcast(intent)
+            notifyVibrate(longArrayOf(0, 80))
         }
     }
 }

@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Perfectly Symmetrical 1:1 Circular Button (Light / Ceramic State) -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Outer Silver Chrome Ring -->
+    <item>
+        <shape android:shape="oval">
+            <gradient
+                android:type="linear"
+                android:angle="270"
+                android:startColor="#E2E8F0"
+                android:centerColor="#CBD5E1"
+                android:endColor="#94A3B8" />
+            <stroke android:width="1.5dp" android:color="#94A3B8" />
+        </shape>
+    </item>
+    <!-- Symmetrical Inner Pearl White Plunger -->
+    <item
+        android:left="4dp"
+        android:top="4dp"
+        android:right="4dp"
+        android:bottom="4dp">
+        <shape android:shape="oval">
+            <gradient
+                android:type="radial"
+                android:gradientRadius="35dp"
+                android:centerX="0.5"
+                android:centerY="0.5"
+                android:startColor="#FFFFFF"
+                android:centerColor="#F8FAFC"
+                android:endColor="#E2E8F0" />
+            <stroke android:width="1.8dp" android:color="#64748B" />
+        </shape>
+    </item>
+</layer-list>

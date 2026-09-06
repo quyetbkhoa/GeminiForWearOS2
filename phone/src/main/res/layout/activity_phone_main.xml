@@ -83,6 +83,60 @@
             </LinearLayout>
         </LinearLayout>
 
+        <!-- Watch Color Theme Switcher (Sync to Watch) -->
+        <LinearLayout
+            android:id="@+id/card_watch_theme"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="@drawable/bg_rack_card"
+            android:padding="10dp"
+            android:layout_marginBottom="12dp">
+
+            <TextView
+                android:id="@+id/tv_watch_color_label"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="⌚ MÀU SẮC ĐỒNG HỒ (WATCH COLOR):"
+                android:textSize="11sp"
+                android:textStyle="bold"
+                android:textColor="#34D399"
+                android:letterSpacing="0.04"
+                android:layout_marginBottom="8dp" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="38dp"
+                android:orientation="horizontal">
+
+                <Button
+                    android:id="@+id/btn_watch_theme_dark"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:text="⚫ ĐEN (OLED DARK)"
+                    android:textSize="10sp"
+                    android:textStyle="bold"
+                    android:textColor="#FFFFFF"
+                    android:background="@drawable/bg_btn_gold"
+                    android:backgroundTint="@null"
+                    android:layout_marginRight="4dp" />
+
+                <Button
+                    android:id="@+id/btn_watch_theme_light"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:text="⚪ TRẮNG (CERAMIC LIGHT)"
+                    android:textSize="10sp"
+                    android:textStyle="bold"
+                    android:textColor="#FFFFFF"
+                    android:background="@drawable/bg_btn_metallic"
+                    android:backgroundTint="@null"
+                    android:layout_marginLeft="4dp" />
+            </LinearLayout>
+        </LinearLayout>
+
         <!-- Top Console Title Plate -->
         <LinearLayout
             android:id="@+id/card_title_plate"

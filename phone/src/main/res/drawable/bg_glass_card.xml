@@ -1,16 +1,36 @@
 <?xml version="1.0" encoding="utf-8"?>
-<shape xmlns:android="http://schemas.android.com/apk/res/android"
-    android:shape="rectangle">
-    <!-- Frosted Translucent Acrylic Glass -->
-    <solid android:color="#D0151C2C" />
-    <corners android:radius="14dp" />
-    <!-- Prismatic Cyber Refractive Border -->
-    <stroke
-        android:width="1.5dp"
-        android:color="#6038BDF8" />
-    <padding
-        android:left="12dp"
-        android:top="12dp"
-        android:right="12dp"
-        android:bottom="12dp" />
-</shape>
+<!-- True Liquid Frosted Glass (Soft diffused frosted blur with organic glass sheen) -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Diffuse Frost Ambient Shadow -->
+    <item>
+        <shape android:shape="rectangle">
+            <corners android:radius="16dp" />
+            <solid android:color="#30000000" />
+        </shape>
+    </item>
+    <!-- Translucent Frosted Glass Body with Top Specular Sheen -->
+    <item
+        android:left="0.5dp"
+        android:top="0.5dp"
+        android:right="0.5dp"
+        android:bottom="0.5dp">
+        <shape android:shape="rectangle">
+            <corners android:radius="16dp" />
+            <gradient
+                android:type="linear"
+                android:angle="270"
+                android:startColor="#2A334D66"
+                android:centerColor="#1C182638"
+                android:endColor="#15121E2C" />
+            <!-- Soft Diffuse Frost Border (No harsh neon reflect) -->
+            <stroke
+                android:width="1dp"
+                android:color="#38E2E8F0" />
+            <padding
+                android:left="13dp"
+                android:top="13dp"
+                android:right="13dp"
+                android:bottom="13dp" />
+        </shape>
+    </item>
+</layer-list>

@@ -1,23 +1,27 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Frosted Liquid Glass Button (Gold / Accent) -->
 <selector xmlns:android="http://schemas.android.com/apk/res/android">
     <item android:state_pressed="true">
         <shape android:shape="rectangle">
+            <corners android:radius="14dp" />
             <gradient
-                android:angle="90"
-                android:startColor="#B0D97706"
-                android:endColor="#D0B45309" />
-            <corners android:radius="10dp" />
-            <stroke android:width="1dp" android:color="#90FBBF24" />
+                android:type="linear"
+                android:angle="270"
+                android:startColor="#45F59E0B"
+                android:endColor="#20B45309" />
+            <stroke android:width="1dp" android:color="#70FBBF24" />
         </shape>
     </item>
     <item>
         <shape android:shape="rectangle">
+            <corners android:radius="14dp" />
             <gradient
-                android:angle="90"
-                android:startColor="#70D97706"
-                android:endColor="#90F59E0B" />
-            <corners android:radius="10dp" />
-            <stroke android:width="1.5dp" android:color="#B0FBBF24" />
+                android:type="linear"
+                android:angle="270"
+                android:startColor="#30F59E0B"
+                android:centerColor="#1E2B2414"
+                android:endColor="#151C170E" />
+            <stroke android:width="1dp" android:color="#50FBBF24" />
         </shape>
     </item>
 </selector>

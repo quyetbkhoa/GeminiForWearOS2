@@ -34,6 +34,11 @@
             </intent-filter>
         </activity>
 
+        <activity
+            android:name=".TileLaunchActivity"
+            android:exported="true"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar" />
+
         <service
             android:name=".SwipeAccessibilityService"
             android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE"

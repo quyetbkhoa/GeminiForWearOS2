@@ -26,7 +26,7 @@ class GeminiTileService : TileService() {
             .setAndroidActivity(
                 ActionBuilders.AndroidActivity.Builder()
                     .setPackageName(packageName)
-                    .setClassName("com.oppowatch.gemini.MainActivity")
+                    .setClassName("com.oppowatch.gemini.TileLaunchActivity")
                     .build()
             )
             .build()

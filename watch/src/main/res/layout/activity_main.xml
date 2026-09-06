@@ -1,29 +1,33 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Optimized Layout specifically engineered for OPPO Watch 46mm 3D Dual-Curved AMOLED (402x476 px / 201x238 dp) -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/layout_root"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:background="#07080A"
-    android:paddingLeft="14dp"
-    android:paddingRight="14dp"
-    android:paddingTop="8dp"
+    android:background="#000000"
+    android:paddingLeft="18dp"
+    android:paddingRight="18dp"
+    android:paddingTop="12dp"
     android:paddingBottom="8dp">
 
-    <!-- Header Row -->
+    <!-- Top Header Plate (Safe from top bezel) -->
     <LinearLayout
+        android:id="@+id/layout_header"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:gravity="center_vertical"
-        android:layout_marginBottom="4dp">
+        android:layout_marginBottom="6dp">
 
         <TextView
+            android:id="@+id/tv_header_title"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:text="GEMINI AI"
-            android:textColor="#D4AF37"
-            android:textSize="12sp"
+            android:textColor="#E5C158"
+            android:textSize="11sp"
             android:textStyle="bold"
             android:letterSpacing="0.08" />
 
@@ -31,13 +35,13 @@
             android:id="@+id/tv_status"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="NHẤN GIỮ ĐỂ NÓI"
+            android:text="NHẤN ĐỂ NÓI"
             android:textColor="#94A3B8"
             android:textSize="10sp"
             android:textStyle="bold" />
     </LinearLayout>
 
-    <!-- Response Display Area: Full spacious scrolling plate -->
+    <!-- Response Display Area: Contained inside flat screen area (Protected from 3D curved side glass) -->
     <ScrollView
         android:id="@+id/scroll_result"
         android:layout_width="match_parent"
@@ -47,38 +51,40 @@
         android:scrollbars="none">
 
         <LinearLayout
+            android:id="@+id/container_result_card"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:background="@drawable/bg_result_plate"
+            android:background="@drawable/bg_watch_plate_dark"
             android:padding="10dp">
 
             <TextView
                 android:id="@+id/tv_result"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Nhấn giữ nút micro bên dưới để đặt câu hỏi. Đáp án sẽ hiển thị đầy đủ tại đây."
+                android:text="Chạm hoặc nhấn giữ biểu tượng micro bên dưới để hỏi..."
                 android:textColor="#F1F5F9"
-                android:textSize="13sp"
-                android:lineSpacingExtra="3dp" />
+                android:textSize="12sp"
+                android:lineSpacingExtra="2.5dp" />
         </LinearLayout>
     </ScrollView>
 
-    <!-- Bottom Center Push-To-Talk Button -->
+    <!-- Bottom Center Push-To-Talk Button: Strict 1:1 Circular Geometry (No distortion) -->
     <FrameLayout
         android:id="@+id/btn_ptt_container"
-        android:layout_width="64dp"
-        android:layout_height="64dp"
+        android:layout_width="56dp"
+        android:layout_height="56dp"
         android:layout_gravity="center_horizontal"
         android:layout_marginTop="6dp"
-        android:background="@drawable/bg_ptt_idle"
+        android:layout_marginBottom="2dp"
+        android:background="@drawable/bg_watch_ptt_dark"
         android:clickable="true"
         android:focusable="true">
 
         <ImageView
             android:id="@+id/iv_mic_icon"
-            android:layout_width="28dp"
-            android:layout_height="28dp"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
             android:layout_gravity="center"
             android:src="@drawable/ic_mic" />
     </FrameLayout>

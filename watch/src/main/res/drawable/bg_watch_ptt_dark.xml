@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Perfectly Symmetrical 1:1 Circular Button for 402x476 OPPO Watch AMOLED -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Outer Titanium Bezel Ring -->
+    <item>
+        <shape android:shape="oval">
+            <gradient
+                android:type="linear"
+                android:angle="270"
+                android:startColor="#475569"
+                android:centerColor="#29303D"
+                android:endColor="#141820" />
+            <stroke android:width="1.5dp" android:color="#64748B" />
+        </shape>
+    </item>
+    <!-- Symmetrical Inner Obsidian Plunger with Gold Accent -->
+    <item
+        android:left="4dp"
+        android:top="4dp"
+        android:right="4dp"
+        android:bottom="4dp">
+        <shape android:shape="oval">
+            <gradient
+                android:type="radial"
+                android:gradientRadius="35dp"
+                android:centerX="0.5"
+                android:centerY="0.5"
+                android:startColor="#252C3B"
+                android:centerColor="#141822"
+                android:endColor="#0B0D13" />
+            <stroke android:width="1.8dp" android:color="#D4AF37" />
+        </shape>
+    </item>
+</layer-list>

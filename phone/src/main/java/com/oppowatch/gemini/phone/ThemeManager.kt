@@ -13,6 +13,7 @@ object ThemeManager {
 
     private const val PREFS_NAME = "gemini_prefs"
     private const val KEY_THEME = "selected_theme"
+    private const val KEY_WATCH_COLOR = "watch_color_theme"
 
     fun getTheme(context: Context): ThemeMode {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
@@ -23,6 +24,16 @@ object ThemeManager {
     fun setTheme(context: Context, theme: ThemeMode) {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         prefs.edit().putString(KEY_THEME, theme.id).apply()
+    }
+
+    fun getWatchColorTheme(context: Context): String {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        return prefs.getString(KEY_WATCH_COLOR, "dark") ?: "dark"
+    }
+
+    fun setWatchColorTheme(context: Context, mode: String) {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        prefs.edit().putString(KEY_WATCH_COLOR, mode).apply()
     }
 
     data class ThemeConfig(
@@ -69,7 +80,7 @@ object ThemeManager {
                 textSecondaryColor = Color.parseColor("#94A3B8")
             )
             ThemeMode.LIQUID_GLASS -> ThemeConfig(
-                rootBgColor = Color.parseColor("#060713"),
+                rootBgColor = Color.parseColor("#090D1A"),
                 cardDrawable = R.drawable.bg_glass_card,
                 panelDrawable = R.drawable.bg_glass_panel,
                 bezelDrawable = R.drawable.bg_glass_card,
@@ -82,11 +93,11 @@ object ThemeManager {
                 switchOffDrawable = R.drawable.bg_switch_glass_off,
                 switchOnTextColor = Color.parseColor("#38BDF8"),
                 switchOffTextColor = Color.parseColor("#64748B"),
-                titleTextColor = Color.parseColor("#38BDF8"),
-                headerBluetoothColor = Color.parseColor("#38BDF8"),
-                headerHistoryColor = Color.parseColor("#A855F7"),
-                headerApiKeyColor = Color.parseColor("#38BDF8"),
-                textSecondaryColor = Color.parseColor("#94A3B8")
+                titleTextColor = Color.parseColor("#7DD3FC"),
+                headerBluetoothColor = Color.parseColor("#34D399"),
+                headerHistoryColor = Color.parseColor("#C084FC"),
+                headerApiKeyColor = Color.parseColor("#7DD3FC"),
+                textSecondaryColor = Color.parseColor("#CBD5E1")
             )
             ThemeMode.MATERIAL -> ThemeConfig(
                 rootBgColor = Color.parseColor("#121212"),
