@@ -23,26 +23,62 @@
         android:layout_marginTop="4dp"
         android:layout_marginBottom="16dp" />
 
-    <TextView
-        android:layout_width="wrap_content"
+    <LinearLayout
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="DANH SÁCH THIẾT BỊ BLUETOOTH ĐÃ GHÉP NỐI:"
-        android:textSize="11sp"
-        android:textStyle="bold"
-        android:textColor="#0F766E"
-        android:letterSpacing="0.05"
-        android:layout_marginBottom="8dp" />
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:layout_marginBottom="8dp">
 
-    <!-- List of Bluetooth Devices with Checkboxes -->
-    <ListView
-        android:id="@+id/lv_bluetooth_devices"
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="DANH SÁCH THIẾT BỊ BLUETOOTH ĐÃ GHÉP NỐI:"
+            android:textSize="11sp"
+            android:textStyle="bold"
+            android:textColor="#0F766E"
+            android:letterSpacing="0.05" />
+
+        <Button
+            android:id="@+id/btn_reload_bluetooth"
+            android:layout_width="wrap_content"
+            android:layout_height="36dp"
+            android:text="🔄 LÀM MỚI"
+            android:textSize="11sp"
+            android:textStyle="bold"
+            android:textColor="#0F766E"
+            android:backgroundTint="#CCFBF1"
+            android:paddingLeft="12dp"
+            android:paddingRight="12dp" />
+    </LinearLayout>
+
+    <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="1"
-        android:background="#FFFFFF"
-        android:divider="#E2E8F0"
-        android:dividerHeight="1dp"
-        android:padding="8dp" />
+        android:layout_weight="1">
+
+        <!-- List of Bluetooth Devices with Checkboxes -->
+        <ListView
+            android:id="@+id/lv_bluetooth_devices"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="#FFFFFF"
+            android:divider="#E2E8F0"
+            android:dividerHeight="1dp"
+            android:padding="8dp" />
+
+        <TextView
+            android:id="@+id/tv_empty_devices"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:gravity="center"
+            android:text="Chưa tải được thiết bị.\nVui lòng bấm '🔄 LÀM MỚI' hoặc bật Bluetooth trên máy."
+            android:textColor="#94A3B8"
+            android:textSize="13sp"
+            android:padding="16dp"
+            android:visibility="gone" />
+    </FrameLayout>
 
     <TextView
         android:id="@+id/tv_last_message"

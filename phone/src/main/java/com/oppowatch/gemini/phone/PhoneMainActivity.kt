@@ -27,6 +27,8 @@ class PhoneMainActivity : AppCompatActivity() {
 
     private lateinit var filterManager: BluetoothFilterManager
     private lateinit var lvDevices: ListView
+    private lateinit var tvEmptyDevices: TextView
+    private lateinit var btnReloadBluetooth: Button
     private lateinit var tvLastMessage: TextView
     private lateinit var btnTestTts: Button
 
@@ -51,6 +53,8 @@ class PhoneMainActivity : AppCompatActivity() {
         TtsSpeaker.init(this)
 
         lvDevices = findViewById(R.id.lv_bluetooth_devices)
+        tvEmptyDevices = findViewById(R.id.tv_empty_devices)
+        btnReloadBluetooth = findViewById(R.id.btn_reload_bluetooth)
         tvLastMessage = findViewById(R.id.tv_last_message)
         btnTestTts = findViewById(R.id.btn_test_tts)
 
@@ -61,7 +65,11 @@ class PhoneMainActivity : AppCompatActivity() {
 
         setupUpdateSection()
         checkPermissions()
-        loadPairedBluetoothDevices()
+        checkPermissionsAndLoadDevices(userInitiated = false)
+
+        btnReloadBluetooth.setOnClickListener {
+            checkPermissionsAndLoadDevices(userInitiated = true)
+        }
 
         btnTestTts.setOnClickListener {
             TtsSpeaker.speak(this, "Đây là âm thanh thử nghiệm từ trợ lý Gemini trên đồng hồ OPPO Watch.")
@@ -160,6 +168,11 @@ class PhoneMainActivity : AppCompatActivity() {
         unregisterReceiver(receiver)
     }
 
+    override fun onResume() {
+        super.onResume()
+        checkPermissionsAndLoadDevices(userInitiated = false)
+    }
+
     private fun checkPermissions() {
         val permissionsNeeded = mutableListOf<String>()
 
@@ -193,13 +206,88 @@ class PhoneMainActivity : AppCompatActivity() {
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         if (requestCode == 201) {
-            loadPairedBluetoothDevices()
+            val connectGranted = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                ContextCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT) == PackageManager.PERMISSION_GRANTED
+            } else true
+
+            if (connectGranted) {
+                loadPairedBluetoothDevices(userInitiated = true)
+            } else {
+                tvEmptyDevices.text = "Bạn chưa cấp quyền 'Thiết bị ở gần (Bluetooth)'.\nBấm vào đây để mở Cài đặt ứng dụng và cấp quyền."
+                tvEmptyDevices.visibility = View.VISIBLE
+                tvEmptyDevices.setOnClickListener {
+                    val intent = Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                        data = android.net.Uri.parse("package:$packageName")
+                    }
+                    startActivity(intent)
+                }
+            }
         }
     }
 
-    private fun loadPairedBluetoothDevices() {
-        val adapter = BluetoothAdapter.getDefaultAdapter() ?: return
-        val paired = adapter.bondedDevices.toList()
+    private fun checkPermissionsAndLoadDevices(userInitiated: Boolean) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT)
+                != PackageManager.PERMISSION_GRANTED) {
+                tvEmptyDevices.text = "Cần quyền 'Thiết bị ở gần' để tìm tai nghe Bluetooth.\nBấm vào đây để cấp quyền."
+                tvEmptyDevices.visibility = View.VISIBLE
+                tvEmptyDevices.setOnClickListener {
+                    ActivityCompat.requestPermissions(
+                        this,
+                        arrayOf(Manifest.permission.BLUETOOTH_CONNECT, Manifest.permission.BLUETOOTH_SCAN),
+                        201
+                    )
+                }
+                if (userInitiated) {
+                    ActivityCompat.requestPermissions(
+                        this,
+                        arrayOf(Manifest.permission.BLUETOOTH_CONNECT, Manifest.permission.BLUETOOTH_SCAN),
+                        201
+                    )
+                }
+                return
+            }
+        }
+
+        loadPairedBluetoothDevices(userInitiated)
+    }
+
+    private fun loadPairedBluetoothDevices(userInitiated: Boolean = false) {
+        val adapter = BluetoothAdapter.getDefaultAdapter()
+        if (adapter == null) {
+            tvEmptyDevices.text = "Thiết bị này không hỗ trợ Bluetooth."
+            tvEmptyDevices.visibility = View.VISIBLE
+            return
+        }
+
+        if (!adapter.isEnabled) {
+            tvEmptyDevices.text = "Bluetooth trên điện thoại đang TẮT.\nVui lòng bật Bluetooth và bấm '🔄 LÀM MỚI'."
+            tvEmptyDevices.visibility = View.VISIBLE
+            lvDevices.adapter = null
+            if (userInitiated) {
+                Toast.makeText(this, "Vui lòng bật Bluetooth!", Toast.LENGTH_SHORT).show()
+            }
+            return
+        }
+
+        val paired = try {
+            adapter.bondedDevices?.toList() ?: emptyList()
+        } catch (e: SecurityException) {
+            android.util.Log.e("PhoneMainActivity", "Lỗi quyền đọc bondedDevices", e)
+            emptyList()
+        }
+
+        if (paired.isEmpty()) {
+            tvEmptyDevices.text = "Chưa tìm thấy thiết bị Bluetooth nào đã ghép nối.\nHãy vào Cài đặt điện thoại kết nối tai nghe, sau đó bấm '🔄 LÀM MỚI'."
+            tvEmptyDevices.visibility = View.VISIBLE
+            lvDevices.adapter = null
+            if (userInitiated) {
+                Toast.makeText(this, "Chưa tìm thấy thiết bị Bluetooth nào!", Toast.LENGTH_SHORT).show()
+            }
+            return
+        }
+
+        tvEmptyDevices.visibility = View.GONE
 
         val listAdapter = object : ArrayAdapter<BluetoothDevice>(this, 0, paired) {
             override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
@@ -209,7 +297,7 @@ class PhoneMainActivity : AppCompatActivity() {
                     false
                 )
                 val device = getItem(position) ?: return view
-                val name = device.name ?: "Thiết bị không tên"
+                val name = try { device.name ?: "Thiết bị không tên" } catch (_: SecurityException) { "Thiết bị Bluetooth" }
                 val mac = device.address
 
                 val checkedTextView = view.findViewById<TextView>(android.R.id.text1)
@@ -230,11 +318,16 @@ class PhoneMainActivity : AppCompatActivity() {
             val device = paired[position]
             val currentlyChecked = lvDevices.isItemChecked(position)
             filterManager.setDeviceSelected(device.address, currentlyChecked)
+            val name = try { device.name ?: "Thiết bị" } catch (_: SecurityException) { "Thiết bị" }
             Toast.makeText(
                 this,
-                "${if (currentlyChecked) "Đã chọn" else "Đã bỏ"}: ${device.name}",
+                "${if (currentlyChecked) "Đã chọn" else "Đã bỏ"}: $name",
                 Toast.LENGTH_SHORT
             ).show()
+        }
+
+        if (userInitiated) {
+            Toast.makeText(this, "Đã làm mới: ${paired.size} thiết bị", Toast.LENGTH_SHORT).show()
         }
     }
 }
