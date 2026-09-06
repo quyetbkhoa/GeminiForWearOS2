@@ -45,10 +45,31 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode == 101) {
+            if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                tvStatus.text = "NHẤN GIỮ ĐỂ NÓI"
+            } else {
+                tvStatus.text = "CẦN CẤP QUYỀN MICRO"
+            }
+        }
+    }
+
     private fun setupPttListener() {
         pttContainer.setOnTouchListener { _, event ->
             when (event.action) {
                 MotionEvent.ACTION_DOWN -> {
+                    if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO)
+                        != PackageManager.PERMISSION_GRANTED) {
+                        checkMicrophonePermission()
+                        tvStatus.text = "CẦN CẤP QUYỀN MICRO"
+                        return@setOnTouchListener true
+                    }
                     startVoiceRecording()
                     true
                 }
