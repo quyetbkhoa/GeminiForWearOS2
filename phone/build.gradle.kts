@@ -7,7 +7,7 @@ android {
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.oppowatch.gemini.phone"
+        applicationId = "com.oppowatch.gemini"
         minSdk = 26
         targetSdk = 34
         versionCode = 1

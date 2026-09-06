@@ -16,7 +16,7 @@
         android:icon="@drawable/ic_launcher"
         android:label="Gemini Voice Companion"
         android:supportsRtl="true"
-        android:theme="@style/Theme.AppCompat.DayNight">
+        android:theme="@style/Theme.GeminiCompanion">
 
         <activity
             android:name=".PhoneMainActivity"
@@ -37,11 +37,14 @@
                     android:pathPrefix="/gemini_tts_payload"
                     android:scheme="wear" />
             </intent-filter>
+            <intent-filter>
+                <action android:name="com.google.android.gms.wearable.BIND_LISTENER" />
+            </intent-filter>
         </service>
 
         <provider
             android:name="androidx.core.content.FileProvider"
-            android:authorities="com.oppowatch.gemini.phone.fileprovider"
+            android:authorities="${applicationId}.fileprovider"
             android:exported="false"
             android:grantUriPermissions="true">
             <meta-data

@@ -1,0 +1,13 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<!-- Debossed dark circular socket -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="oval">
+    <gradient
+        android:type="radial"
+        android:gradientRadius="20dp"
+        android:centerX="0.4"
+        android:centerY="0.3"
+        android:startColor="#0D0F14"
+        android:endColor="#1F2430" />
+    <stroke android:width="1.5dp" android:color="#0A0C10" />
+</shape>

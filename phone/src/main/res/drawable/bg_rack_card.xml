@@ -1,0 +1,24 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<!-- Dark brushed titanium card with 3D chamfered edge -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Bottom Shadow -->
+    <item>
+        <shape android:shape="rectangle">
+            <corners android:radius="6dp" />
+            <solid android:color="#07080B" />
+        </shape>
+    </item>
+    <!-- Brushed Titanium Body -->
+    <item android:bottom="2dp">
+        <shape android:shape="rectangle">
+            <corners android:radius="6dp" />
+            <gradient
+                android:type="linear"
+                android:angle="270"
+                android:startColor="#262C38"
+                android:centerColor="#1B1F28"
+                android:endColor="#14171E" />
+            <stroke android:width="1.2dp" android:color="#3D4659" />
+        </shape>
+    </item>
+</layer-list>

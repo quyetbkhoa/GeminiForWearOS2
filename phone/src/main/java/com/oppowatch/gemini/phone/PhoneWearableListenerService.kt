@@ -35,6 +35,7 @@ class PhoneWearableListenerService : WearableListenerService() {
 
             // Broadcast to UI to update both last message and history list
             val broadcastIntent = Intent("com.oppowatch.gemini.TTS_RECEIVED").apply {
+                setPackage(packageName)
                 putExtra("question", question)
                 putExtra("answer", answer)
                 putExtra("timestamp", timestamp)

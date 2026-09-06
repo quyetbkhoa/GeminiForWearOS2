@@ -1,9 +1,9 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
-    android:background="#FFFFFF"
+    android:background="@drawable/bg_rack_card"
     android:padding="12dp"
     android:layout_marginBottom="8dp">
 
@@ -20,7 +20,8 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:text="🕒 05:58:10 - Hôm nay"
-            android:textColor="#64748B"
+            android:textColor="#94A3B8"
+            android:textStyle="bold"
             android:textSize="11sp" />
 
         <Button
@@ -28,12 +29,13 @@
             android:layout_width="wrap_content"
             android:layout_height="32dp"
             android:text="🔊 NGHE LẠI"
-            android:textColor="#0F766E"
+            android:textColor="#FFFFFF"
             android:textSize="10sp"
             android:textStyle="bold"
-            android:backgroundTint="#CCFBF1"
-            android:paddingLeft="8dp"
-            android:paddingRight="8dp" />
+            android:background="@drawable/bg_btn_emerald"
+            android:backgroundTint="@null"
+            android:paddingLeft="10dp"
+            android:paddingRight="10dp" />
     </LinearLayout>
 
     <!-- Question Box -->
@@ -41,7 +43,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:background="#F1F5F9"
+        android:background="@drawable/bg_qa_question"
         android:padding="8dp"
         android:layout_marginTop="6dp">
 
@@ -49,7 +51,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="🗣️ BẠN HỎI:"
-            android:textColor="#475569"
+            android:textColor="#38BDF8"
             android:textSize="10sp"
             android:textStyle="bold" />
 
@@ -58,7 +60,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="Nội dung câu hỏi của bạn..."
-            android:textColor="#0F172A"
+            android:textColor="#F1F5F9"
             android:textSize="13sp"
             android:layout_marginTop="2dp" />
     </LinearLayout>
@@ -68,7 +70,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:background="#F0FDF4"
+        android:background="@drawable/bg_qa_answer"
         android:padding="8dp"
         android:layout_marginTop="6dp">
 
@@ -76,7 +78,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="🤖 GEMINI ĐÁP:"
-            android:textColor="#16A34A"
+            android:textColor="#34D399"
             android:textSize="10sp"
             android:textStyle="bold" />
 
@@ -85,7 +87,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="Nội dung câu trả lời từ Gemini..."
-            android:textColor="#14532D"
+            android:textColor="#ECFDF5"
             android:textSize="13sp"
             android:lineSpacingExtra="2dp"
             android:layout_marginTop="2dp" />

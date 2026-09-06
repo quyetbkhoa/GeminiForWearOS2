@@ -49,6 +49,27 @@ class PhoneMainActivity : AppCompatActivity() {
         }
     }
 
+    private val wearMessageListener = com.google.android.gms.wearable.MessageClient.OnMessageReceivedListener { messageEvent ->
+        if (messageEvent.path == "/gemini_tts_payload") {
+            val rawPayload = String(messageEvent.data, Charsets.UTF_8)
+            var question = "Câu hỏi từ đồng hồ"
+            var answer = rawPayload
+            var timestamp = System.currentTimeMillis()
+            try {
+                val json = org.json.JSONObject(rawPayload)
+                if (json.has("answer")) {
+                    answer = json.optString("answer", rawPayload)
+                    question = json.optString("question", "Câu hỏi bằng giọng nói")
+                    timestamp = json.optLong("timestamp", System.currentTimeMillis())
+                }
+            } catch (_: Exception) {}
+            qaHistoryManager.addEntry(question, answer, timestamp)
+            runOnUiThread {
+                loadQaHistory()
+            }
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_phone_main)
@@ -229,6 +250,17 @@ class PhoneMainActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
         checkPermissionsAndLoadDevices(userInitiated = false)
+        loadQaHistory()
+        try {
+            com.google.android.gms.wearable.Wearable.getMessageClient(this).addListener(wearMessageListener)
+        } catch (_: Exception) {}
+    }
+
+    override fun onPause() {
+        super.onPause()
+        try {
+            com.google.android.gms.wearable.Wearable.getMessageClient(this).removeListener(wearMessageListener)
+        } catch (_: Exception) {}
     }
 
     private fun checkPermissions() {
@@ -350,7 +382,7 @@ class PhoneMainActivity : AppCompatActivity() {
         val listAdapter = object : ArrayAdapter<BluetoothDevice>(this, 0, paired) {
             override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
                 val view = convertView ?: LayoutInflater.from(context).inflate(
-                    android.R.layout.simple_list_item_multiple_choice,
+                    R.layout.item_bluetooth_device,
                     parent,
                     false
                 )
@@ -358,28 +390,50 @@ class PhoneMainActivity : AppCompatActivity() {
                 val name = try { device.name ?: "Thiết bị không tên" } catch (_: SecurityException) { "Thiết bị Bluetooth" }
                 val mac = device.address
 
-                val checkedTextView = view.findViewById<TextView>(android.R.id.text1)
-                checkedTextView.text = "$name\n$mac"
-                checkedTextView.textSize = 14f
+                val tvName = view.findViewById<TextView>(R.id.tv_device_name)
+                val tvMac = view.findViewById<TextView>(R.id.tv_device_mac)
+                val tvSwitch = view.findViewById<TextView>(R.id.tv_switch_status)
+                val tvIcon = view.findViewById<TextView>(R.id.tv_device_icon)
+
+                tvName.text = name
+                tvMac.text = mac
 
                 val isChecked = filterManager.isDeviceSelected(mac)
-                (parent as? ListView)?.setItemChecked(position, isChecked)
+                if (isChecked) {
+                    tvSwitch.text = "BẬT"
+                    tvSwitch.setTextColor(0xFFFFFFFF.toInt())
+                    tvSwitch.setBackgroundResource(R.drawable.bg_switch_on)
+                } else {
+                    tvSwitch.text = "TẮT"
+                    tvSwitch.setTextColor(0xFF94A3B8.toInt())
+                    tvSwitch.setBackgroundResource(R.drawable.bg_switch_off)
+                }
+
+                val lowerName = name.lowercase()
+                tvIcon.text = when {
+                    lowerName.contains("watch") -> "⌚"
+                    lowerName.contains("soundcore") || lowerName.contains("buds") || lowerName.contains("ear") || lowerName.contains("headphone") -> "🎧"
+                    lowerName.contains("speaker") || lowerName.contains("loa") -> "🔊"
+                    else -> "📻"
+                }
 
                 return view
             }
         }
 
-        lvDevices.choiceMode = ListView.CHOICE_MODE_MULTIPLE
+        lvDevices.choiceMode = ListView.CHOICE_MODE_NONE
         lvDevices.adapter = listAdapter
 
         lvDevices.setOnItemClickListener { _, _, position, _ ->
             val device = paired[position]
-            val currentlyChecked = lvDevices.isItemChecked(position)
-            filterManager.setDeviceSelected(device.address, currentlyChecked)
+            val wasChecked = filterManager.isDeviceSelected(device.address)
+            val newChecked = !wasChecked
+            filterManager.setDeviceSelected(device.address, newChecked)
+            listAdapter.notifyDataSetChanged()
             val name = try { device.name ?: "Thiết bị" } catch (_: SecurityException) { "Thiết bị" }
             Toast.makeText(
                 this,
-                "${if (currentlyChecked) "Đã chọn" else "Đã bỏ"}: $name",
+                "${if (newChecked) "Đã bật phát TTS" else "Đã tắt phát TTS"}: $name",
                 Toast.LENGTH_SHORT
             ).show()
         }

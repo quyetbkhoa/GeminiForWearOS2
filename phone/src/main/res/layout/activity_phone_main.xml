@@ -3,69 +3,82 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:padding="16dp"
-    android:background="#F8FAFC">
+    android:padding="14dp"
+    android:background="#0C0E14">
 
-    <TextView
-        android:layout_width="wrap_content"
+    <!-- Top Console Title Plate -->
+    <LinearLayout
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Gemini Voice Companion"
-        android:textSize="20sp"
-        android:textStyle="bold"
-        android:textColor="#1E293B" />
+        android:orientation="vertical"
+        android:background="@drawable/bg_rack_card"
+        android:padding="10dp"
+        android:layout_marginBottom="12dp">
 
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Chọn thiết bị Bluetooth được phép phát giọng nói (TTS) khi đồng hồ hỏi Gemini:"
-        android:textSize="13sp"
-        android:textColor="#64748B"
-        android:layout_marginTop="4dp"
-        android:layout_marginBottom="16dp" />
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="GEMINI VOICE COMPANION"
+            android:textSize="17sp"
+            android:textStyle="bold"
+            android:textColor="#F59E0B"
+            android:letterSpacing="0.06" />
 
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="HỆ THỐNG ĐIỀU PHỐI BLUETOOTH TTS &amp; LỊCH SỬ TRUY VẤN"
+            android:textSize="11sp"
+            android:textColor="#94A3B8"
+            android:layout_marginTop="2dp" />
+    </LinearLayout>
+
+    <!-- Bluetooth Device Selector Header -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:gravity="center_vertical"
-        android:layout_marginBottom="8dp">
+        android:layout_marginBottom="6dp">
 
         <TextView
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="DANH SÁCH THIẾT BỊ BLUETOOTH ĐÃ GHÉP NỐI:"
+            android:text="🎧 THIẾT BỊ BLUETOOTH PHÁT TTS:"
             android:textSize="11sp"
             android:textStyle="bold"
-            android:textColor="#0F766E"
-            android:letterSpacing="0.05" />
+            android:textColor="#34D399"
+            android:letterSpacing="0.04" />
 
         <Button
             android:id="@+id/btn_reload_bluetooth"
             android:layout_width="wrap_content"
-            android:layout_height="36dp"
+            android:layout_height="32dp"
             android:text="🔄 LÀM MỚI"
-            android:textSize="11sp"
+            android:textSize="10sp"
             android:textStyle="bold"
-            android:textColor="#0F766E"
-            android:backgroundTint="#CCFBF1"
-            android:paddingLeft="12dp"
-            android:paddingRight="12dp" />
+            android:textColor="#FFFFFF"
+            android:background="@drawable/bg_btn_metallic"
+            android:backgroundTint="@null"
+            android:paddingLeft="10dp"
+            android:paddingRight="10dp" />
     </LinearLayout>
 
+    <!-- Bluetooth Devices Bezel Rack -->
     <FrameLayout
         android:layout_width="match_parent"
-        android:layout_height="110dp">
+        android:layout_height="125dp"
+        android:background="@drawable/bg_screen_bezel"
+        android:padding="4dp">
 
-        <!-- List of Bluetooth Devices with Checkboxes -->
         <ListView
             android:id="@+id/lv_bluetooth_devices"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:background="#FFFFFF"
-            android:divider="#E2E8F0"
-            android:dividerHeight="1dp"
-            android:padding="6dp" />
+            android:divider="@null"
+            android:dividerHeight="0dp"
+            android:scrollbars="vertical" />
 
         <TextView
             android:id="@+id/tv_empty_devices"
@@ -85,7 +98,7 @@
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:gravity="center_vertical"
-        android:layout_marginTop="12dp"
+        android:layout_marginTop="10dp"
         android:layout_marginBottom="6dp">
 
         <TextView
@@ -95,65 +108,71 @@
             android:text="💬 LỊCH SỬ HỎI ĐÁP TỪ ĐỒNG HỒ:"
             android:textSize="11sp"
             android:textStyle="bold"
-            android:textColor="#1E293B"
-            android:letterSpacing="0.05" />
+            android:textColor="#38BDF8"
+            android:letterSpacing="0.04" />
 
         <Button
             android:id="@+id/btn_clear_history"
             android:layout_width="wrap_content"
-            android:layout_height="32dp"
+            android:layout_height="30dp"
             android:text="🗑️ XÓA"
             android:textSize="10sp"
-            android:textColor="#EF4444"
-            android:backgroundTint="#FEE2E2"
-            android:paddingLeft="8dp"
-            android:paddingRight="8dp" />
+            android:textStyle="bold"
+            android:textColor="#FFFFFF"
+            android:background="@drawable/bg_btn_crimson"
+            android:backgroundTint="@null"
+            android:paddingLeft="10dp"
+            android:paddingRight="10dp" />
     </LinearLayout>
 
-    <!-- Q&A History List -->
+    <!-- Q&A History Screen Bezel -->
     <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="1">
+        android:layout_weight="1"
+        android:background="@drawable/bg_screen_bezel"
+        android:padding="4dp">
 
         <ListView
             android:id="@+id/lv_qa_history"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:background="#F8FAFC"
             android:divider="@null"
-            android:dividerHeight="0dp" />
+            android:dividerHeight="0dp"
+            android:scrollbars="vertical" />
 
         <TextView
             android:id="@+id/tv_empty_history"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:gravity="center"
-            android:text="Chưa có lượt hỏi đáp nào.\nHãy nhấn giữ nút micro trên đồng hồ để hỏi Gemini!"
-            android:textColor="#94A3B8"
-            android:textSize="13sp"
+            android:text="Chưa có lượt hỏi đáp nào.\nHãy nhấn giữ micro trên đồng hồ để hỏi Gemini!"
+            android:textColor="#64748B"
+            android:textSize="12sp"
             android:padding="16dp" />
     </FrameLayout>
 
+    <!-- Test TTS Push Button -->
     <Button
         android:id="@+id/btn_test_tts"
         android:layout_width="match_parent"
-        android:layout_height="44dp"
-        android:text="THỬ PHÁT GIỌNG NÓI (TEST TTS)"
+        android:layout_height="42dp"
+        android:text="🔊 THỬ PHÁT GIỌNG NÓI (TEST TTS)"
         android:textColor="#FFFFFF"
         android:textStyle="bold"
         android:textSize="12sp"
-        android:backgroundTint="#0F766E"
+        android:background="@drawable/bg_btn_emerald"
+        android:backgroundTint="@null"
         android:layout_marginTop="8dp" />
 
-    <!-- Cập nhật tự động từ GitHub -->
+    <!-- Cập nhật tự động từ GitHub (Avionics Panel) -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:background="#EDE9FE"
-        android:padding="12dp"
-        android:layout_marginTop="12dp">
+        android:background="@drawable/bg_rack_panel"
+        android:padding="10dp"
+        android:layout_marginTop="8dp">
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -166,16 +185,16 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:text="Phiên bản: v1.0.0"
-                android:textColor="#5B21B6"
+                android:textColor="#A78BFA"
                 android:textStyle="bold"
-                android:textSize="12sp" />
+                android:textSize="11sp" />
 
             <TextView
                 android:id="@+id/tv_repo_info"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="quyetbkhoa/GeminiForWearOS2"
-                android:textColor="#7C3AED"
+                android:textColor="#C4B5FD"
                 android:textSize="11sp" />
         </LinearLayout>
 
@@ -184,28 +203,29 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="Sẵn sàng kiểm tra bản mới từ GitHub."
-            android:textSize="12sp"
-            android:textColor="#4C1D95"
-            android:layout_marginTop="4dp"
-            android:layout_marginBottom="6dp" />
+            android:textSize="11sp"
+            android:textColor="#E2E8F0"
+            android:layout_marginTop="3dp"
+            android:layout_marginBottom="4dp" />
 
         <ProgressBar
             android:id="@+id/pb_update_progress"
             style="?android:attr/progressBarStyleHorizontal"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_height="6dp"
             android:visibility="gone"
             android:max="100" />
 
         <Button
             android:id="@+id/btn_check_update"
             android:layout_width="match_parent"
-            android:layout_height="44dp"
+            android:layout_height="40dp"
             android:text="KIỂM TRA &amp; CẬP NHẬT (PHONE + WATCH)"
             android:textColor="#FFFFFF"
             android:textStyle="bold"
-            android:textSize="12sp"
-            android:backgroundTint="#7C3AED"
+            android:textSize="11sp"
+            android:background="@drawable/bg_btn_gold"
+            android:backgroundTint="@null"
             android:layout_marginTop="4dp" />
     </LinearLayout>
 

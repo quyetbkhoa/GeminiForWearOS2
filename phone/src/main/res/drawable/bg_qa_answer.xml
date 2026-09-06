@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Debossed dark emerald plate for Gemini response -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android">
+    <corners android:radius="4dp" />
+    <solid android:color="#0C1B15" />
+    <stroke android:width="1dp" android:color="#047857" />
+</shape>

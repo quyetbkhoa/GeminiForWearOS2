@@ -1,4 +1,4 @@
-﻿package com.oppowatch.gemini.phone
+package com.oppowatch.gemini.phone
 
 import android.content.Context
 import org.json.JSONArray
@@ -24,6 +24,10 @@ class QaHistoryManager(context: Context) {
 
     fun addEntry(question: String, answer: String, timestamp: Long = System.currentTimeMillis()) {
         val list = getHistory().toMutableList()
+        // Deduplicate if identical answer already added within 3 seconds
+        if (list.isNotEmpty() && list[0].answer == answer && Math.abs(list[0].timestamp - timestamp) < 3000) {
+            return
+        }
         list.add(0, QaItem(question, answer, timestamp)) // Newest first
 
         if (list.size > 50) {

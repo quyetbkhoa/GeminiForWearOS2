@@ -1,0 +1,64 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:gravity="center_vertical"
+    android:background="@drawable/bg_rack_card"
+    android:padding="10dp"
+    android:layout_marginBottom="6dp">
+
+    <!-- Device Icon Indicator -->
+    <TextView
+        android:id="@+id/tv_device_icon"
+        android:layout_width="36dp"
+        android:layout_height="36dp"
+        android:gravity="center"
+        android:text="🎧"
+        android:textSize="18sp"
+        android:background="@drawable/bg_jewel_recess" />
+
+    <!-- Device Information -->
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:orientation="vertical"
+        android:layout_marginLeft="10dp"
+        android:layout_marginRight="10dp">
+
+        <TextView
+            android:id="@+id/tv_device_name"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Tên thiết bị Bluetooth"
+            android:textColor="#FFFFFF"
+            android:textSize="14sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/tv_device_mac"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="AA:BB:CC:DD:EE:FF"
+            android:textColor="#F59E0B"
+            android:textSize="11sp"
+            android:fontFamily="monospace"
+            android:layout_marginTop="2dp" />
+    </LinearLayout>
+
+    <!-- Skeuomorphic 3D Tactile Switch Checkbox -->
+    <TextView
+        android:id="@+id/tv_switch_status"
+        android:layout_width="wrap_content"
+        android:layout_height="28dp"
+        android:gravity="center"
+        android:text="TẮT"
+        android:textSize="11sp"
+        android:textStyle="bold"
+        android:textColor="#94A3B8"
+        android:background="@drawable/bg_switch_off"
+        android:paddingLeft="12dp"
+        android:paddingRight="12dp" />
+
+</LinearLayout>
