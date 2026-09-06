@@ -29,8 +29,13 @@ class PhoneMainActivity : AppCompatActivity() {
     private lateinit var lvDevices: ListView
     private lateinit var tvEmptyDevices: TextView
     private lateinit var btnReloadBluetooth: Button
-    private lateinit var tvLastMessage: TextView
     private lateinit var btnTestTts: Button
+
+    // Q&A History
+    private lateinit var qaHistoryManager: QaHistoryManager
+    private lateinit var lvQaHistory: ListView
+    private lateinit var tvEmptyHistory: TextView
+    private lateinit var btnClearHistory: Button
 
     // Các thành phần Cập nhật GitHub
     private lateinit var tvAppVersion: TextView
@@ -40,8 +45,7 @@ class PhoneMainActivity : AppCompatActivity() {
 
     private val receiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
-            val payload = intent?.getStringExtra("payload") ?: return
-            tvLastMessage.text = "Tin nhắn từ đồng hồ:\n$payload"
+            loadQaHistory()
         }
     }
 
@@ -50,13 +54,17 @@ class PhoneMainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_phone_main)
 
         filterManager = BluetoothFilterManager(this)
+        qaHistoryManager = QaHistoryManager(this)
         TtsSpeaker.init(this)
 
         lvDevices = findViewById(R.id.lv_bluetooth_devices)
         tvEmptyDevices = findViewById(R.id.tv_empty_devices)
         btnReloadBluetooth = findViewById(R.id.btn_reload_bluetooth)
-        tvLastMessage = findViewById(R.id.tv_last_message)
         btnTestTts = findViewById(R.id.btn_test_tts)
+
+        lvQaHistory = findViewById(R.id.lv_qa_history)
+        tvEmptyHistory = findViewById(R.id.tv_empty_history)
+        btnClearHistory = findViewById(R.id.btn_clear_history)
 
         tvAppVersion = findViewById(R.id.tv_app_version)
         tvUpdateStatus = findViewById(R.id.tv_update_status)
@@ -64,6 +72,7 @@ class PhoneMainActivity : AppCompatActivity() {
         btnCheckUpdate = findViewById(R.id.btn_check_update)
 
         setupUpdateSection()
+        setupQaHistorySection()
         checkPermissions()
         checkPermissionsAndLoadDevices(userInitiated = false)
 
@@ -82,6 +91,55 @@ class PhoneMainActivity : AppCompatActivity() {
         } else {
             registerReceiver(receiver, filter)
         }
+    }
+
+    private fun setupQaHistorySection() {
+        btnClearHistory.setOnClickListener {
+            qaHistoryManager.clearHistory()
+            loadQaHistory()
+            Toast.makeText(this, "Đã xóa toàn bộ lịch sử hỏi đáp.", Toast.LENGTH_SHORT).show()
+        }
+        loadQaHistory()
+    }
+
+    private fun loadQaHistory() {
+        val history = qaHistoryManager.getHistory()
+        if (history.isEmpty()) {
+            tvEmptyHistory.visibility = View.VISIBLE
+            lvQaHistory.adapter = null
+            return
+        }
+
+        tvEmptyHistory.visibility = View.GONE
+
+        val adapter = object : ArrayAdapter<QaItem>(this, 0, history) {
+            override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
+                val view = convertView ?: LayoutInflater.from(context).inflate(
+                    R.layout.item_qa_history,
+                    parent,
+                    false
+                )
+                val item = getItem(position) ?: return view
+
+                val tvTime = view.findViewById<TextView>(R.id.tv_qa_time)
+                val tvQuestion = view.findViewById<TextView>(R.id.tv_qa_question)
+                val tvAnswer = view.findViewById<TextView>(R.id.tv_qa_answer)
+                val btnReplay = view.findViewById<Button>(R.id.btn_replay_tts)
+
+                tvTime.text = "🕒 ${item.getFormattedTime()}"
+                tvQuestion.text = item.question
+                tvAnswer.text = item.answer
+
+                btnReplay.setOnClickListener {
+                    TtsSpeaker.speak(context, item.answer)
+                    Toast.makeText(context, "Đang phát lại câu trả lời...", Toast.LENGTH_SHORT).show()
+                }
+
+                return view
+            }
+        }
+
+        lvQaHistory.adapter = adapter
     }
 
     private fun setupUpdateSection() {

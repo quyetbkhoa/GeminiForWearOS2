@@ -18,11 +18,16 @@ object GeminiClient {
     private val ENDPOINT get() = "https://generativelanguage.googleapis.com/v1beta/models/$MODEL:generateContent?key=$API_KEY"
 
     private const val SYSTEM_INSTRUCTION =
-        "Bạn là trợ lý ảo hiển thị trên màn hình đồng hồ thông minh thông qua giọng nói. " +
-        "QUY TẮC BẮT BUỘC: Nếu thông tin có thể trả lời siêu ngắn gọn (như câu hỏi có/không, các câu hỏi không cần giải thích chỉ cần nêu đáp án), " +
-        "hãy trả lời thật ngắn gọn, súc tích, đi thẳng vào đáp án trong 1 đến 2 câu ngắn để hiển thị vừa vặn trên màn hình đồng hồ và thuận tiện nghe đọc TTS. Không dài dòng."
+        "Bạn là trợ lý AI thông minh tích hợp trên đồng hồ Wear OS. " +
+        "QUY TẮC BẮT BUỘC: " +
+        "1. Hãy nghe file âm thanh giọng nói của người dùng và nhận diện chính xác câu hỏi. " +
+        "2. Trả lời theo đúng định dạng JSON chuẩn gồm 2 trường: " +
+        "\"question\": câu hỏi hoặc yêu cầu của người dùng được viết lại chuẩn tiếng Việt; " +
+        "\"answer\": câu trả lời siêu ngắn gọn, súc tích, đi thẳng vào đáp án trong 1 đến 2 câu ngắn. " +
+        "3. Tuyệt đối chỉ trả về chuỗi JSON thuần túy, không dùng markdown code block ```json. " +
+        "Ví dụ: {\"question\": \"Mấy giờ rồi\", \"answer\": \"Bây giờ là 6 giờ sáng.\"}"
 
-    fun askGemini(audioBase64: String, onResult: (Boolean, String) -> Unit) {
+    fun askGemini(audioBase64: String, onResult: (Boolean, String, String) -> Unit) {
         thread {
             var connection: HttpURLConnection? = null
             try {
@@ -43,7 +48,7 @@ object GeminiClient {
 
                 // 1. Text prompt with system instruction
                 val textPart = JSONObject()
-                textPart.put("text", "$SYSTEM_INSTRUCTION\nCâu hỏi giọng nói của người dùng nằm trong file âm thanh đính kèm dưới đây:")
+                textPart.put("text", "$SYSTEM_INSTRUCTION\nFile âm thanh của người dùng:")
                 partsArray.put(textPart)
 
                 // 2. Audio part (inline_data)
@@ -73,18 +78,34 @@ object GeminiClient {
                     if (candidates != null && candidates.length() > 0) {
                         val content = candidates.getJSONObject(0).optJSONObject("content")
                         val parts = content?.optJSONArray("parts")
-                        val answer = parts?.getJSONObject(0)?.optString("text") ?: "Không nhận được phản hồi."
-                        onResult(true, answer.trim())
+                        val rawText = parts?.getJSONObject(0)?.optString("text")?.trim() ?: ""
+
+                        var question = "Câu hỏi từ đồng hồ"
+                        var answer = rawText
+
+                        try {
+                            val clean = rawText.removePrefix("```json").removePrefix("```").removeSuffix("```").trim()
+                            val parsed = JSONObject(clean)
+                            if (parsed.has("answer")) {
+                                answer = parsed.optString("answer", rawText)
+                                question = parsed.optString("question", "Câu hỏi bằng giọng nói")
+                            } else if (parsed.has("a")) {
+                                answer = parsed.optString("a", rawText)
+                                question = parsed.optString("q", "Câu hỏi bằng giọng nói")
+                            }
+                        } catch (_: Exception) {}
+
+                        onResult(true, question, answer)
                     } else {
-                        onResult(false, "Không có câu trả lời từ Gemini.")
+                        onResult(false, "Không rõ câu hỏi", "Không có câu trả lời từ Gemini.")
                     }
                 } else {
                     Log.e(TAG, "API Error $responseCode: $responseText")
-                    onResult(false, "Lỗi kết nối Gemini ($responseCode)")
+                    onResult(false, "Lỗi kết nối", "Lỗi kết nối Gemini ($responseCode)")
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "Exception: ${e.message}")
-                onResult(false, "Lỗi: ${e.localizedMessage}")
+                onResult(false, "Lỗi ngoại lệ", "Lỗi: ${e.localizedMessage}")
             } finally {
                 connection?.disconnect()
             }

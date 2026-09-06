@@ -1,0 +1,94 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="#FFFFFF"
+    android:padding="12dp"
+    android:layout_marginBottom="8dp">
+
+    <!-- Top info bar: Timestamp + Replay button -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
+
+        <TextView
+            android:id="@+id/tv_qa_time"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="🕒 05:58:10 - Hôm nay"
+            android:textColor="#64748B"
+            android:textSize="11sp" />
+
+        <Button
+            android:id="@+id/btn_replay_tts"
+            android:layout_width="wrap_content"
+            android:layout_height="32dp"
+            android:text="🔊 NGHE LẠI"
+            android:textColor="#0F766E"
+            android:textSize="10sp"
+            android:textStyle="bold"
+            android:backgroundTint="#CCFBF1"
+            android:paddingLeft="8dp"
+            android:paddingRight="8dp" />
+    </LinearLayout>
+
+    <!-- Question Box -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:background="#F1F5F9"
+        android:padding="8dp"
+        android:layout_marginTop="6dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="🗣️ BẠN HỎI:"
+            android:textColor="#475569"
+            android:textSize="10sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/tv_qa_question"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Nội dung câu hỏi của bạn..."
+            android:textColor="#0F172A"
+            android:textSize="13sp"
+            android:layout_marginTop="2dp" />
+    </LinearLayout>
+
+    <!-- Answer Box -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:background="#F0FDF4"
+        android:padding="8dp"
+        android:layout_marginTop="6dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="🤖 GEMINI ĐÁP:"
+            android:textColor="#16A34A"
+            android:textSize="10sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/tv_qa_answer"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Nội dung câu trả lời từ Gemini..."
+            android:textColor="#14532D"
+            android:textSize="13sp"
+            android:lineSpacingExtra="2dp"
+            android:layout_marginTop="2dp" />
+    </LinearLayout>
+
+</LinearLayout>

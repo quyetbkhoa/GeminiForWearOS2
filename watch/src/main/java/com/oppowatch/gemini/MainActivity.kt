@@ -20,6 +20,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var pttContainer: FrameLayout
     private lateinit var tvStatus: TextView
     private lateinit var tvResult: TextView
+    private lateinit var scrollResult: android.widget.ScrollView
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -29,6 +30,7 @@ class MainActivity : AppCompatActivity() {
         pttContainer = findViewById(R.id.btn_ptt_container)
         tvStatus = findViewById(R.id.tv_status)
         tvResult = findViewById(R.id.tv_result)
+        scrollResult = findViewById(R.id.scroll_result)
 
         checkMicrophonePermission()
         setupPttListener()
@@ -87,10 +89,12 @@ class MainActivity : AppCompatActivity() {
         pttContainer.setBackgroundResource(R.drawable.bg_ptt_recording)
         tvStatus.text = "🔴 ĐANG LẮNG NGHE..."
         tvStatus.setTextColor(resources.getColor(R.color.red_recording))
+        tvResult.text = "Đang lắng nghe câu hỏi của bạn..."
 
         val started = recorderHelper.startRecording()
         if (!started) {
             tvStatus.text = "LỖI MICROPHONE"
+            tvResult.text = "Không thể khởi động micro."
             pttContainer.setBackgroundResource(R.drawable.bg_ptt_idle)
         }
     }
@@ -102,24 +106,32 @@ class MainActivity : AppCompatActivity() {
         pttContainer.setBackgroundResource(R.drawable.bg_ptt_idle)
         tvStatus.text = "⚡ ĐANG GỌI GEMINI..."
         tvStatus.setTextColor(resources.getColor(R.color.gold_accent))
+        tvResult.text = "Gemini đang suy nghĩ câu trả lời..."
 
         val audioBase64 = recorderHelper.stopRecording()
         if (audioBase64.isNullOrEmpty()) {
             tvStatus.text = "NHẤN GIỮ ĐỂ NÓI"
             tvStatus.setTextColor(resources.getColor(R.color.gold_light))
+            tvResult.text = "Chưa thu được âm thanh. Hãy nhấn giữ lâu hơn."
             return
         }
 
-        GeminiClient.askGemini(audioBase64) { success, answer ->
+        GeminiClient.askGemini(audioBase64) { success, question, answer ->
             runOnUiThread {
                 tvStatus.text = if (success) "✓ ĐÃ TRẢ LỜI" else "LỖI"
                 tvStatus.setTextColor(if (success) resources.getColor(R.color.gold_accent) else resources.getColor(R.color.red_recording))
                 tvResult.text = answer
+                scrollResult.smoothScrollTo(0, 0)
 
                 if (success) {
                     vibrateTick(180, 200)
-                    // Push to paired phone for Bluetooth TTS
-                    PhoneCommunicator.sendTextToPhone(this, answer)
+                    // Push structured JSON payload to paired phone for Bluetooth TTS & History
+                    val payload = org.json.JSONObject().apply {
+                        put("question", question)
+                        put("answer", answer)
+                        put("timestamp", System.currentTimeMillis())
+                    }.toString()
+                    PhoneCommunicator.sendTextToPhone(this, payload)
                 }
             }
         }
