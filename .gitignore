@@ -12,3 +12,4 @@ local.properties
 *.hprof
 .idea/caches
 .idea/libraries
+watch/src/main/java/com/oppowatch/gemini/GeminiConfig.kt

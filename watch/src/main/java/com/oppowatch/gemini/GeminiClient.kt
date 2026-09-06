@@ -13,7 +13,7 @@ import kotlin.concurrent.thread
 object GeminiClient {
 
     private const val TAG = "GeminiClient"
-    private val API_KEY = BuildConfig.GEMINI_API_KEY
+    private val API_KEY = GeminiConfig.GEMINI_API_KEY
     private const val MODEL = "gemini-3.5-flash-lite"
     private val ENDPOINT get() = "https://generativelanguage.googleapis.com/v1beta/models/$MODEL:generateContent?key=$API_KEY"
 

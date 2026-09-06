@@ -33,9 +33,18 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
+      - name: Generate GeminiConfig for CI
+        run: |
+          mkdir -p watch/src/main/java/com/oppowatch/gemini
+          cat << 'EOF' > watch/src/main/java/com/oppowatch/gemini/GeminiConfig.kt
+          package com.oppowatch.gemini
+
+          object GeminiConfig {
+              const val GEMINI_API_KEY = "${{ secrets.GEMINI_API_KEY }}"
+          }
+          EOF
+
       - name: Build APKs with Gradle
-        env:
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: ./gradlew assembleRelease
 
       - name: Organize Release Artifacts
