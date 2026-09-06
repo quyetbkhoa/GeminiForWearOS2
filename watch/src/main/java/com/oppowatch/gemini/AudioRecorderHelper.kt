@@ -141,4 +141,31 @@ class AudioRecorderHelper(private val context: Context) {
             null
         }
     }
+
+    /**
+     * Hủy ngay lập tức phiên thu âm, giải phóng mic và xóa file đệm.
+     * Tuyệt đối không kích hoạt callback onSilenceDetected.
+     */
+    fun cancelRecording() {
+        stopSilenceMonitoring()
+        if (!isRecording) return
+        isRecording = false
+        try {
+            recorder?.apply {
+                try { stop() } catch (_: Exception) {}
+                try { release() } catch (_: Exception) {}
+            }
+        } catch (_: Exception) {}
+        recorder = null
+
+        try {
+            outputFile?.let { file ->
+                if (file.exists()) {
+                    file.delete()
+                }
+            }
+        } catch (_: Exception) {}
+        outputFile = null
+        Log.d("AudioRecorder", "Đã hủy ghi âm và xóa file đệm.")
+    }
 }

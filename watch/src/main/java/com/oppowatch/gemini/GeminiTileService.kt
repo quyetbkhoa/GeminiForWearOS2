@@ -2,6 +2,7 @@ package com.oppowatch.gemini
 
 import androidx.wear.tiles.ActionBuilders
 import androidx.wear.tiles.ColorBuilders.argb
+import androidx.wear.tiles.DimensionBuilders
 import androidx.wear.tiles.DimensionBuilders.dp
 import androidx.wear.tiles.LayoutElementBuilders
 import androidx.wear.tiles.ModifiersBuilders
@@ -40,6 +41,7 @@ class GeminiTileService : TileService() {
                 Text.Builder(this, "GEMINI AI")
                     .setColor(argb(0xFFD4AF37.toInt()))
                     .setTypography(Typography.TYPOGRAPHY_CAPTION1)
+                    .setModifiers(ModifiersBuilders.Modifiers.Builder().setClickable(clickModifier).build())
                     .build()
             )
             .setContent(
@@ -51,15 +53,25 @@ class GeminiTileService : TileService() {
                             argb(0xFFFFFFFF.toInt())
                         )
                     )
-                    .setSize(dp(64f))
+                    .setSize(dp(72f))
                     .build()
             )
             .setSecondaryLabelTextContent(
                 Text.Builder(this, "Chạm để hỏi ngay")
                     .setColor(argb(0xFF94A3B8.toInt()))
                     .setTypography(Typography.TYPOGRAPHY_CAPTION2)
+                    .setModifiers(ModifiersBuilders.Modifiers.Builder().setClickable(clickModifier).build())
                     .build()
             )
+            .build()
+
+        // Bọc toàn bộ Tile trong một Box toàn màn hình có gắn Clickable
+        // Giúp người dùng chạm vào BẤT KỲ VỊ TRÍ NÀO trên màn hình thẻ thông tin đều mở app ngay lập tức
+        val fullScreenBox = LayoutElementBuilders.Box.Builder()
+            .setWidth(DimensionBuilders.expand())
+            .setHeight(DimensionBuilders.expand())
+            .setModifiers(ModifiersBuilders.Modifiers.Builder().setClickable(clickModifier).build())
+            .addContent(layout)
             .build()
 
         val tile = TileBuilders.Tile.Builder()
@@ -70,7 +82,7 @@ class GeminiTileService : TileService() {
                         TimelineBuilders.TimelineEntry.Builder()
                             .setLayout(
                                 LayoutElementBuilders.Layout.Builder()
-                                    .setRoot(layout)
+                                    .setRoot(fullScreenBox)
                                     .build()
                             )
                             .build()

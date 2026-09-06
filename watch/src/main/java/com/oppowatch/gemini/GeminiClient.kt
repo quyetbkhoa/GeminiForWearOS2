@@ -20,6 +20,23 @@ object GeminiClient {
     private const val TAG = "GeminiClient"
     private const val MODEL = "gemini-3.5-flash-lite"
 
+    @Volatile
+    private var activeConnection: HttpURLConnection? = null
+    private val connectionLock = Any()
+
+    /**
+     * Hủy ngay kết nối HTTP đang gọi Gemini nếu người dùng vuốt back thoát app
+     */
+    fun cancelCurrentRequest() {
+        synchronized(connectionLock) {
+            try {
+                activeConnection?.disconnect()
+                Log.d(TAG, "Đã ngắt kết nối Gemini request.")
+            } catch (_: Exception) {}
+            activeConnection = null
+        }
+    }
+
     fun askGemini(context: Context, audioBase64: String, onResult: (Boolean, String, String) -> Unit) {
         thread {
             var connection: HttpURLConnection? = null
@@ -38,6 +55,10 @@ object GeminiClient {
                     connectTimeout = 15000
                     readTimeout = 20000
                     doOutput = true
+                }
+
+                synchronized(connectionLock) {
+                    activeConnection = connection
                 }
 
                 // Lấy thời gian thực tế hiện tại của hệ thống theo múi giờ Việt Nam
@@ -98,6 +119,14 @@ object GeminiClient {
                 val stream = if (responseCode in 200..299) connection.inputStream else connection.errorStream
                 val responseText = BufferedReader(InputStreamReader(stream)).use { it.readText() }
 
+                // Kiểm tra lại nếu request đã bị hủy trong quá trình đọc response
+                synchronized(connectionLock) {
+                    if (activeConnection == null) {
+                        Log.d(TAG, "Request đã bị hủy bỏ trước khi trả về.")
+                        return@thread
+                    }
+                }
+
                 if (responseCode in 200..299) {
                     val respJson = JSONObject(responseText)
                     val candidates = respJson.optJSONArray("candidates")
@@ -130,9 +159,21 @@ object GeminiClient {
                     onResult(false, "Lỗi kết nối", "Lỗi kết nối Gemini ($responseCode)")
                 }
             } catch (e: Exception) {
+                // Nếu bị cancel thì ngắt êm thấm, không báo lỗi ra màn hình
+                synchronized(connectionLock) {
+                    if (activeConnection == null) {
+                        Log.d(TAG, "Request đã bị hủy, không trả kết quả.")
+                        return@thread
+                    }
+                }
                 Log.e(TAG, "Exception: ${e.message}")
                 onResult(false, "Lỗi ngoại lệ", "Lỗi: ${e.localizedMessage}")
             } finally {
+                synchronized(connectionLock) {
+                    if (activeConnection == connection) {
+                        activeConnection = null
+                    }
+                }
                 connection?.disconnect()
             }
         }

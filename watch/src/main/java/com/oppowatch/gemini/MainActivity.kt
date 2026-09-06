@@ -2,11 +2,13 @@ package com.oppowatch.gemini
 
 import android.Manifest
 import android.content.Context
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
 import android.os.VibrationEffect
 import android.os.Vibrator
+import android.util.Log
 import android.view.MotionEvent
 import android.widget.FrameLayout
 import android.widget.ScrollView
@@ -25,14 +27,24 @@ class MainActivity : AppCompatActivity() {
 
     private var touchDownTime = 0L
 
+    // Chỉ tự động kích hoạt thu âm khi người dùng chủ động mở app (từ launcher, shortcut, tile...)
+    private var isAppActivelyLaunched = false
+    // Đánh dấu người dùng đã thoát app (swipe back) hoặc tắt màn hình để hủy bỏ toàn bộ tác vụ
+    private var isDismissedOrCancelled = false
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+        // Khi khởi tạo app lần đầu (bật chủ động từ menu / nút tắt)
+        if (savedInstanceState == null) {
+            isAppActivelyLaunched = true
+        }
+
         recorderHelper = AudioRecorderHelper(this)
         recorderHelper.onSilenceDetected = {
             runOnUiThread {
-                if (recorderHelper.isRecording) {
+                if (recorderHelper.isRecording && !isDismissedOrCancelled && !isFinishing) {
                     finishVoiceRecording()
                 }
             }
@@ -55,23 +67,71 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    override fun onNewIntent(intent: Intent?) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        // Khi người dùng bấm lại vào icon hoặc phím tắt trong khi app đang ở background
+        isAppActivelyLaunched = true
+        isDismissedOrCancelled = false
+    }
+
     override fun onResume() {
         super.onResume()
-        // Khi mở app: Tự động vào chế độ lắng nghe ngay lập tức
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO)
-            == PackageManager.PERMISSION_GRANTED && !recorderHelper.isRecording) {
-            startVoiceRecording()
+        isDismissedOrCancelled = false
+
+        // CHỈ tự động thu âm khi người dùng vừa chủ động bấm mở app
+        if (isAppActivelyLaunched) {
+            isAppActivelyLaunched = false // Tiêu thụ cờ để các lần resume sau (như bật lại màn hình) không tự ghi âm
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO)
+                == PackageManager.PERMISSION_GRANTED && !recorderHelper.isRecording) {
+                startVoiceRecording()
+            }
+        } else {
+            // Khi người dùng tắt màn hình đi vào lại: TUYỆT ĐỐI KHÔNG TỰ ĐỘNG GHI ÂM
+            if (!recorderHelper.isRecording) {
+                pttContainer.setBackgroundResource(R.drawable.bg_ptt_idle)
+                tvStatus.text = "NHẤN ĐỂ NÓI"
+                tvStatus.setTextColor(resources.getColor(R.color.gold_light))
+            }
         }
     }
 
     override fun onPause() {
         super.onPause()
+        isAppActivelyLaunched = false
+        isDismissedOrCancelled = true
+
+        // Thoát app bằng swipe back hoặc tắt màn hình: HỦY NGAY ghi âm và HỦY cuộc gọi API Gemini đang dở
         if (recorderHelper.isRecording) {
-            recorderHelper.stopRecording()
-            pttContainer.setBackgroundResource(R.drawable.bg_ptt_idle)
-            tvStatus.text = "NHẤN ĐỂ NÓI"
-            tvStatus.setTextColor(resources.getColor(R.color.gold_light))
+            recorderHelper.cancelRecording()
         }
+        GeminiClient.cancelCurrentRequest()
+
+        pttContainer.setBackgroundResource(R.drawable.bg_ptt_idle)
+        tvStatus.text = "NHẤN ĐỂ NÓI"
+        tvStatus.setTextColor(resources.getColor(R.color.gold_light))
+    }
+
+    override fun onStop() {
+        super.onStop()
+        isAppActivelyLaunched = false
+        isDismissedOrCancelled = true
+        recorderHelper.cancelRecording()
+        GeminiClient.cancelCurrentRequest()
+    }
+
+    override fun finish() {
+        isDismissedOrCancelled = true
+        recorderHelper.cancelRecording()
+        GeminiClient.cancelCurrentRequest()
+        super.finish()
+    }
+
+    override fun onBackPressed() {
+        isDismissedOrCancelled = true
+        recorderHelper.cancelRecording()
+        GeminiClient.cancelCurrentRequest()
+        super.onBackPressed()
     }
 
     override fun onRequestPermissionsResult(
@@ -127,6 +187,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun startVoiceRecording() {
+        isDismissedOrCancelled = false
         vibrateTick(80, 100)
         pttContainer.setBackgroundResource(R.drawable.bg_ptt_recording)
         tvStatus.text = "🔴 ĐANG LẮNG NGHE..."
@@ -142,7 +203,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun finishVoiceRecording() {
-        if (!recorderHelper.isRecording) return
+        if (!recorderHelper.isRecording || isDismissedOrCancelled || isFinishing) return
 
         vibrateTick(120, 150)
         pttContainer.setBackgroundResource(R.drawable.bg_ptt_idle)
@@ -160,6 +221,12 @@ class MainActivity : AppCompatActivity() {
 
         GeminiClient.askGemini(this, audioBase64) { success, question, answer ->
             runOnUiThread {
+                // Nếu người dùng đã vuốt thoát app hoặc màn hình tắt thì bỏ qua kết quả
+                if (isDismissedOrCancelled || isFinishing || isDestroyed) {
+                    Log.d("MainActivity", "Bỏ qua kết quả vì người dùng đã thoát app hoặc hủy.")
+                    return@runOnUiThread
+                }
+
                 tvStatus.text = if (success) "✓ ĐÃ TRẢ LỜI" else "LỖI"
                 tvStatus.setTextColor(if (success) resources.getColor(R.color.gold_accent) else resources.getColor(R.color.red_recording))
                 tvResult.text = answer
