@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/scroll_root"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:fillViewport="true"
@@ -7,14 +8,84 @@
     android:scrollbars="vertical">
 
     <LinearLayout
+        android:id="@+id/layout_container"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
         android:padding="14dp"
         android:paddingBottom="50dp">
 
+        <!-- Theme Selector Segmented Bar -->
+        <LinearLayout
+            android:id="@+id/card_theme_selector"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="@drawable/bg_rack_card"
+            android:padding="10dp"
+            android:layout_marginBottom="12dp">
+
+            <TextView
+                android:id="@+id/tv_theme_label"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="🎨 CHỌN GIAO DIỆN (THEME ENGINE):"
+                android:textSize="11sp"
+                android:textStyle="bold"
+                android:textColor="#F59E0B"
+                android:letterSpacing="0.04"
+                android:layout_marginBottom="8dp" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="38dp"
+                android:orientation="horizontal">
+
+                <Button
+                    android:id="@+id/btn_theme_skeuo"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:text="📻 SKEUO"
+                    android:textSize="10sp"
+                    android:textStyle="bold"
+                    android:textColor="#FFFFFF"
+                    android:background="@drawable/bg_btn_gold"
+                    android:backgroundTint="@null"
+                    android:layout_marginRight="4dp" />
+
+                <Button
+                    android:id="@+id/btn_theme_glass"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:text="🧊 GLASS"
+                    android:textSize="10sp"
+                    android:textStyle="bold"
+                    android:textColor="#FFFFFF"
+                    android:background="@drawable/bg_btn_metallic"
+                    android:backgroundTint="@null"
+                    android:layout_marginLeft="2dp"
+                    android:layout_marginRight="2dp" />
+
+                <Button
+                    android:id="@+id/btn_theme_material"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:text="🎨 MATERIAL"
+                    android:textSize="10sp"
+                    android:textStyle="bold"
+                    android:textColor="#FFFFFF"
+                    android:background="@drawable/bg_btn_metallic"
+                    android:backgroundTint="@null"
+                    android:layout_marginLeft="4dp" />
+            </LinearLayout>
+        </LinearLayout>
+
         <!-- Top Console Title Plate -->
         <LinearLayout
+            android:id="@+id/card_title_plate"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
@@ -23,6 +94,7 @@
             android:layout_marginBottom="12dp">
 
             <TextView
+                android:id="@+id/tv_main_title"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="GEMINI VOICE COMPANION"
@@ -32,12 +104,99 @@
                 android:letterSpacing="0.06" />
 
             <TextView
+                android:id="@+id/tv_main_subtitle"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="HỆ THỐNG ĐIỀU PHỐI BLUETOOTH TTS &amp; LỊCH SỬ TRUY VẤN"
                 android:textSize="11sp"
                 android:textColor="#94A3B8"
                 android:layout_marginTop="2dp" />
+        </LinearLayout>
+
+        <!-- Gemini API Key Settings Card -->
+        <LinearLayout
+            android:id="@+id/card_api_key"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="@drawable/bg_rack_card"
+            android:padding="12dp"
+            android:layout_marginBottom="12dp">
+
+            <TextView
+                android:id="@+id/tv_api_key_header"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="🔑 CÀI ĐẶT GEMINI API KEY:"
+                android:textSize="11sp"
+                android:textStyle="bold"
+                android:textColor="#F59E0B"
+                android:letterSpacing="0.04" />
+
+            <TextView
+                android:id="@+id/tv_api_key_desc"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Nhập khóa API Gemini cá nhân. Khóa sẽ được lưu an toàn trên máy và tự động đồng bộ sang đồng hồ qua Bluetooth."
+                android:textSize="11sp"
+                android:textColor="#94A3B8"
+                android:layout_marginTop="3dp"
+                android:layout_marginBottom="8dp" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+
+                <EditText
+                    android:id="@+id/et_gemini_api_key"
+                    android:layout_width="0dp"
+                    android:layout_height="44dp"
+                    android:layout_weight="1"
+                    android:hint="AIzaSy..."
+                    android:textColorHint="#475569"
+                    android:textColor="#FFFFFF"
+                    android:textSize="13sp"
+                    android:fontFamily="monospace"
+                    android:inputType="textPassword"
+                    android:singleLine="true"
+                    android:background="@drawable/bg_input_skeuo"
+                    android:paddingLeft="12dp"
+                    android:paddingRight="12dp" />
+
+                <Button
+                    android:id="@+id/btn_toggle_api_visibility"
+                    android:layout_width="48dp"
+                    android:layout_height="44dp"
+                    android:text="👁️"
+                    android:textSize="14sp"
+                    android:textColor="#FFFFFF"
+                    android:background="@drawable/bg_btn_metallic"
+                    android:backgroundTint="@null"
+                    android:layout_marginLeft="6dp" />
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/tv_api_key_status"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Chưa cấu hình API Key riêng."
+                android:textSize="11sp"
+                android:textColor="#64748B"
+                android:layout_marginTop="6dp"
+                android:layout_marginBottom="8dp" />
+
+            <Button
+                android:id="@+id/btn_save_api_key"
+                android:layout_width="match_parent"
+                android:layout_height="40dp"
+                android:text="💾 LƯU &amp; ĐỒNG BỘ SANG ĐỒNG HỒ"
+                android:textSize="11sp"
+                android:textStyle="bold"
+                android:textColor="#FFFFFF"
+                android:background="@drawable/bg_btn_emerald"
+                android:backgroundTint="@null" />
         </LinearLayout>
 
         <!-- Bluetooth Device Selector Header -->
@@ -49,6 +208,7 @@
             android:layout_marginBottom="6dp">
 
             <TextView
+                android:id="@+id/tv_bluetooth_header"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
@@ -109,6 +269,7 @@
             android:layout_marginBottom="6dp">
 
             <TextView
+                android:id="@+id/tv_history_header"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
@@ -174,6 +335,7 @@
 
         <!-- Cập nhật tự động từ GitHub (Avionics Panel) -->
         <LinearLayout
+            android:id="@+id/card_update_panel"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"

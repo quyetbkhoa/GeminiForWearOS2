@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <!-- Frosted Translucent Acrylic Glass -->
+    <solid android:color="#D0151C2C" />
+    <corners android:radius="14dp" />
+    <!-- Prismatic Cyber Refractive Border -->
+    <stroke
+        android:width="1.5dp"
+        android:color="#6038BDF8" />
+    <padding
+        android:left="12dp"
+        android:top="12dp"
+        android:right="12dp"
+        android:bottom="12dp" />
+</shape>

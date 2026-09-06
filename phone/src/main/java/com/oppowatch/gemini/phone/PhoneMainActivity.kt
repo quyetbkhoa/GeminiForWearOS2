@@ -10,9 +10,11 @@ import android.content.IntentFilter
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
+import android.text.InputType
 import android.view.LayoutInflater
 import android.view.View
 import android.widget.Button
+import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.TextView
@@ -20,26 +22,63 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.core.widget.NestedScrollView
+import com.google.android.gms.wearable.Wearable
 
 class PhoneMainActivity : AppCompatActivity() {
 
     private lateinit var filterManager: BluetoothFilterManager
+    private lateinit var qaHistoryManager: QaHistoryManager
+
+    // Containers & Roots for Theme Engine
+    private lateinit var scrollRoot: NestedScrollView
+    private lateinit var cardThemeSelector: LinearLayout
+    private lateinit var cardTitlePlate: LinearLayout
+    private lateinit var cardApiKey: LinearLayout
+    private lateinit var cardBluetoothRack: LinearLayout
+    private lateinit var cardHistoryRack: LinearLayout
+    private lateinit var cardUpdatePanel: LinearLayout
+
+    // Theme Selector Buttons & Labels
+    private lateinit var tvThemeLabel: TextView
+    private lateinit var btnThemeSkeuo: Button
+    private lateinit var btnThemeGlass: Button
+    private lateinit var btnThemeMaterial: Button
+
+    // Title Elements
+    private lateinit var tvMainTitle: TextView
+    private lateinit var tvMainSubtitle: TextView
+
+    // API Key Section
+    private lateinit var tvApiKeyHeader: TextView
+    private lateinit var tvApiKeyDesc: TextView
+    private lateinit var etGeminiApiKey: EditText
+    private lateinit var btnToggleApiVisibility: Button
+    private lateinit var tvApiKeyStatus: TextView
+    private lateinit var btnSaveApiKey: Button
+    private var isApiKeyVisible = false
+
+    // Bluetooth Section
+    private lateinit var tvBluetoothHeader: TextView
     private lateinit var llBluetoothDevices: LinearLayout
     private lateinit var tvEmptyDevices: TextView
     private lateinit var btnReloadBluetooth: Button
     private lateinit var btnTestTts: Button
 
     // Q&A History
-    private lateinit var qaHistoryManager: QaHistoryManager
+    private lateinit var tvHistoryHeader: TextView
     private lateinit var llQaHistory: LinearLayout
     private lateinit var tvEmptyHistory: TextView
     private lateinit var btnClearHistory: Button
 
-    // Các thành phần Cập nhật GitHub
+    // GitHub Update Section
     private lateinit var tvAppVersion: TextView
+    private lateinit var tvRepoInfo: TextView
     private lateinit var tvUpdateStatus: TextView
     private lateinit var pbUpdateProgress: ProgressBar
     private lateinit var btnCheckUpdate: Button
+
+    private var currentThemeMode = ThemeManager.ThemeMode.SKEUOMORPHISM
 
     private val receiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
@@ -77,22 +116,12 @@ class PhoneMainActivity : AppCompatActivity() {
         qaHistoryManager = QaHistoryManager(this)
         TtsSpeaker.init(this)
 
-        llBluetoothDevices = findViewById(R.id.ll_bluetooth_devices_list)
-        tvEmptyDevices = findViewById(R.id.tv_empty_devices)
-        btnReloadBluetooth = findViewById(R.id.btn_reload_bluetooth)
-        btnTestTts = findViewById(R.id.btn_test_tts)
-
-        llQaHistory = findViewById(R.id.ll_qa_history_list)
-        tvEmptyHistory = findViewById(R.id.tv_empty_history)
-        btnClearHistory = findViewById(R.id.btn_clear_history)
-
-        tvAppVersion = findViewById(R.id.tv_app_version)
-        tvUpdateStatus = findViewById(R.id.tv_update_status)
-        pbUpdateProgress = findViewById(R.id.pb_update_progress)
-        btnCheckUpdate = findViewById(R.id.btn_check_update)
-
-        setupUpdateSection()
+        initViews()
+        setupThemeEngine()
+        setupApiKeySection()
         setupQaHistorySection()
+        setupUpdateSection()
+
         checkPermissions()
         checkPermissionsAndLoadDevices(userInitiated = false)
 
@@ -110,6 +139,170 @@ class PhoneMainActivity : AppCompatActivity() {
             registerReceiver(receiver, filter, Context.RECEIVER_NOT_EXPORTED)
         } else {
             registerReceiver(receiver, filter)
+        }
+    }
+
+    private fun initViews() {
+        scrollRoot = findViewById(R.id.scroll_root)
+        cardThemeSelector = findViewById(R.id.card_theme_selector)
+        cardTitlePlate = findViewById(R.id.card_title_plate)
+        cardApiKey = findViewById(R.id.card_api_key)
+        cardBluetoothRack = findViewById(R.id.card_bluetooth_rack)
+        cardHistoryRack = findViewById(R.id.card_history_rack)
+        cardUpdatePanel = findViewById(R.id.card_update_panel)
+
+        tvThemeLabel = findViewById(R.id.tv_theme_label)
+        btnThemeSkeuo = findViewById(R.id.btn_theme_skeuo)
+        btnThemeGlass = findViewById(R.id.btn_theme_glass)
+        btnThemeMaterial = findViewById(R.id.btn_theme_material)
+
+        tvMainTitle = findViewById(R.id.tv_main_title)
+        tvMainSubtitle = findViewById(R.id.tv_main_subtitle)
+
+        tvApiKeyHeader = findViewById(R.id.tv_api_key_header)
+        tvApiKeyDesc = findViewById(R.id.tv_api_key_desc)
+        etGeminiApiKey = findViewById(R.id.et_gemini_api_key)
+        btnToggleApiVisibility = findViewById(R.id.btn_toggle_api_visibility)
+        tvApiKeyStatus = findViewById(R.id.tv_api_key_status)
+        btnSaveApiKey = findViewById(R.id.btn_save_api_key)
+
+        tvBluetoothHeader = findViewById(R.id.tv_bluetooth_header)
+        llBluetoothDevices = findViewById(R.id.ll_bluetooth_devices_list)
+        tvEmptyDevices = findViewById(R.id.tv_empty_devices)
+        btnReloadBluetooth = findViewById(R.id.btn_reload_bluetooth)
+        btnTestTts = findViewById(R.id.btn_test_tts)
+
+        tvHistoryHeader = findViewById(R.id.tv_history_header)
+        llQaHistory = findViewById(R.id.ll_qa_history_list)
+        tvEmptyHistory = findViewById(R.id.tv_empty_history)
+        btnClearHistory = findViewById(R.id.btn_clear_history)
+
+        tvAppVersion = findViewById(R.id.tv_app_version)
+        tvRepoInfo = findViewById(R.id.tv_repo_info)
+        tvUpdateStatus = findViewById(R.id.tv_update_status)
+        pbUpdateProgress = findViewById(R.id.pb_update_progress)
+        btnCheckUpdate = findViewById(R.id.btn_check_update)
+    }
+
+    private fun setupThemeEngine() {
+        currentThemeMode = ThemeManager.getTheme(this)
+        applyTheme(currentThemeMode)
+
+        btnThemeSkeuo.setOnClickListener {
+            applyTheme(ThemeManager.ThemeMode.SKEUOMORPHISM)
+        }
+        btnThemeGlass.setOnClickListener {
+            applyTheme(ThemeManager.ThemeMode.LIQUID_GLASS)
+        }
+        btnThemeMaterial.setOnClickListener {
+            applyTheme(ThemeManager.ThemeMode.MATERIAL)
+        }
+    }
+
+    private fun applyTheme(mode: ThemeManager.ThemeMode) {
+        currentThemeMode = mode
+        ThemeManager.setTheme(this, mode)
+        val config = ThemeManager.getConfig(mode)
+
+        // Root Background
+        scrollRoot.setBackgroundColor(config.rootBgColor)
+
+        // Cards & Containers
+        cardThemeSelector.setBackgroundResource(config.cardDrawable)
+        cardTitlePlate.setBackgroundResource(config.cardDrawable)
+        cardApiKey.setBackgroundResource(config.cardDrawable)
+        cardBluetoothRack.setBackgroundResource(config.bezelDrawable)
+        cardHistoryRack.setBackgroundResource(config.bezelDrawable)
+        cardUpdatePanel.setBackgroundResource(config.panelDrawable)
+
+        // Input & Controls
+        etGeminiApiKey.setBackgroundResource(config.inputDrawable)
+        btnToggleApiVisibility.setBackgroundResource(config.btnPrimaryDrawable)
+        btnSaveApiKey.setBackgroundResource(config.btnEmeraldDrawable)
+        btnReloadBluetooth.setBackgroundResource(config.btnPrimaryDrawable)
+        btnClearHistory.setBackgroundResource(config.btnCrimsonDrawable)
+        btnTestTts.setBackgroundResource(config.btnEmeraldDrawable)
+        btnCheckUpdate.setBackgroundResource(config.btnGoldDrawable)
+
+        // Typography Colors
+        tvThemeLabel.setTextColor(config.titleTextColor)
+        tvMainTitle.setTextColor(config.titleTextColor)
+        tvApiKeyHeader.setTextColor(config.headerApiKeyColor)
+        tvBluetoothHeader.setTextColor(config.headerBluetoothColor)
+        tvHistoryHeader.setTextColor(config.headerHistoryColor)
+
+        // Active State of Theme Buttons
+        btnThemeSkeuo.setBackgroundResource(
+            if (mode == ThemeManager.ThemeMode.SKEUOMORPHISM) config.btnGoldDrawable else config.btnPrimaryDrawable
+        )
+        btnThemeGlass.setBackgroundResource(
+            if (mode == ThemeManager.ThemeMode.LIQUID_GLASS) config.btnGoldDrawable else config.btnPrimaryDrawable
+        )
+        btnThemeMaterial.setBackgroundResource(
+            if (mode == ThemeManager.ThemeMode.MATERIAL) config.btnGoldDrawable else config.btnPrimaryDrawable
+        )
+
+        // Refresh dynamic device & history views to adopt new theme drawables
+        loadPairedBluetoothDevices(userInitiated = false)
+        loadQaHistory()
+    }
+
+    private fun setupApiKeySection() {
+        val prefs = getSharedPreferences("gemini_prefs", Context.MODE_PRIVATE)
+        val savedKey = prefs.getString("custom_api_key", "") ?: ""
+        if (savedKey.isNotEmpty()) {
+            etGeminiApiKey.setText(savedKey)
+            tvApiKeyStatus.text = "✓ Đang dùng API Key riêng (đã lưu trên thiết bị)"
+            tvApiKeyStatus.setTextColor(0xFF34D399.toInt())
+        }
+
+        btnToggleApiVisibility.setOnClickListener {
+            isApiKeyVisible = !isApiKeyVisible
+            if (isApiKeyVisible) {
+                etGeminiApiKey.inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD
+                btnToggleApiVisibility.text = "🔒"
+            } else {
+                etGeminiApiKey.inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
+                btnToggleApiVisibility.text = "👁️"
+            }
+            etGeminiApiKey.setSelection(etGeminiApiKey.text.length)
+        }
+
+        btnSaveApiKey.setOnClickListener {
+            val key = etGeminiApiKey.text.toString().trim()
+            if (key.isEmpty()) {
+                prefs.edit().remove("custom_api_key").apply()
+                tvApiKeyStatus.text = "Đã xóa API Key riêng. Đang dùng cấu hình mặc định."
+                tvApiKeyStatus.setTextColor(0xFF94A3B8.toInt())
+                Toast.makeText(this, "Đã xóa API Key riêng", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+
+            prefs.edit().putString("custom_api_key", key).apply()
+            tvApiKeyStatus.text = "✓ Đang đồng bộ sang đồng hồ qua Bluetooth..."
+            tvApiKeyStatus.setTextColor(0xFFF59E0B.toInt())
+
+            Wearable.getNodeClient(this).connectedNodes.addOnSuccessListener { nodes ->
+                if (nodes.isEmpty()) {
+                    tvApiKeyStatus.text = "✓ Đã lưu trên máy. Đang chờ kết nối đồng hồ..."
+                    tvApiKeyStatus.setTextColor(0xFFF59E0B.toInt())
+                    Toast.makeText(this, "Đã lưu API Key! Đồng hồ chưa kết nối qua Bluetooth.", Toast.LENGTH_LONG).show()
+                } else {
+                    for (node in nodes) {
+                        Wearable.getMessageClient(this).sendMessage(
+                            node.id,
+                            "/gemini_api_key_sync",
+                            key.toByteArray(Charsets.UTF_8)
+                        )
+                    }
+                    tvApiKeyStatus.text = "✓ Đã đồng bộ sang ${nodes.size} đồng hồ qua Wearable Layer!"
+                    tvApiKeyStatus.setTextColor(0xFF34D399.toInt())
+                    Toast.makeText(this, "✓ Đã đồng bộ API Key sang đồng hồ!", Toast.LENGTH_SHORT).show()
+                }
+            }.addOnFailureListener {
+                tvApiKeyStatus.text = "✓ Đã lưu trên điện thoại."
+                Toast.makeText(this, "Đã lưu trên điện thoại.", Toast.LENGTH_SHORT).show()
+            }
         }
     }
 
@@ -132,6 +325,7 @@ class PhoneMainActivity : AppCompatActivity() {
         }
 
         tvEmptyHistory.visibility = View.GONE
+        val config = ThemeManager.getConfig(currentThemeMode)
 
         for (item in history) {
             val itemView = LayoutInflater.from(this).inflate(
@@ -140,10 +334,14 @@ class PhoneMainActivity : AppCompatActivity() {
                 false
             )
 
+            itemView.setBackgroundResource(config.cardDrawable)
+
             val tvTime = itemView.findViewById<TextView>(R.id.tv_qa_time)
             val tvQuestion = itemView.findViewById<TextView>(R.id.tv_qa_question)
             val tvAnswer = itemView.findViewById<TextView>(R.id.tv_qa_answer)
             val btnReplay = itemView.findViewById<Button>(R.id.btn_replay_tts)
+
+            btnReplay.setBackgroundResource(config.btnEmeraldDrawable)
 
             tvTime.text = "🕒 ${item.getFormattedTime()}"
             tvQuestion.text = item.question
@@ -247,14 +445,14 @@ class PhoneMainActivity : AppCompatActivity() {
         checkPermissionsAndLoadDevices(userInitiated = false)
         loadQaHistory()
         try {
-            com.google.android.gms.wearable.Wearable.getMessageClient(this).addListener(wearMessageListener)
+            Wearable.getMessageClient(this).addListener(wearMessageListener)
         } catch (_: Exception) {}
     }
 
     override fun onPause() {
         super.onPause()
         try {
-            com.google.android.gms.wearable.Wearable.getMessageClient(this).removeListener(wearMessageListener)
+            Wearable.getMessageClient(this).removeListener(wearMessageListener)
         } catch (_: Exception) {}
     }
 
@@ -373,6 +571,7 @@ class PhoneMainActivity : AppCompatActivity() {
         }
 
         tvEmptyDevices.visibility = View.GONE
+        val config = ThemeManager.getConfig(currentThemeMode)
 
         for (device in paired) {
             val itemView = LayoutInflater.from(this).inflate(
@@ -380,6 +579,8 @@ class PhoneMainActivity : AppCompatActivity() {
                 llBluetoothDevices,
                 false
             )
+
+            itemView.setBackgroundResource(config.cardDrawable)
 
             val name = try { device.name ?: "Thiết bị không tên" } catch (_: SecurityException) { "Thiết bị Bluetooth" }
             val mac = device.address
@@ -395,12 +596,12 @@ class PhoneMainActivity : AppCompatActivity() {
             fun updateSwitchUi(isSelected: Boolean) {
                 if (isSelected) {
                     tvSwitch.text = "BẬT"
-                    tvSwitch.setTextColor(0xFFFFFFFF.toInt())
-                    tvSwitch.setBackgroundResource(R.drawable.bg_switch_on)
+                    tvSwitch.setTextColor(config.switchOnTextColor)
+                    tvSwitch.setBackgroundResource(config.switchOnDrawable)
                 } else {
                     tvSwitch.text = "TẮT"
-                    tvSwitch.setTextColor(0xFF94A3B8.toInt())
-                    tvSwitch.setBackgroundResource(R.drawable.bg_switch_off)
+                    tvSwitch.setTextColor(config.switchOffTextColor)
+                    tvSwitch.setBackgroundResource(config.switchOffDrawable)
                 }
             }
 

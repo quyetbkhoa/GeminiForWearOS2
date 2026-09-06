@@ -30,6 +30,14 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
 
         recorderHelper = AudioRecorderHelper(this)
+        recorderHelper.onSilenceDetected = {
+            runOnUiThread {
+                if (recorderHelper.isRecording) {
+                    finishVoiceRecording()
+                }
+            }
+        }
+
         pttContainer = findViewById(R.id.btn_ptt_container)
         tvStatus = findViewById(R.id.tv_status)
         tvResult = findViewById(R.id.tv_result)
@@ -123,7 +131,7 @@ class MainActivity : AppCompatActivity() {
         pttContainer.setBackgroundResource(R.drawable.bg_ptt_recording)
         tvStatus.text = "🔴 ĐANG LẮNG NGHE..."
         tvStatus.setTextColor(resources.getColor(R.color.red_recording))
-        tvResult.text = "Đang lắng nghe câu hỏi của bạn...\n(Chạm vào micro bên dưới để gửi)"
+        tvResult.text = "Đang lắng nghe bạn nói...\n(Dừng nói 1.3s để tự động gửi)"
 
         val started = recorderHelper.startRecording()
         if (!started) {
@@ -140,7 +148,7 @@ class MainActivity : AppCompatActivity() {
         pttContainer.setBackgroundResource(R.drawable.bg_ptt_idle)
         tvStatus.text = "⚡ ĐANG GỌI GEMINI..."
         tvStatus.setTextColor(resources.getColor(R.color.gold_accent))
-        tvResult.text = "Gemini đang suy nghĩ câu trả lời..."
+        tvResult.text = "Gemini đang xử lý câu trả lời..."
 
         val audioBase64 = recorderHelper.stopRecording()
         if (audioBase64.isNullOrEmpty()) {
@@ -150,7 +158,7 @@ class MainActivity : AppCompatActivity() {
             return
         }
 
-        GeminiClient.askGemini(audioBase64) { success, question, answer ->
+        GeminiClient.askGemini(this, audioBase64) { success, question, answer ->
             runOnUiThread {
                 tvStatus.text = if (success) "✓ ĐÃ TRẢ LỜI" else "LỖI"
                 tvStatus.setTextColor(if (success) resources.getColor(R.color.gold_accent) else resources.getColor(R.color.red_recording))

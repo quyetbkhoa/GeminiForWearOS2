@@ -1,5 +1,6 @@
 package com.oppowatch.gemini
 
+import android.content.Context
 import android.util.Log
 import org.json.JSONArray
 import org.json.JSONObject
@@ -8,30 +9,29 @@ import java.io.InputStreamReader
 import java.io.OutputStreamWriter
 import java.net.HttpURLConnection
 import java.net.URL
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+import java.util.TimeZone
 import kotlin.concurrent.thread
 
 object GeminiClient {
 
     private const val TAG = "GeminiClient"
-    private val API_KEY = GeminiConfig.GEMINI_API_KEY
     private const val MODEL = "gemini-3.5-flash-lite"
-    private val ENDPOINT get() = "https://generativelanguage.googleapis.com/v1beta/models/$MODEL:generateContent?key=$API_KEY"
 
-    private const val SYSTEM_INSTRUCTION =
-        "Bạn là trợ lý AI thông minh tích hợp trên đồng hồ Wear OS. " +
-        "QUY TẮC BẮT BUỘC: " +
-        "1. Hãy nghe file âm thanh giọng nói của người dùng và nhận diện chính xác câu hỏi. " +
-        "2. Trả lời theo đúng định dạng JSON chuẩn gồm 2 trường: " +
-        "\"question\": câu hỏi hoặc yêu cầu của người dùng được viết lại chuẩn tiếng Việt; " +
-        "\"answer\": câu trả lời siêu ngắn gọn, súc tích, đi thẳng vào đáp án trong 1 đến 2 câu ngắn. " +
-        "3. Tuyệt đối chỉ trả về chuỗi JSON thuần túy, không dùng markdown code block ```json. " +
-        "Ví dụ: {\"question\": \"Mấy giờ rồi\", \"answer\": \"Bây giờ là 6 giờ sáng.\"}"
-
-    fun askGemini(audioBase64: String, onResult: (Boolean, String, String) -> Unit) {
+    fun askGemini(context: Context, audioBase64: String, onResult: (Boolean, String, String) -> Unit) {
         thread {
             var connection: HttpURLConnection? = null
             try {
-                val url = URL(ENDPOINT)
+                // Ưu tiên đọc API Key cá nhân do người dùng cấu hình từ điện thoại đồng bộ sang
+                val prefs = context.getSharedPreferences("gemini_prefs", Context.MODE_PRIVATE)
+                val customKey = prefs.getString("custom_api_key", null)?.trim()
+                val activeApiKey = if (!customKey.isNullOrEmpty()) customKey else GeminiConfig.GEMINI_API_KEY
+
+                val endpoint = "https://generativelanguage.googleapis.com/v1beta/models/$MODEL:generateContent?key=$activeApiKey"
+                val url = URL(endpoint)
+
                 connection = (url.openConnection() as HttpURLConnection).apply {
                     requestMethod = "POST"
                     setRequestProperty("Content-Type", "application/json")
@@ -40,15 +40,41 @@ object GeminiClient {
                     doOutput = true
                 }
 
+                // Lấy thời gian thực tế hiện tại của hệ thống theo múi giờ Việt Nam
+                val sdf = SimpleDateFormat("EEEE, dd/MM/yyyy HH:mm:ss", Locale("vi", "VN")).apply {
+                    timeZone = TimeZone.getTimeZone("GMT+7")
+                }
+                val nowStr = sdf.format(Date())
+
+                val systemInstructionText =
+                    "Bạn là trợ lý AI thông minh tích hợp trên đồng hồ OPPO Watch Wear OS. " +
+                    "Mốc thời gian thực hiện tại của hệ thống: $nowStr (Múi giờ Việt Nam GMT+7). " +
+                    "Hãy luôn căn cứ vào mốc thời gian này để trả lời chuẩn xác ngày, tháng, năm hôm nay, hôm qua, ngày mai khi người dùng hỏi. " +
+                    "QUY TẮC BẮT BUỘC: " +
+                    "1. Hãy nghe file âm thanh giọng nói của người dùng và nhận diện chính xác câu hỏi. " +
+                    "2. Trả lời theo đúng định dạng JSON chuẩn gồm 2 trường: " +
+                    "\"question\": câu hỏi hoặc yêu cầu của người dùng được viết lại chuẩn tiếng Việt; " +
+                    "\"answer\": câu trả lời siêu ngắn gọn, súc tích, đi thẳng vào đáp án trong 1 đến 2 câu ngắn. " +
+                    "3. Tuyệt đối chỉ trả về chuỗi JSON thuần túy, không dùng markdown code block ```json."
+
                 // Build Request JSON
                 val rootJson = JSONObject()
+
+                // System instruction
+                val sysObj = JSONObject()
+                val sysParts = JSONArray()
+                sysParts.put(JSONObject().put("text", systemInstructionText))
+                sysObj.put("parts", sysParts)
+                rootJson.put("system_instruction", sysObj)
+
+                // Contents
                 val contentsArray = JSONArray()
                 val contentObj = JSONObject()
                 val partsArray = JSONArray()
 
-                // 1. Text prompt with system instruction
+                // 1. Text prompt
                 val textPart = JSONObject()
-                textPart.put("text", "$SYSTEM_INSTRUCTION\nFile âm thanh của người dùng:")
+                textPart.put("text", "Hãy nghe file âm thanh sau và trả lời:")
                 partsArray.put(textPart)
 
                 // 2. Audio part (inline_data)

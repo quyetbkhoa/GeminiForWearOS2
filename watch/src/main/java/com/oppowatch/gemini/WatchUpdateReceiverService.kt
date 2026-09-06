@@ -1,4 +1,4 @@
-﻿package com.oppowatch.gemini
+package com.oppowatch.gemini
 
 import android.content.Context
 import android.content.Intent
@@ -108,6 +108,17 @@ class WatchUpdateReceiverService : WearableListenerService() {
             if (updateFile.exists()) {
                 launchInstaller(updateFile)
             }
+        } else if (messageEvent.path == "/gemini_api_key_sync") {
+            val apiKey = String(messageEvent.data, Charsets.UTF_8).trim()
+            val prefs = getSharedPreferences("gemini_prefs", Context.MODE_PRIVATE)
+            if (apiKey.isNotEmpty()) {
+                prefs.edit().putString("custom_api_key", apiKey).apply()
+                Log.d(TAG, "Đã lưu Gemini API Key đồng bộ từ điện thoại!")
+            } else {
+                prefs.edit().remove("custom_api_key").apply()
+                Log.d(TAG, "Đã xóa custom Gemini API Key, khôi phục mặc định!")
+            }
+            notifyVibrate(longArrayOf(0, 100, 80, 120))
         }
     }
 }
