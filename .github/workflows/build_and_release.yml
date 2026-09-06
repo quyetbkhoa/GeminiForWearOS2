@@ -1,0 +1,65 @@
+name: Build and Release APKs
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      release_title:
+        description: 'Tiêu đề bản phát hành (ví dụ: Bản cập nhật v1.0.1)'
+        required: false
+        default: 'Cập nhật tự động'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build & Publish Release
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+          cache: 'gradle'
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: Build APKs with Gradle
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: ./gradlew assembleRelease
+
+      - name: Organize Release Artifacts
+        run: |
+          mkdir -p release_apks
+          cp watch/build/outputs/apk/release/watch-release.apk release_apks/Gemini_Watch_App.apk
+          cp phone/build/outputs/apk/release/phone-release.apk release_apks/Gemini_Phone_Companion.apk
+          echo "Danh sách file đã tạo:"
+          ls -lh release_apks/
+
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: Gemini-APKs
+          path: release_apks/*
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch'
+        with:
+          name: ${{ github.event.inputs.release_title || github.ref_name }}
+          draft: false
+          prerelease: false
+          generate_release_notes: true
+          files: |
+            release_apks/Gemini_Watch_App.apk
+            release_apks/Gemini_Phone_Companion.apk

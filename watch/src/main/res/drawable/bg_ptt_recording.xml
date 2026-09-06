@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Skeuomorphic Push-To-Talk Button (Active Recording State - Glowing Crimson) -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Outer Crimson Glow Aura -->
+    <item>
+        <shape android:shape="oval">
+            <solid android:color="#40FF1744" />
+        </shape>
+    </item>
+    <!-- Deep Recessed Plunger Core -->
+    <item android:top="6dp" android:left="6dp" android:right="6dp" android:bottom="6dp">
+        <shape android:shape="oval">
+            <gradient
+                android:type="radial"
+                android:gradientRadius="65dp"
+                android:centerX="0.5"
+                android:centerY="0.5"
+                android:startColor="#D50000"
+                android:centerColor="#8A0000"
+                android:endColor="#3E0000" />
+            <stroke android:width="3dp" android:color="#FF5252" />
+        </shape>
+    </item>
+</layer-list>

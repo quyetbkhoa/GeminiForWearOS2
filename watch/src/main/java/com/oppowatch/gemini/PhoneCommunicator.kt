@@ -1,0 +1,35 @@
+package com.oppowatch.gemini
+
+import android.content.Context
+import android.util.Log
+import com.google.android.gms.wearable.Wearable
+
+object PhoneCommunicator {
+
+    private const val TAG = "PhoneCommunicator"
+    const val PATH_TTS = "/gemini_tts_payload"
+
+    fun sendTextToPhone(context: Context, text: String) {
+        val nodeClient = Wearable.getNodeClient(context)
+        val messageClient = Wearable.getMessageClient(context)
+
+        nodeClient.connectedNodes.addOnSuccessListener { nodes ->
+            if (nodes.isEmpty()) {
+                Log.w(TAG, "No connected phone found to send TTS")
+                return@addOnSuccessListener
+            }
+            val bytes = text.toByteArray(Charsets.UTF_8)
+            for (node in nodes) {
+                messageClient.sendMessage(node.id, PATH_TTS, bytes)
+                    .addOnSuccessListener {
+                        Log.d(TAG, "Sent TTS payload to phone node: ${node.displayName}")
+                    }
+                    .addOnFailureListener { e ->
+                        Log.e(TAG, "Failed sending TTS payload: ${e.message}")
+                    }
+            }
+        }.addOnFailureListener { e ->
+            Log.e(TAG, "Failed finding connected nodes: ${e.message}")
+        }
+    }
+}

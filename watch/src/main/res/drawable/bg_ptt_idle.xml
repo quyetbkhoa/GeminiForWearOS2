@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Skeuomorphic Luxury Push-To-Talk Button (Idle / Normal State) -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Outer Drop Shadow -->
+    <item>
+        <shape android:shape="oval">
+            <solid android:color="#040507" />
+        </shape>
+    </item>
+    <!-- Metallic Bezel Chamfer -->
+    <item android:bottom="4dp">
+        <shape android:shape="oval">
+            <gradient
+                android:type="linear"
+                android:angle="270"
+                android:startColor="#5A6273"
+                android:centerColor="#2D3340"
+                android:endColor="#14171E" />
+            <stroke android:width="1.5dp" android:color="#78849E" />
+        </shape>
+    </item>
+    <!-- Recessed Trench Ring -->
+    <item android:top="5dp" android:left="5dp" android:right="5dp" android:bottom="9dp">
+        <shape android:shape="oval">
+            <solid android:color="#0A0B0E" />
+            <stroke android:width="1dp" android:color="#000000" />
+        </shape>
+    </item>
+    <!-- Raised Core Plunger (Brushed Titanium Obsidian with Gold Accent Ring) -->
+    <item android:top="8dp" android:left="8dp" android:right="8dp" android:bottom="14dp">
+        <shape android:shape="oval">
+            <gradient
+                android:type="radial"
+                android:gradientRadius="70dp"
+                android:centerX="0.45"
+                android:centerY="0.35"
+                android:startColor="#3E4554"
+                android:centerColor="#20242E"
+                android:endColor="#12141A" />
+            <stroke android:width="2dp" android:color="#D4AF37" />
+        </shape>
+    </item>
+</layer-list>

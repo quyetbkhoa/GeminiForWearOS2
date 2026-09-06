@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="bg_dark">#08090C</color>
+    <color name="gold_accent">#D4AF37</color>
+    <color name="gold_light">#F5E09A</color>
+    <color name="cyan_glow">#00E5FF</color>
+    <color name="red_recording">#FF1744</color>
+</resources>
