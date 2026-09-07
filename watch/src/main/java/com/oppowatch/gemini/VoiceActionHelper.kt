@@ -8,14 +8,16 @@ import org.json.JSONObject
 import java.util.regex.Pattern
 
 data class VoiceAction(
-    val type: String, // "SET_ALARM", "SET_TIMER", "REPLY_MESSAGE", "CREATE_TASK", "SET_REMINDER", "COPY_CLIPBOARD"
+    val type: String, // "SET_ALARM", "SET_TIMER", "REPLY_MESSAGE", "CREATE_TASK", "SET_REMINDER", "COPY_CLIPBOARD", "MEDIA_CONTROL"
     val hour: Int = 0,
     val minute: Int = 0,
     val seconds: Int = 0,
     val message: String = "",
     val recipient: String = "", // Tên người nhận (rỗng nếu là tin nhắn gần nhất)
     val text: String = "",       // Văn bản chi tiết / ghi chú / clipboard
-    val delaySeconds: Int = 0   // Số giây delay cho reminder
+    val delaySeconds: Int = 0,  // Số giây delay cho reminder
+    val command: String = "",   // "PAUSE", "PLAY", "NEXT", "PREV", "OPEN_VIDEO"
+    val query: String = ""      // Tên video / bài hát cho OPEN_VIDEO
 )
 
 object VoiceActionHelper {
@@ -74,6 +76,13 @@ object VoiceActionHelper {
                         VoiceAction(type = "COPY_CLIPBOARD", text = txt, message = txt)
                     } else null
                 }
+                "MEDIA_CONTROL" -> {
+                    val cmd = actObj.optString("command", "").uppercase().trim()
+                    val q = actObj.optString("query", "").trim()
+                    if (cmd.isNotEmpty()) {
+                        VoiceAction(type = "MEDIA_CONTROL", command = cmd, query = q, message = q)
+                    } else null
+                }
                 else -> null
             }
         } catch (e: Exception) {
@@ -88,6 +97,35 @@ object VoiceActionHelper {
      */
     fun parseFallback(text: String): VoiceAction? {
         val lower = text.lowercase().trim()
+
+        // 0. Nhận diện ĐIỀU KHIỂN MEDIA & MỞ VIDEO YOUTUBE
+        if (lower.startsWith("mở video") || lower.startsWith("bật video") || lower.startsWith("phát video") ||
+            lower.startsWith("bật bài hát") || lower.startsWith("mở bài hát") || lower.startsWith("bật bài") ||
+            lower.startsWith("mở bài") || lower.startsWith("nghe bài") || lower.startsWith("play video") ||
+            lower.contains("trên youtube")) {
+            val cleanQuery = text.replace(
+                Regex("^(?:mở video|bật video|phát video|bật bài hát|mở bài hát|bật bài|mở bài|nghe bài|play video)(?:\\s*[:là-]?\\s*)", RegexOption.IGNORE_CASE),
+                ""
+            ).replace(Regex("(?:\\s*trên youtube\\s*)$", RegexOption.IGNORE_CASE), "").trim()
+            if (cleanQuery.isNotEmpty()) {
+                return VoiceAction(type = "MEDIA_CONTROL", command = "OPEN_VIDEO", query = cleanQuery, message = cleanQuery)
+            }
+        }
+        if (lower == "tạm dừng" || lower == "dừng lại" || lower == "dừng" || lower == "pause" ||
+            lower.startsWith("tạm dừng") || lower.startsWith("dừng video") || lower.startsWith("dừng nhạc")) {
+            return VoiceAction(type = "MEDIA_CONTROL", command = "PAUSE", message = "Tạm dừng phát video")
+        }
+        if (lower == "tiếp tục" || lower == "phát tiếp" || lower == "play" ||
+            lower.startsWith("tiếp tục") || lower.startsWith("phát tiếp") || lower.startsWith("tiếp tục phát")) {
+            return VoiceAction(type = "MEDIA_CONTROL", command = "PLAY", message = "Tiếp tục phát video")
+        }
+        if (lower == "chuyển bài" || lower == "bài tiếp" || lower == "bài tiếp theo" || lower == "video tiếp" ||
+            lower == "video tiếp theo" || lower == "next" || lower == "next bài" || lower == "next video" || lower == "bỏ qua") {
+            return VoiceAction(type = "MEDIA_CONTROL", command = "NEXT", message = "Chuyển sang video tiếp theo")
+        }
+        if (lower == "bài trước" || lower == "quay lại bài trước" || lower == "video trước" || lower == "previous" || lower == "lùi bài") {
+            return VoiceAction(type = "MEDIA_CONTROL", command = "PREV", message = "Quay lại video trước")
+        }
 
         // 1. Nhận diện CHÉP CHÍNH TẢ / SAO CHÉP VÀO CLIPBOARD ĐIỆN THOẠI
         if (lower.startsWith("chép chính tả") || lower.startsWith("chép văn bản") ||
@@ -376,6 +414,11 @@ object VoiceActionHelper {
                 "COPY_CLIPBOARD" -> {
                     PhoneCommunicator.sendClipboardToPhone(context, action.text)
                     Log.i(TAG, "COPY_CLIPBOARD: text='${action.text}'")
+                    true
+                }
+                "MEDIA_CONTROL" -> {
+                    PhoneCommunicator.sendMediaControlToPhone(context, action.command, action.query)
+                    Log.i(TAG, "MEDIA_CONTROL: cmd='${action.command}', query='${action.query}'")
                     true
                 }
                 else -> false

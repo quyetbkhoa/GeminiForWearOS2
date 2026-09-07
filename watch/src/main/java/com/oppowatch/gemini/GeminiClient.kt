@@ -85,6 +85,10 @@ object GeminiClient {
                     "- Thêm việc cần làm (Google Tasks): {\"type\":\"CREATE_TASK\",\"title\":\"<tiêu đề việc cần làm>\",\"notes\":\"<chi tiết nếu có>\"} " +
                     "- Nhắc nhở theo ngữ cảnh: {\"type\":\"SET_REMINDER\",\"message\":\"<nội dung nhắc nhở>\",\"delay_seconds\":<số giây tính từ hiện tại>} " +
                     "- Chép chính tả / Sao chép vào clipboard điện thoại: {\"type\":\"COPY_CLIPBOARD\",\"text\":\"<văn bản đã chuẩn hóa ngữ pháp và chính tả tiếng Việt, dấu chấm phẩy chuẩn xác>\"} " +
+                    "- Điều khiển phát nhạc/video YouTube: {\"type\":\"MEDIA_CONTROL\",\"command\":\"PAUSE\"|\"PLAY\"|\"NEXT\"|\"PREV\"|\"OPEN_VIDEO\",\"query\":\"<tên bài/video nếu là OPEN_VIDEO>\"} " +
+                    "Ví dụ mở video: {\"question\":\"Mở video Một con vịt\",\"answer\":\"Đang mở video Một con vịt trên YouTube.\",\"action\":{\"type\":\"MEDIA_CONTROL\",\"command\":\"OPEN_VIDEO\",\"query\":\"Một con vịt\"}} " +
+                    "Ví dụ tạm dừng: {\"question\":\"Tạm dừng video\",\"answer\":\"Đã tạm dừng phát video.\",\"action\":{\"type\":\"MEDIA_CONTROL\",\"command\":\"PAUSE\"}} " +
+                    "Ví dụ chuyển bài: {\"question\":\"Chuyển bài tiếp theo\",\"answer\":\"Đã chuyển sang video tiếp theo.\",\"action\":{\"type\":\"MEDIA_CONTROL\",\"command\":\"NEXT\"}} " +
                     "Ví dụ đặt báo thức 6h30 sáng: {\"question\":\"Đặt báo thức 6 giờ 30 sáng\",\"answer\":\"Đã đặt báo thức lúc 06:30 cho bạn.\",\"action\":{\"type\":\"SET_ALARM\",\"hour\":6,\"minute\":30,\"message\":\"Báo thức sáng\"}} " +
                     "Ví dụ hẹn giờ 10 phút: {\"question\":\"Hẹn giờ 10 phút\",\"answer\":\"Đã bắt đầu hẹn giờ 10 phút.\",\"action\":{\"type\":\"SET_TIMER\",\"seconds\":600,\"message\":\"Hẹn giờ\"}} " +
                     "Ví dụ rep tin nhắn gần nhất: {\"question\":\"Rep là đang đi xe lát gọi lại\",\"answer\":\"Đã gửi trả lời tin nhắn: Đang đi xe lát gọi lại.\",\"action\":{\"type\":\"REPLY_MESSAGE\",\"recipient\":\"\",\"message\":\"Đang đi xe lát gọi lại\"}} " +

@@ -166,12 +166,89 @@
                     </LinearLayout>
                 </LinearLayout>
 
-                <!-- SECTION 1: TRÍ TUỆ NHÂN TẠO & MÔ HÌNH -->
+                <!-- NÚT GIỚI THIỆU KHẨU LỆNH NỔI BẬT -->
+                <LinearLayout
+                    android:id="@+id/row_menu_voice_guide"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:background="@drawable/bg_menu_item_row"
+                    android:padding="13dp"
+                    android:layout_marginBottom="14dp"
+                    android:clickable="true"
+                    android:focusable="true">
+
+                    <TextView
+                        android:layout_width="40dp"
+                        android:layout_height="40dp"
+                        android:gravity="center"
+                        android:text="🎙️"
+                        android:textSize="20sp"
+                        android:background="@drawable/bg_menu_icon_badge"
+                        android:layout_marginEnd="12dp" />
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <LinearLayout
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:gravity="center_vertical">
+
+                            <TextView
+                                android:id="@+id/tv_menu_title_guide"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Tổng hợp khẩu lệnh Gemini"
+                                android:textSize="13sp"
+                                android:textStyle="bold"
+                                android:textColor="#F59E0B" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="✨ KHÁM PHÁ"
+                                android:textSize="8.5sp"
+                                android:textStyle="bold"
+                                android:textColor="#34D399"
+                                android:background="@drawable/bg_pill_badge"
+                                android:paddingHorizontal="6dp"
+                                android:paddingVertical="2dp"
+                                android:layout_marginStart="6dp" />
+                        </LinearLayout>
+
+                        <TextView
+                            android:id="@+id/tv_hub_guide_summary"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Báo thức, Hẹn giờ, Nhắn tin ngầm, YouTube Morphe, Tasks, Chép clipboard..."
+                            android:textSize="10sp"
+                            android:textColor="#94A3B8"
+                            android:layout_marginTop="2dp" />
+                    </LinearLayout>
+
+                    <TextView
+                        android:id="@+id/tv_chevron_guide"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="›"
+                        android:textSize="20sp"
+                        android:textStyle="bold"
+                        android:textColor="#F59E0B"
+                        android:layout_marginStart="8dp" />
+                </LinearLayout>
+
+                <!-- SECTION 1: CÀI ĐẶT HỆ THỐNG -->
                 <TextView
-                    android:id="@+id/tv_cat_header_ai"
+                    android:id="@+id/tv_cat_header_settings"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="🤖 TRÍ TUỆ NHÂN TẠO &amp; MÔ HÌNH"
+                    android:text="⚙️ CÀI ĐẶT HỆ THỐNG"
                     android:textSize="10.5sp"
                     android:textStyle="bold"
                     android:textColor="#60A5FA"
@@ -179,7 +256,7 @@
                     android:layout_marginStart="4dp"
                     android:layout_marginBottom="6dp" />
 
-                <!-- Menu Item: Gemini Model & API Key -->
+                <!-- 1.1: Gemini Model & API Key -->
                 <LinearLayout
                     android:id="@+id/row_menu_gemini_api"
                     android:layout_width="match_parent"
@@ -188,7 +265,7 @@
                     android:gravity="center_vertical"
                     android:background="@drawable/bg_menu_item_row"
                     android:padding="12dp"
-                    android:layout_marginBottom="12dp"
+                    android:layout_marginBottom="8dp"
                     android:clickable="true"
                     android:focusable="true">
 
@@ -248,20 +325,7 @@
                         android:textColor="#64748B" />
                 </LinearLayout>
 
-                <!-- SECTION 2: KẾT NỐI & PHẦN CỨNG -->
-                <TextView
-                    android:id="@+id/tv_cat_header_devices"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="📡 KẾT NỐI &amp; THIẾT BỊ NGOẠI VI"
-                    android:textSize="10.5sp"
-                    android:textStyle="bold"
-                    android:textColor="#34D399"
-                    android:letterSpacing="0.05"
-                    android:layout_marginStart="4dp"
-                    android:layout_marginBottom="6dp" />
-
-                <!-- Menu Item: Bluetooth Audio -->
+                <!-- 1.2: Bluetooth Audio & Trả Lời Tin Nhắn -->
                 <LinearLayout
                     android:id="@+id/row_menu_bluetooth"
                     android:layout_width="match_parent"
@@ -293,7 +357,7 @@
                             android:id="@+id/tv_menu_title_bluetooth"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="Tai nghe Bluetooth &amp; Phát âm TTS"
+                            android:text="Tai nghe Bluetooth &amp; Quyền ứng dụng"
                             android:textSize="12.5sp"
                             android:textStyle="bold"
                             android:textColor="#F8FAFC" />
@@ -302,7 +366,7 @@
                             android:id="@+id/tv_hub_bluetooth_summary"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="Bộ lọc tai nghe nhận giọng đọc phản hồi"
+                            android:text="Bộ lọc tai nghe TTS • Quyền thông báo &amp; Overlay"
                             android:textSize="10.5sp"
                             android:textColor="#94A3B8" />
                     </LinearLayout>
@@ -330,89 +394,7 @@
                         android:textColor="#64748B" />
                 </LinearLayout>
 
-                <!-- Menu Item: Wireless ADB & Updates -->
-                <LinearLayout
-                    android:id="@+id/row_menu_adb_update"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical"
-                    android:background="@drawable/bg_menu_item_row"
-                    android:padding="12dp"
-                    android:layout_marginBottom="12dp"
-                    android:clickable="true"
-                    android:focusable="true">
-
-                    <TextView
-                        android:layout_width="38dp"
-                        android:layout_height="38dp"
-                        android:gravity="center"
-                        android:text="⚡"
-                        android:textSize="18sp"
-                        android:background="@drawable/bg_menu_icon_badge"
-                        android:layout_marginEnd="12dp" />
-
-                    <LinearLayout
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:orientation="vertical">
-
-                        <TextView
-                            android:id="@+id/tv_menu_title_adb"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Cài đặt không dây (ADB) &amp; Cập nhật"
-                            android:textSize="12.5sp"
-                            android:textStyle="bold"
-                            android:textColor="#F8FAFC" />
-
-                        <TextView
-                            android:id="@+id/tv_hub_adb_summary"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Cài APK siêu tốc qua Wi-Fi • Cập nhật GitHub"
-                            android:textSize="10.5sp"
-                            android:textColor="#94A3B8" />
-                    </LinearLayout>
-
-                    <TextView
-                        android:id="@+id/tv_hub_adb_badge"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="v1.2.8"
-                        android:textSize="10sp"
-                        android:textStyle="bold"
-                        android:textColor="#38BDF8"
-                        android:background="@drawable/bg_pill_badge"
-                        android:paddingHorizontal="7dp"
-                        android:paddingVertical="3dp"
-                        android:layout_marginEnd="8dp" />
-
-                    <TextView
-                        android:id="@+id/tv_chevron_adb"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="›"
-                        android:textSize="18sp"
-                        android:textStyle="bold"
-                        android:textColor="#64748B" />
-                </LinearLayout>
-
-                <!-- SECTION 3: CÁ NHÂN HÓA -->
-                <TextView
-                    android:id="@+id/tv_cat_header_theme"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="🎨 CÁ NHÂN HÓA &amp; CHỦ ĐỀ"
-                    android:textSize="10.5sp"
-                    android:textStyle="bold"
-                    android:textColor="#F59E0B"
-                    android:letterSpacing="0.05"
-                    android:layout_marginStart="4dp"
-                    android:layout_marginBottom="6dp" />
-
-                <!-- Menu Item: Appearance & Theme -->
+                <!-- 1.3: Appearance & Theme -->
                 <LinearLayout
                     android:id="@+id/row_menu_theme"
                     android:layout_width="match_parent"
@@ -421,7 +403,7 @@
                     android:gravity="center_vertical"
                     android:background="@drawable/bg_menu_item_row"
                     android:padding="12dp"
-                    android:layout_marginBottom="12dp"
+                    android:layout_marginBottom="8dp"
                     android:clickable="true"
                     android:focusable="true">
 
@@ -481,7 +463,76 @@
                         android:textColor="#64748B" />
                 </LinearLayout>
 
-                <!-- SECTION 4: NHẬT KÝ & CHẨN ĐOÁN -->
+                <!-- 1.4: Wireless ADB & Updates -->
+                <LinearLayout
+                    android:id="@+id/row_menu_adb_update"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:background="@drawable/bg_menu_item_row"
+                    android:padding="12dp"
+                    android:layout_marginBottom="14dp"
+                    android:clickable="true"
+                    android:focusable="true">
+
+                    <TextView
+                        android:layout_width="38dp"
+                        android:layout_height="38dp"
+                        android:gravity="center"
+                        android:text="⚡"
+                        android:textSize="18sp"
+                        android:background="@drawable/bg_menu_icon_badge"
+                        android:layout_marginEnd="12dp" />
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:id="@+id/tv_menu_title_adb"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Cài đặt không dây (ADB) &amp; Cập nhật"
+                            android:textSize="12.5sp"
+                            android:textStyle="bold"
+                            android:textColor="#F8FAFC" />
+
+                        <TextView
+                            android:id="@+id/tv_hub_adb_summary"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Đồng hồ tự nhận diện IP:5555 qua Bluetooth"
+                            android:textSize="10.5sp"
+                            android:textColor="#94A3B8" />
+                    </LinearLayout>
+
+                    <TextView
+                        android:id="@+id/tv_hub_adb_badge"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="v1.3.3"
+                        android:textSize="10sp"
+                        android:textStyle="bold"
+                        android:textColor="#38BDF8"
+                        android:background="@drawable/bg_pill_badge"
+                        android:paddingHorizontal="7dp"
+                        android:paddingVertical="3dp"
+                        android:layout_marginEnd="8dp" />
+
+                    <TextView
+                        android:id="@+id/tv_chevron_adb"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="›"
+                        android:textSize="18sp"
+                        android:textStyle="bold"
+                        android:textColor="#64748B" />
+                </LinearLayout>
+
+                <!-- SECTION 2: NHẬT KÝ & CHẨN ĐOÁN -->
                 <TextView
                     android:id="@+id/tv_cat_header_logs"
                     android:layout_width="wrap_content"
@@ -630,6 +681,835 @@
                         android:textSize="18sp"
                         android:textStyle="bold"
                         android:textColor="#64748B" />
+                </LinearLayout>
+
+            </LinearLayout>
+
+            <!-- ============================================================= -->
+            <!-- SUB-PAGE: HƯỚNG DẪN & TỔNG HỢP KHẨU LỆNH (VOICE GUIDE)        -->
+            <!-- ============================================================= -->
+            <LinearLayout
+                android:id="@+id/page_voice_guide"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:visibility="gone">
+
+                <!-- 1. Header Banner -->
+                <LinearLayout
+                    android:id="@+id/card_guide_header"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:background="@drawable/bg_rack_card"
+                    android:padding="14dp"
+                    android:layout_marginBottom="12dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:layout_marginBottom="6dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="🎙️"
+                            android:textSize="22sp"
+                            android:layout_marginEnd="8dp" />
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:id="@+id/tv_guide_page_title"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="TỔNG HỢP KHẨU LỆNH GEMINI"
+                                android:textSize="13sp"
+                                android:textStyle="bold"
+                                android:textColor="#F59E0B"
+                                android:letterSpacing="0.04" />
+
+                            <TextView
+                                android:id="@+id/tv_guide_page_subtitle"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Các tính năng rảnh tay điều khiển bằng giọng nói trên OPPO Watch"
+                                android:textSize="10sp"
+                                android:textColor="#94A3B8" />
+                        </LinearLayout>
+                    </LinearLayout>
+
+                    <TextView
+                        android:id="@+id/tv_guide_page_desc"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Nhấn giữ nút PTT màu cam trên đồng hồ để nói câu lệnh. Trợ lý Gemini sẽ phân tích ý định và tự động kích hoạt hành động hoặc trả lời súc tích qua giọng đọc TTS."
+                        android:textSize="10sp"
+                        android:textColor="#CBD5E1"
+                        android:lineSpacingExtra="2dp" />
+                </LinearLayout>
+
+                <!-- 2. Card: YouTube Morphe & Media Control -->
+                <LinearLayout
+                    android:id="@+id/card_guide_media"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:background="@drawable/bg_rack_card"
+                    android:padding="12dp"
+                    android:layout_marginBottom="10dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:layout_marginBottom="4dp">
+
+                        <TextView
+                            android:id="@+id/tv_guide_media_title"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="📺 YOUTUBE MORPHE &amp; PHÁT NHẠC"
+                            android:textSize="11sp"
+                            android:textStyle="bold"
+                            android:textColor="#EF4444" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Tự động phát"
+                            android:textSize="8.5sp"
+                            android:textStyle="bold"
+                            android:textColor="#EF4444"
+                            android:background="@drawable/bg_pill_badge"
+                            android:paddingHorizontal="6dp"
+                            android:paddingVertical="2dp" />
+                    </LinearLayout>
+
+                    <TextView
+                        android:id="@+id/tv_guide_media_desc"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Tự động tìm kiếm và phát ngay video đầu tiên trên YouTube Morphe. Điều khiển tạm dừng, phát tiếp, chuyển bài 100% ngầm khi màn hình tắt."
+                        android:textSize="10sp"
+                        android:textColor="#94A3B8"
+                        android:layout_marginBottom="6dp" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:background="@drawable/bg_qa_question"
+                        android:padding="8dp">
+
+                        <TextView
+                            android:id="@+id/tv_guide_media_cmd1"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="• &quot;Mở video Một con vịt&quot; ➔ Tự tìm &amp; phát ngay video top 1"
+                            android:textSize="10sp"
+                            android:textColor="#EF4444"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:id="@+id/tv_guide_media_cmd2"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="• &quot;Bật bài hát Nắng ấm xa dần trên YouTube&quot;"
+                            android:textSize="10sp"
+                            android:textColor="#EF4444"
+                            android:textStyle="bold"
+                            android:layout_marginTop="2dp" />
+
+                        <TextView
+                            android:id="@+id/tv_guide_media_cmd3"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="• &quot;Tạm dừng video&quot; / &quot;Tiếp tục phát&quot;"
+                            android:textSize="10sp"
+                            android:textColor="#34D399"
+                            android:textStyle="bold"
+                            android:layout_marginTop="2dp" />
+
+                        <TextView
+                            android:id="@+id/tv_guide_media_cmd4"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="• &quot;Chuyển bài tiếp theo&quot; / &quot;Quay lại bài trước&quot;"
+                            android:textSize="10sp"
+                            android:textColor="#38BDF8"
+                            android:textStyle="bold"
+                            android:layout_marginTop="2dp" />
+                    </LinearLayout>
+                </LinearLayout>
+
+                <!-- 3. Card: Báo Thức -->
+                <LinearLayout
+                    android:id="@+id/card_guide_alarm"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:background="@drawable/bg_rack_card"
+                    android:padding="12dp"
+                    android:layout_marginBottom="10dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:layout_marginBottom="4dp">
+
+                        <TextView
+                            android:id="@+id/tv_guide_alarm_title"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="⏰ ĐẶT BÁO THỨC (SYSTEM ALARM)"
+                            android:textSize="11sp"
+                            android:textStyle="bold"
+                            android:textColor="#F59E0B" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Tự động"
+                            android:textSize="8.5sp"
+                            android:textStyle="bold"
+                            android:textColor="#34D399"
+                            android:background="@drawable/bg_pill_badge"
+                            android:paddingHorizontal="6dp"
+                            android:paddingVertical="2dp" />
+                    </LinearLayout>
+
+                    <TextView
+                        android:id="@+id/tv_guide_alarm_desc"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Tạo báo thức trên điện thoại thông qua trình quản lý đồng hồ hệ thống. Không cần chạm tay vào điện thoại."
+                        android:textSize="10sp"
+                        android:textColor="#94A3B8"
+                        android:layout_marginBottom="6dp" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:background="@drawable/bg_qa_question"
+                        android:padding="8dp">
+
+                        <TextView
+                            android:id="@+id/tv_guide_alarm_cmd1"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="• &quot;Đặt báo thức 6 giờ sáng mai&quot;"
+                            android:textSize="10sp"
+                            android:textColor="#38BDF8"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:id="@+id/tv_guide_alarm_cmd2"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="• &quot;Báo thức 7 giờ 30 phút&quot;"
+                            android:textSize="10sp"
+                            android:textColor="#38BDF8"
+                            android:textStyle="bold"
+                            android:layout_marginTop="2dp" />
+
+                        <TextView
+                            android:id="@+id/tv_guide_alarm_cmd3"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="• &quot;Đánh thức tôi lúc 5 giờ kém 15&quot;"
+                            android:textSize="10sp"
+                            android:textColor="#38BDF8"
+                            android:textStyle="bold"
+                            android:layout_marginTop="2dp" />
+                    </LinearLayout>
+                </LinearLayout>
+
+                <!-- 4. Card: Hẹn Giờ -->
+                <LinearLayout
+                    android:id="@+id/card_guide_timer"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:background="@drawable/bg_rack_card"
+                    android:padding="12dp"
+                    android:layout_marginBottom="10dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:layout_marginBottom="4dp">
+
+                        <TextView
+                            android:id="@+id/tv_guide_timer_title"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="⏱️ HẸN GIỜ ĐẾM NGƯỢC (COUNTDOWN TIMER)"
+                            android:textSize="11sp"
+                            android:textStyle="bold"
+                            android:textColor="#34D399" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Tự động"
+                            android:textSize="8.5sp"
+                            android:textStyle="bold"
+                            android:textColor="#34D399"
+                            android:background="@drawable/bg_pill_badge"
+                            android:paddingHorizontal="6dp"
+                            android:paddingVertical="2dp" />
+                    </LinearLayout>
+
+                    <TextView
+                        android:id="@+id/tv_guide_timer_desc"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Khởi chạy đồng hồ đếm ngược tức thì trên điện thoại cho việc nấu nướng, tập luyện thể thao."
+                        android:textSize="10sp"
+                        android:textColor="#94A3B8"
+                        android:layout_marginBottom="6dp" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:background="@drawable/bg_qa_question"
+                        android:padding="8dp">
+
+                        <TextView
+                            android:id="@+id/tv_guide_timer_cmd1"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="• &quot;Hẹn giờ 5 phút&quot;"
+                            android:textSize="10sp"
+                            android:textColor="#34D399"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:id="@+id/tv_guide_timer_cmd2"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="• &quot;Đếm ngược 10 phút&quot;"
+                            android:textSize="10sp"
+                            android:textColor="#34D399"
+                            android:textStyle="bold"
+                            android:layout_marginTop="2dp" />
+
+                        <TextView
+                            android:id="@+id/tv_guide_timer_cmd3"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="• &quot;Hẹn giờ 30 giây luộc trứng&quot;"
+                            android:textSize="10sp"
+                            android:textColor="#34D399"
+                            android:textStyle="bold"
+                            android:layout_marginTop="2dp" />
+                    </LinearLayout>
+                </LinearLayout>
+
+                <!-- 5. Card: Trả Lời Tin Nhắn Ngầm -->
+                <LinearLayout
+                    android:id="@+id/card_guide_reply"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:background="@drawable/bg_rack_card"
+                    android:padding="12dp"
+                    android:layout_marginBottom="10dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:layout_marginBottom="4dp">
+
+                        <TextView
+                            android:id="@+id/tv_guide_reply_title"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="💬 TRẢ LỜI TIN NHẮN NGẦM (QUICK REPLY)"
+                            android:textSize="11sp"
+                            android:textStyle="bold"
+                            android:textColor="#38BDF8" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="100% Chạy ngầm"
+                            android:textSize="8.5sp"
+                            android:textStyle="bold"
+                            android:textColor="#38BDF8"
+                            android:background="@drawable/bg_pill_badge"
+                            android:paddingHorizontal="6dp"
+                            android:paddingVertical="2dp" />
+                    </LinearLayout>
+
+                    <TextView
+                        android:id="@+id/tv_guide_reply_desc"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Gửi phản hồi nhanh cho Zalo, Messenger, SMS... Chạy ngầm 100% kể cả khi điện thoại tắt màn hình trong túi quần (Cần cấp quyền truy cập thông báo)."
+                        android:textSize="10sp"
+                        android:textColor="#94A3B8"
+                        android:layout_marginBottom="6dp" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:background="@drawable/bg_qa_question"
+                        android:padding="8dp">
+
+                        <TextView
+                            android:id="@+id/tv_guide_reply_cmd1"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="• &quot;Trả lời tin nhắn: Mình đang lái xe, tí gọi lại&quot;"
+                            android:textSize="10sp"
+                            android:textColor="#38BDF8"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:id="@+id/tv_guide_reply_cmd2"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="• &quot;Nhắn lại cho Zalo: Đang trên đường về rồi&quot;"
+                            android:textSize="10sp"
+                            android:textColor="#38BDF8"
+                            android:textStyle="bold"
+                            android:layout_marginTop="2dp" />
+
+                        <TextView
+                            android:id="@+id/tv_guide_reply_cmd3"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="• &quot;Nhắn tin cho Nam: Ok em cứ tiến hành nhé&quot;"
+                            android:textSize="10sp"
+                            android:textColor="#38BDF8"
+                            android:textStyle="bold"
+                            android:layout_marginTop="2dp" />
+                    </LinearLayout>
+                </LinearLayout>
+
+                <!-- 6. Card: Google Tasks -->
+                <LinearLayout
+                    android:id="@+id/card_guide_tasks"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:background="@drawable/bg_rack_card"
+                    android:padding="12dp"
+                    android:layout_marginBottom="10dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:layout_marginBottom="4dp">
+
+                        <TextView
+                            android:id="@+id/tv_guide_tasks_title"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="📝 GOOGLE TASKS / VIỆC CẦN LÀM"
+                            android:textSize="11sp"
+                            android:textStyle="bold"
+                            android:textColor="#A78BFA" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Đồng bộ"
+                            android:textSize="8.5sp"
+                            android:textStyle="bold"
+                            android:textColor="#A78BFA"
+                            android:background="@drawable/bg_pill_badge"
+                            android:paddingHorizontal="6dp"
+                            android:paddingVertical="2dp" />
+                    </LinearLayout>
+
+                    <TextView
+                        android:id="@+id/tv_guide_tasks_desc"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Tự động tạo task mới vào Google Tasks trên điện thoại để quản lý công việc và đồng bộ với Google Calendar."
+                        android:textSize="10sp"
+                        android:textColor="#94A3B8"
+                        android:layout_marginBottom="6dp" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:background="@drawable/bg_qa_question"
+                        android:padding="8dp">
+
+                        <TextView
+                            android:id="@+id/tv_guide_tasks_cmd1"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="• &quot;Thêm vào Google Tasks: Mua sữa và bánh mì&quot;"
+                            android:textSize="10sp"
+                            android:textColor="#A78BFA"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:id="@+id/tv_guide_tasks_cmd2"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="• &quot;Tạo công việc: Họp dự án lúc 3 giờ chiều&quot;"
+                            android:textSize="10sp"
+                            android:textColor="#A78BFA"
+                            android:textStyle="bold"
+                            android:layout_marginTop="2dp" />
+
+                        <TextView
+                            android:id="@+id/tv_guide_tasks_cmd3"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="• &quot;Ghi nhớ vào task: Gửi báo cáo cho sếp&quot;"
+                            android:textSize="10sp"
+                            android:textColor="#A78BFA"
+                            android:textStyle="bold"
+                            android:layout_marginTop="2dp" />
+                    </LinearLayout>
+                </LinearLayout>
+
+                <!-- 7. Card: Nhắc Nhở Ngữ Cảnh -->
+                <LinearLayout
+                    android:id="@+id/card_guide_remind"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:background="@drawable/bg_rack_card"
+                    android:padding="12dp"
+                    android:layout_marginBottom="10dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:layout_marginBottom="4dp">
+
+                        <TextView
+                            android:id="@+id/tv_guide_remind_title"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="🔔 NHẮC NHỞ THEO NGỮ CẢNH"
+                            android:textSize="11sp"
+                            android:textStyle="bold"
+                            android:textColor="#F43F5E" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Thông minh"
+                            android:textSize="8.5sp"
+                            android:textStyle="bold"
+                            android:textColor="#F43F5E"
+                            android:background="@drawable/bg_pill_badge"
+                            android:paddingHorizontal="6dp"
+                            android:paddingVertical="2dp" />
+                    </LinearLayout>
+
+                    <TextView
+                        android:id="@+id/tv_guide_remind_desc"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Ghi nhớ các đầu việc kèm ngữ cảnh thời gian, địa điểm hoặc sự kiện để trợ lý nhắc đúng lúc."
+                        android:textSize="10sp"
+                        android:textColor="#94A3B8"
+                        android:layout_marginBottom="6dp" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:background="@drawable/bg_qa_question"
+                        android:padding="8dp">
+
+                        <TextView
+                            android:id="@+id/tv_guide_remind_cmd1"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="• &quot;Nhắc tôi khi đến công ty thì nộp giấy tờ&quot;"
+                            android:textSize="10sp"
+                            android:textColor="#F43F5E"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:id="@+id/tv_guide_remind_cmd2"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="• &quot;Nhắc tôi mang áo mưa chiều nay&quot;"
+                            android:textSize="10sp"
+                            android:textColor="#F43F5E"
+                            android:textStyle="bold"
+                            android:layout_marginTop="2dp" />
+
+                        <TextView
+                            android:id="@+id/tv_guide_remind_cmd3"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="• &quot;Nhắc tôi gọi điện chúc mừng sinh nhật lúc 8 giờ tối&quot;"
+                            android:textSize="10sp"
+                            android:textColor="#F43F5E"
+                            android:textStyle="bold"
+                            android:layout_marginTop="2dp" />
+                    </LinearLayout>
+                </LinearLayout>
+
+                <!-- 8. Card: Chép Chính Tả Vào Clipboard -->
+                <LinearLayout
+                    android:id="@+id/card_guide_dictate"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:background="@drawable/bg_rack_card"
+                    android:padding="12dp"
+                    android:layout_marginBottom="10dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:layout_marginBottom="4dp">
+
+                        <TextView
+                            android:id="@+id/tv_guide_dictate_title"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="📋 CHÉP CHÍNH TẢ &amp; CLIPBOARD ĐIỆN THOẠI"
+                            android:textSize="11sp"
+                            android:textStyle="bold"
+                            android:textColor="#10B981" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Clipboard"
+                            android:textSize="8.5sp"
+                            android:textStyle="bold"
+                            android:textColor="#10B981"
+                            android:background="@drawable/bg_pill_badge"
+                            android:paddingHorizontal="6dp"
+                            android:paddingVertical="2dp" />
+                    </LinearLayout>
+
+                    <TextView
+                        android:id="@+id/tv_guide_dictate_desc"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Chuyển lời nói trực tiếp thành văn bản và sao chép ngay vào Clipboard điện thoại. Bạn chỉ việc nhấn Giữ &amp; Dán vào bất kỳ ứng dụng nào."
+                        android:textSize="10sp"
+                        android:textColor="#94A3B8"
+                        android:layout_marginBottom="6dp" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:background="@drawable/bg_qa_question"
+                        android:padding="8dp">
+
+                        <TextView
+                            android:id="@+id/tv_guide_dictate_cmd1"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="• &quot;Chép chính tả: Cuộc họp hôm nay đã thống nhất ba mục tiêu chính...&quot;"
+                            android:textSize="10sp"
+                            android:textColor="#10B981"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:id="@+id/tv_guide_dictate_cmd2"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="• &quot;Chép vào clipboard: Số tài khoản 0123456789 ngân hàng Techcombank&quot;"
+                            android:textSize="10sp"
+                            android:textColor="#10B981"
+                            android:textStyle="bold"
+                            android:layout_marginTop="2dp" />
+
+                        <TextView
+                            android:id="@+id/tv_guide_dictate_cmd3"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="• &quot;Ghi chép: Ý tưởng tính năng mới cho ứng dụng&quot;"
+                            android:textSize="10sp"
+                            android:textColor="#10B981"
+                            android:textStyle="bold"
+                            android:layout_marginTop="2dp" />
+                    </LinearLayout>
+                </LinearLayout>
+
+                <!-- 9. Card: Hỏi Đáp & Hội Thoại Tiếp Nối -->
+                <LinearLayout
+                    android:id="@+id/card_guide_context"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:background="@drawable/bg_rack_card"
+                    android:padding="12dp"
+                    android:layout_marginBottom="10dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:layout_marginBottom="4dp">
+
+                        <TextView
+                            android:id="@+id/tv_guide_context_title"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="🧠 HỎI ĐÁP &amp; HỘI THOẠI TIẾP NỐI"
+                            android:textSize="11sp"
+                            android:textStyle="bold"
+                            android:textColor="#60A5FA" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="5 Phút / 5 Lượt"
+                            android:textSize="8.5sp"
+                            android:textStyle="bold"
+                            android:textColor="#60A5FA"
+                            android:background="@drawable/bg_pill_badge"
+                            android:paddingHorizontal="6dp"
+                            android:paddingVertical="2dp" />
+                    </LinearLayout>
+
+                    <TextView
+                        android:id="@+id/tv_guide_context_desc"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Lưu giữ ngữ cảnh chuỗi câu hỏi trong 5 phút (tối đa 5 lượt). Bạn có thể hỏi nối tiếp như đang nói chuyện tự nhiên mà không cần nhắc lại câu trước."
+                        android:textSize="10sp"
+                        android:textColor="#94A3B8"
+                        android:layout_marginBottom="6dp" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:background="@drawable/bg_qa_question"
+                        android:padding="8dp">
+
+                        <TextView
+                            android:id="@+id/tv_guide_context_cmd1"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="• Câu 1: &quot;Thời tiết Đà Nẵng hôm nay thế nào?&quot;"
+                            android:textSize="10sp"
+                            android:textColor="#60A5FA"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:id="@+id/tv_guide_context_cmd2"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="  ➔ Câu 2 nối tiếp: &quot;Thế còn ngày mai có mưa không?&quot;"
+                            android:textSize="10sp"
+                            android:textColor="#34D399"
+                            android:textStyle="bold"
+                            android:layout_marginTop="2dp" />
+
+                        <TextView
+                            android:id="@+id/tv_guide_context_cmd3"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="• Câu 1: &quot;1 USD bằng bao nhiêu VND?&quot;"
+                            android:textSize="10sp"
+                            android:textColor="#60A5FA"
+                            android:textStyle="bold"
+                            android:layout_marginTop="4dp" />
+
+                        <TextView
+                            android:id="@+id/tv_guide_context_cmd4"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="  ➔ Câu 2 nối tiếp: &quot;Vậy 50 USD là bao nhiêu?&quot;"
+                            android:textSize="10sp"
+                            android:textColor="#34D399"
+                            android:textStyle="bold"
+                            android:layout_marginTop="2dp" />
+                    </LinearLayout>
+                </LinearLayout>
+
+                <!-- 10. Card: Tự Động Tắt Màn Hình & Cử Chỉ PTT -->
+                <LinearLayout
+                    android:id="@+id/card_guide_road"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:background="@drawable/bg_rack_card"
+                    android:padding="12dp"
+                    android:layout_marginBottom="14dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:layout_marginBottom="4dp">
+
+                        <TextView
+                            android:id="@+id/tv_guide_road_title"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="⌚ ROAD MODE &amp; TỰ ĐỘNG TẮT MÀN HÌNH"
+                            android:textSize="11sp"
+                            android:textStyle="bold"
+                            android:textColor="#F59E0B" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Tiết kiệm pin"
+                            android:textSize="8.5sp"
+                            android:textStyle="bold"
+                            android:textColor="#F59E0B"
+                            android:background="@drawable/bg_pill_badge"
+                            android:paddingHorizontal="6dp"
+                            android:paddingVertical="2dp" />
+                    </LinearLayout>
+
+                    <TextView
+                        android:id="@+id/tv_guide_road_desc"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="• Nhấn giữ nút cam PTT để nói, thả ra để gửi.\n• Vuốt ngón tay ra xa hoặc bấm [HỦY] để hủy bỏ tức thì.\n• Sau khi Gemini đọc xong, màn hình đồng hồ sẽ tự động tối dần sau 10 giây, và đen hẳn sau 3 giây tiếp theo để quay về mặt đồng hồ.\n• Chạm vào màn hình bất cứ lúc nào để giữ sáng và đếm lại thời gian."
+                        android:textSize="10sp"
+                        android:textColor="#94A3B8"
+                        android:lineSpacingExtra="2dp" />
                 </LinearLayout>
 
             </LinearLayout>
@@ -1010,6 +1890,68 @@
                         android:layout_width="match_parent"
                         android:layout_height="38dp"
                         android:text="⚙️ CẤP QUYỀN TRUY CẬP THÔNG BÁO"
+                        android:textSize="10sp"
+                        android:textStyle="bold"
+                        android:textColor="#FFFFFF"
+                        android:background="@drawable/bg_btn_metallic"
+                        android:backgroundTint="@null" />
+                </LinearLayout>
+
+                <!-- Overlay Permission Panel (Cho phép mở YouTube khi tắt màn hình) -->
+                <LinearLayout
+                    android:id="@+id/card_overlay_panel"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:background="@drawable/bg_screen_bezel"
+                    android:padding="14dp"
+                    android:layout_marginBottom="14dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:layout_marginBottom="6dp">
+
+                        <TextView
+                            android:id="@+id/tv_overlay_header"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="🪟 HIỂN THỊ TRÊN ỨNG DỤNG KHÁC:"
+                            android:textSize="11.5sp"
+                            android:textStyle="bold"
+                            android:textColor="#34D399"
+                            android:letterSpacing="0.04" />
+
+                        <TextView
+                            android:id="@+id/tv_overlay_access_badge"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="CHƯA BẬT"
+                            android:textSize="9sp"
+                            android:textStyle="bold"
+                            android:textColor="#EF4444"
+                            android:background="@drawable/bg_pill_badge"
+                            android:paddingHorizontal="6dp"
+                            android:paddingVertical="2dp" />
+                    </LinearLayout>
+
+                    <TextView
+                        android:id="@+id/tv_overlay_desc"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Cần thiết để điện thoại có thể tự động bật mở video YouTube Morphe ngay cả khi màn hình đang tắt hoặc khóa trong túi quần:"
+                        android:textSize="10sp"
+                        android:textColor="#94A3B8"
+                        android:layout_marginBottom="8dp" />
+
+                    <Button
+                        android:id="@+id/btn_grant_overlay_access"
+                        android:layout_width="match_parent"
+                        android:layout_height="38dp"
+                        android:text="⚙️ CẤP QUYỀN CỬA SỔ NỔI / OVERLAY"
                         android:textSize="10sp"
                         android:textStyle="bold"
                         android:textColor="#FFFFFF"

@@ -216,6 +216,73 @@ class PhoneWearableListenerService : WearableListenerService() {
                     }
                 }
             }
+        } else if (messageEvent.path == "/gemini_media_control") {
+            val rawPayload = String(messageEvent.data, Charsets.UTF_8)
+            Log.d("PhoneListener", "Received media control command from watch: $rawPayload")
+
+            var command = ""
+            var query = ""
+            try {
+                val json = org.json.JSONObject(rawPayload)
+                command = json.optString("command", "").trim()
+                query = json.optString("query", "").trim()
+            } catch (_: Exception) {
+                command = rawPayload
+            }
+
+            if (command.isNotEmpty()) {
+                MediaControlHelper.handleMediaControl(this, command, query) { success, resultMsg ->
+                    val historyTitle = when (command.uppercase()) {
+                        "OPEN_VIDEO" -> "📺 Mở video YouTube: $query"
+                        "PAUSE" -> "⏸️ Tạm dừng video"
+                        "PLAY" -> "▶️ Tiếp tục phát video"
+                        "NEXT" -> "⏭️ Chuyển video tiếp theo"
+                        "PREV" -> "⏮️ Quay lại video trước"
+                        else -> "🎵 Điều khiển Media: $command"
+                    }
+
+                    historyManager.addEntry(
+                        historyTitle,
+                        resultMsg,
+                        System.currentTimeMillis()
+                    )
+
+                    filterManager.checkAndPlayTtsIfAllowed(resultMsg) { allowed, _ ->
+                        if (allowed) {
+                            TtsSpeaker.speak(this, resultMsg)
+                        }
+                    }
+                }
+            }
+        } else if (messageEvent.path == "/watch_adb_info") {
+            val rawPayload = String(messageEvent.data, Charsets.UTF_8)
+            Log.d("PhoneListener", "Received watch ADB info from watch: $rawPayload")
+
+            try {
+                val json = org.json.JSONObject(rawPayload)
+                val ip = json.optString("ip", "").trim()
+                val port = json.optInt("port", 5555)
+                val isAdbReady = json.optBoolean("adb_ready", false)
+
+                if (ip.isNotEmpty()) {
+                    val prefs = getSharedPreferences("gemini_companion_prefs", android.content.Context.MODE_PRIVATE)
+                    prefs.edit()
+                        .putString("saved_watch_adb_ip", ip)
+                        .putInt("saved_watch_adb_port", port)
+                        .apply()
+
+                    val intent = Intent("com.oppowatch.gemini.WATCH_ADB_INFO_RECEIVED").apply {
+                        setPackage(packageName)
+                        putExtra("ip", ip)
+                        putExtra("port", port)
+                        putExtra("adb_ready", isAdbReady)
+                    }
+                    sendBroadcast(intent)
+                    Log.i("PhoneListener", "Saved and broadcasted watch ADB info: $ip:$port (ready=$isAdbReady)")
+                }
+            } catch (e: Exception) {
+                Log.e("PhoneListener", "Error processing watch ADB info: ${e.message}")
+            }
         }
     }
 }

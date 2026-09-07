@@ -16,6 +16,8 @@ import android.os.VibrationEffect
 import android.os.Vibrator
 import android.util.Log
 import android.view.MotionEvent
+import android.view.View
+import android.view.WindowManager
 import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.LinearLayout
@@ -39,8 +41,11 @@ class MainActivity : AppCompatActivity() {
     private lateinit var tvAppVersion: TextView
     private lateinit var btnCancel: FrameLayout
     private lateinit var ivCancelIcon: ImageView
+    private lateinit var viewDimOverlay: View
 
     private val mainHandler = Handler(Looper.getMainLooper())
+    private val autoDimHandler = Handler(Looper.getMainLooper())
+    private var isScreenDimmed = false
     private var touchDownTime = 0L
 
     // Chỉ tự động kích hoạt thu âm khi người dùng chủ động mở app (từ launcher, shortcut, tile...)
@@ -124,6 +129,7 @@ class MainActivity : AppCompatActivity() {
         tvAppVersion = findViewById(R.id.tv_app_version)
         btnCancel = findViewById(R.id.btn_cancel)
         ivCancelIcon = findViewById(R.id.iv_cancel_icon)
+        viewDimOverlay = findViewById(R.id.view_dim_overlay)
 
         // Hiển thị số phiên bản ứng dụng động ở góc màn hình
         val versionName = try {
@@ -172,6 +178,9 @@ class MainActivity : AppCompatActivity() {
                 101
             )
         }
+
+        // Tự động phát hiện IP và kiểm tra cổng ADB 5555 gửi sang điện thoại qua Bluetooth
+        PhoneCommunicator.sendWatchAdbInfoToPhone(this)
     }
 
     private fun getPttIdleDrawable(): Int {
@@ -292,6 +301,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onDestroy() {
+        cancelAutoDimTimer()
         super.onDestroy()
         try {
             unregisterReceiver(themeReceiver)
@@ -397,6 +407,69 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    /**
+     * Tự động làm tối màn hình sau 10s và đen hẳn sau 3s tiếp theo khi đã hiển thị kết quả
+     */
+    private fun cancelAutoDimTimer() {
+        autoDimHandler.removeCallbacksAndMessages(null)
+        if (isScreenDimmed) {
+            isScreenDimmed = false
+            viewDimOverlay.animate().cancel()
+            viewDimOverlay.alpha = 0f
+            viewDimOverlay.visibility = View.GONE
+            try {
+                val lp = window.attributes
+                lp.screenBrightness = WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_NONE
+                window.attributes = lp
+            } catch (_: Exception) {}
+        }
+    }
+
+    private fun startAutoDimTimer() {
+        cancelAutoDimTimer()
+        // Sau 10 giây: màn hình tối dần đi
+        autoDimHandler.postDelayed({
+            if (!isFinishing && !isDestroyed) {
+                isScreenDimmed = true
+                viewDimOverlay.visibility = View.VISIBLE
+                viewDimOverlay.alpha = 0f
+                // Làm mờ dần trong 1.5s lên 85% đen
+                viewDimOverlay.animate()
+                    .alpha(0.85f)
+                    .setDuration(1500L)
+                    .start()
+
+                try {
+                    val lp = window.attributes
+                    lp.screenBrightness = 0.05f
+                    window.attributes = lp
+                } catch (_: Exception) {}
+
+                // Sau đó 3 giây tiếp theo: đen hẳn (100% đen) và tự động thoát về màn hình chính
+                autoDimHandler.postDelayed({
+                    if (!isFinishing && !isDestroyed) {
+                        viewDimOverlay.alpha = 1f
+                        try {
+                            val lp = window.attributes
+                            lp.screenBrightness = 0.01f
+                            window.attributes = lp
+                        } catch (_: Exception) {}
+                        Log.d("MainActivity", "Đã qua 10s tối dần + 3s đen hẳn -> đóng task về Watch Face")
+                        finishAndRemoveTask()
+                    }
+                }, 3000L)
+            }
+        }, 10000L)
+    }
+
+    override fun dispatchTouchEvent(ev: MotionEvent?): Boolean {
+        cancelAutoDimTimer()
+        if (::tvStatus.isInitialized && tvStatus.text.startsWith("✓")) {
+            startAutoDimTimer()
+        }
+        return super.dispatchTouchEvent(ev)
+    }
+
     private fun setupPttListener() {
         pttContainer.setOnTouchListener { _, event ->
             when (event.action) {
@@ -452,6 +525,7 @@ class MainActivity : AppCompatActivity() {
      * Hủy bỏ toàn bộ quá trình thu âm / gọi Gemini (nhấn nút Cancel hoặc trượt ngón tay ra xa) - TUYỆT ĐỐI KHÔNG GỬI
      */
     private fun cancelVoiceRecording() {
+        cancelAutoDimTimer()
         isUserExplicitlyCancelled = true
         vibrateTick(80, 120)
 
@@ -490,6 +564,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun startVoiceRecording() {
+        cancelAutoDimTimer()
         isUserExplicitlyCancelled = false
         isScreenOffPendingExit = false
         vibrateTick(80, 100)
@@ -601,14 +676,22 @@ class MainActivity : AppCompatActivity() {
                                 "COPY_CLIPBOARD" -> "✓ ĐÃ SAO CHÉP"
                                 "CREATE_TASK" -> "✓ ĐÃ THÊM TASK"
                                 "SET_REMINDER" -> "✓ ĐÃ HẸN NHẮC"
+                                "MEDIA_CONTROL" -> when (voiceAction.command) {
+                                    "OPEN_VIDEO" -> "✓ ĐANG MỞ VIDEO"
+                                    "PAUSE" -> "✓ ĐÃ TẠM DỪNG"
+                                    "PLAY" -> "✓ ĐANG PHÁT"
+                                    "NEXT" -> "✓ CHUYỂN BÀI"
+                                    "PREV" -> "✓ BÀI TRƯỚC"
+                                    else -> "✓ ĐÃ ĐIỀU KHIỂN"
+                                }
                                 else -> "✓ ĐÃ THỰC HIỆN"
                             }
 
                             // Xây dựng câu xác nhận TTS cho báo thức / hẹn giờ
-                            // Các tác vụ qua điện thoại (REPLY_MESSAGE, CREATE_TASK, SET_REMINDER, COPY_CLIPBOARD)
+                            // Các tác vụ qua điện thoại (REPLY_MESSAGE, CREATE_TASK, SET_REMINDER, COPY_CLIPBOARD, MEDIA_CONTROL)
                             // sẽ do Phone Companion tự phát TTS sau khi xử lý thành công để tránh phát lặp
                             val handledByPhoneDirectly = voiceAction.type in listOf(
-                                "REPLY_MESSAGE", "CREATE_TASK", "SET_REMINDER", "COPY_CLIPBOARD"
+                                "REPLY_MESSAGE", "CREATE_TASK", "SET_REMINDER", "COPY_CLIPBOARD", "MEDIA_CONTROL"
                             )
                             if (!handledByPhoneDirectly) {
                                 val ttsConfirm = when (voiceAction.type) {
@@ -664,6 +747,7 @@ class MainActivity : AppCompatActivity() {
                     finishAndRemoveTask()
                 } else {
                     releaseWakeLock()
+                    startAutoDimTimer()
                 }
             }
         }

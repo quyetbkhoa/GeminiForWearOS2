@@ -48,7 +48,8 @@ class PhoneMainActivity : AppCompatActivity() {
         ADB_UPDATE,
         THEME,
         QA_HISTORY,
-        ERROR_LOGS
+        ERROR_LOGS,
+        VOICE_GUIDE
     }
 
     private var currentPage = NavPage.HUB
@@ -74,12 +75,18 @@ class PhoneMainActivity : AppCompatActivity() {
     private lateinit var pageTheme: LinearLayout
     private lateinit var pageQaHistory: LinearLayout
     private lateinit var pageErrorLogs: LinearLayout
+    private lateinit var pageVoiceGuide: LinearLayout
 
     // Hub Menu Rows & Badges
     private lateinit var cardTitlePlate: LinearLayout
     private lateinit var tvMainTitle: TextView
     private lateinit var tvMainSubtitle: TextView
     private lateinit var tvWatchConnectionBadge: TextView
+
+    private lateinit var rowMenuVoiceGuide: LinearLayout
+    private lateinit var tvMenuTitleGuide: TextView
+    private lateinit var tvHubGuideSummary: TextView
+    private lateinit var tvChevronGuide: TextView
 
     private lateinit var rowMenuGeminiApi: LinearLayout
     private lateinit var tvHubModelSummary: TextView
@@ -106,9 +113,7 @@ class PhoneMainActivity : AppCompatActivity() {
     private lateinit var tvHubErrorBadge: TextView
 
     // Hub Category Headers
-    private lateinit var tvCatHeaderAi: TextView
-    private lateinit var tvCatHeaderDevices: TextView
-    private lateinit var tvCatHeaderTheme: TextView
+    private lateinit var tvCatHeaderSettings: TextView
     private lateinit var tvCatHeaderLogs: TextView
 
     // Hub Menu Titles
@@ -174,6 +179,13 @@ class PhoneMainActivity : AppCompatActivity() {
     private lateinit var tvQuickReplyDesc: TextView
     private lateinit var btnGrantNotificationAccess: Button
 
+    // Overlay Permission Views (YouTube Morphe background launch)
+    private lateinit var cardOverlayPanel: LinearLayout
+    private lateinit var tvOverlayHeader: TextView
+    private lateinit var tvOverlayAccessBadge: TextView
+    private lateinit var tvOverlayDesc: TextView
+    private lateinit var btnGrantOverlayAccess: Button
+
     // Sub-Page 3: Wireless ADB & GitHub Update Views
     private lateinit var cardUpdatePanel: LinearLayout
     private lateinit var tvAppVersion: TextView
@@ -232,6 +244,22 @@ class PhoneMainActivity : AppCompatActivity() {
 
     private val receiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
+            if (intent?.action == "com.oppowatch.gemini.WATCH_ADB_INFO_RECEIVED") {
+                val ip = intent.getStringExtra("ip") ?: ""
+                val port = intent.getIntExtra("port", 5555)
+                val adbReady = intent.getBooleanExtra("adb_ready", false)
+                if (ip.isNotEmpty() && ::etWatchAdbIp.isInitialized) {
+                    etWatchAdbIp.setText(ip)
+                    etWatchAdbPort.setText(port.toString())
+                    if (::tvAdbStatus.isInitialized) {
+                        if (adbReady) {
+                            tvAdbStatus.text = "✓ Đồng hồ gửi IP qua Bluetooth: $ip:$port (Gỡ lỗi Wi-Fi: BẬT)"
+                        } else {
+                            tvAdbStatus.text = "ℹ️ Đồng hồ báo IP: $ip (Chưa bật 'Gỡ lỗi qua Wi-Fi' hoặc cổng 5555 chưa mở)"
+                        }
+                    }
+                }
+            }
             loadQaHistory()
             loadErrorLogs()
             updateHubSummaries()
@@ -280,6 +308,26 @@ class PhoneMainActivity : AppCompatActivity() {
                 loadErrorLogs()
                 updateHubSummaries()
             }
+        } else if (messageEvent.path == "/watch_adb_info") {
+            try {
+                val json = JSONObject(String(messageEvent.data, Charsets.UTF_8))
+                val ip = json.optString("ip", "")
+                val port = json.optInt("port", 5555)
+                val adbReady = json.optBoolean("adb_ready", false)
+                if (ip.isNotEmpty()) {
+                    runOnUiThread {
+                        if (::etWatchAdbIp.isInitialized) etWatchAdbIp.setText(ip)
+                        if (::etWatchAdbPort.isInitialized) etWatchAdbPort.setText(port.toString())
+                        if (::tvAdbStatus.isInitialized) {
+                            if (adbReady) {
+                                tvAdbStatus.text = "✓ Đồng hồ gửi IP qua Bluetooth: $ip:$port (Gỡ lỗi Wi-Fi: BẬT)"
+                            } else {
+                                tvAdbStatus.text = "ℹ️ Đồng hồ báo IP: $ip (Chưa bật 'Gỡ lỗi qua Wi-Fi' hoặc cổng 5555 chưa mở)"
+                            }
+                        }
+                    }
+                }
+            } catch (_: Exception) {}
         }
     }
 
@@ -312,6 +360,7 @@ class PhoneMainActivity : AppCompatActivity() {
         val filter = IntentFilter().apply {
             addAction("com.oppowatch.gemini.TTS_RECEIVED")
             addAction("com.oppowatch.gemini.ERROR_LOG_RECEIVED")
+            addAction("com.oppowatch.gemini.WATCH_ADB_INFO_RECEIVED")
         }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             registerReceiver(receiver, filter, Context.RECEIVER_NOT_EXPORTED)
@@ -339,12 +388,18 @@ class PhoneMainActivity : AppCompatActivity() {
         pageTheme = findViewById(R.id.page_theme)
         pageQaHistory = findViewById(R.id.page_qa_history)
         pageErrorLogs = findViewById(R.id.page_error_logs)
+        pageVoiceGuide = findViewById(R.id.page_voice_guide)
 
         // Hub Views
         cardTitlePlate = findViewById(R.id.card_title_plate)
         tvMainTitle = findViewById(R.id.tv_main_title)
         tvMainSubtitle = findViewById(R.id.tv_main_subtitle)
         tvWatchConnectionBadge = findViewById(R.id.tv_watch_connection_badge)
+
+        rowMenuVoiceGuide = findViewById(R.id.row_menu_voice_guide)
+        tvMenuTitleGuide = findViewById(R.id.tv_menu_title_guide)
+        tvHubGuideSummary = findViewById(R.id.tv_hub_guide_summary)
+        tvChevronGuide = findViewById(R.id.tv_chevron_guide)
 
         rowMenuGeminiApi = findViewById(R.id.row_menu_gemini_api)
         tvHubModelSummary = findViewById(R.id.tv_hub_model_summary)
@@ -414,6 +469,27 @@ class PhoneMainActivity : AppCompatActivity() {
             }
         }
 
+        // Overlay Permission Views
+        cardOverlayPanel = findViewById(R.id.card_overlay_panel)
+        tvOverlayHeader = findViewById(R.id.tv_overlay_header)
+        tvOverlayAccessBadge = findViewById(R.id.tv_overlay_access_badge)
+        tvOverlayDesc = findViewById(R.id.tv_overlay_desc)
+        btnGrantOverlayAccess = findViewById(R.id.btn_grant_overlay_access)
+
+        btnGrantOverlayAccess.setOnClickListener {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                try {
+                    val intent = Intent(
+                        android.provider.Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                        android.net.Uri.parse("package:$packageName")
+                    )
+                    startActivity(intent)
+                } catch (e: Exception) {
+                    Toast.makeText(this, "Vui lòng cấp quyền 'Hiển thị trên ứng dụng khác' trong Cài đặt", Toast.LENGTH_LONG).show()
+                }
+            }
+        }
+
         // Subpage 3 Views
         cardUpdatePanel = findViewById(R.id.card_update_panel)
         tvAppVersion = findViewById(R.id.tv_app_version)
@@ -466,9 +542,7 @@ class PhoneMainActivity : AppCompatActivity() {
         tvEmptyErrorLogs = findViewById(R.id.tv_empty_error_logs)
 
         // Hub Category Headers
-        tvCatHeaderAi = findViewById(R.id.tv_cat_header_ai)
-        tvCatHeaderDevices = findViewById(R.id.tv_cat_header_devices)
-        tvCatHeaderTheme = findViewById(R.id.tv_cat_header_theme)
+        tvCatHeaderSettings = findViewById(R.id.tv_cat_header_settings)
         tvCatHeaderLogs = findViewById(R.id.tv_cat_header_logs)
 
         // Hub Menu Titles
@@ -500,6 +574,7 @@ class PhoneMainActivity : AppCompatActivity() {
             navigateTo(NavPage.HUB)
         }
 
+        rowMenuVoiceGuide.setOnClickListener { navigateTo(NavPage.VOICE_GUIDE) }
         rowMenuGeminiApi.setOnClickListener { navigateTo(NavPage.GEMINI_API) }
         rowMenuBluetooth.setOnClickListener { navigateTo(NavPage.BLUETOOTH) }
         rowMenuAdbUpdate.setOnClickListener { navigateTo(NavPage.ADB_UPDATE) }
@@ -531,6 +606,7 @@ class PhoneMainActivity : AppCompatActivity() {
         }
 
         layoutHub.visibility = if (page == NavPage.HUB) View.VISIBLE else View.GONE
+        pageVoiceGuide.visibility = if (page == NavPage.VOICE_GUIDE) View.VISIBLE else View.GONE
         pageGeminiApi.visibility = if (page == NavPage.GEMINI_API) View.VISIBLE else View.GONE
         pageBluetooth.visibility = if (page == NavPage.BLUETOOTH) View.VISIBLE else View.GONE
         pageAdbUpdate.visibility = if (page == NavPage.ADB_UPDATE) View.VISIBLE else View.GONE
@@ -546,6 +622,10 @@ class PhoneMainActivity : AppCompatActivity() {
         } else {
             btnNavBack.visibility = View.VISIBLE
             when (page) {
+                NavPage.VOICE_GUIDE -> {
+                    tvNavTitle.text = "🎙️ TỔNG HỢP KHẨU LỆNH"
+                    tvNavSubtitle.text = "Trợ lý giọng nói > Hướng dẫn sử dụng toàn diện"
+                }
                 NavPage.GEMINI_API -> {
                     tvNavTitle.text = "🤖 CẤU HÌNH GEMINI"
                     tvNavSubtitle.text = "Cài đặt > Mô hình AI & API Key"
@@ -601,8 +681,8 @@ class PhoneMainActivity : AppCompatActivity() {
 
         // 3. ADB & Update
         val currentVersion = try {
-            packageManager.getPackageInfo(packageName, 0).versionName ?: "1.3.2"
-        } catch (_: Exception) { "1.3.2" }
+            packageManager.getPackageInfo(packageName, 0).versionName ?: "1.3.3"
+        } catch (_: Exception) { "1.3.3" }
         tvHubAdbBadge.text = "v$currentVersion"
         tvHubAdbSummary.text = "Wireless ADB Sideload • Mobile v$currentVersion"
         if (::tvAppVersion.isInitialized) {
@@ -702,6 +782,7 @@ class PhoneMainActivity : AppCompatActivity() {
 
         // Hub Elements
         cardTitlePlate.setBackgroundResource(config.cardDrawable)
+        rowMenuVoiceGuide.setBackgroundResource(config.cardDrawable)
         rowMenuGeminiApi.setBackgroundResource(config.cardDrawable)
         rowMenuBluetooth.setBackgroundResource(config.cardDrawable)
         rowMenuAdbUpdate.setBackgroundResource(config.cardDrawable)
@@ -710,15 +791,17 @@ class PhoneMainActivity : AppCompatActivity() {
         rowMenuErrorLogs.setBackgroundResource(config.cardDrawable)
 
         // Hub Category Headers
-        tvCatHeaderAi.setTextColor(if (isLight) Color.parseColor("#1D4ED8") else Color.parseColor("#60A5FA"))
-        tvCatHeaderDevices.setTextColor(if (isLight) Color.parseColor("#047857") else Color.parseColor("#34D399"))
-        tvCatHeaderTheme.setTextColor(if (isLight) Color.parseColor("#B45309") else Color.parseColor("#F59E0B"))
+        tvCatHeaderSettings.setTextColor(if (isLight) Color.parseColor("#1D4ED8") else Color.parseColor("#60A5FA"))
         tvCatHeaderLogs.setTextColor(if (isLight) Color.parseColor("#6D28D9") else Color.parseColor("#A78BFA"))
 
         // Hub Menu Titles, Subtitles & Chevrons
         val menuTitleColor = if (isLight) Color.parseColor("#0F172A") else Color.parseColor("#F8FAFC")
         val menuSubColor = if (isLight) Color.parseColor("#475569") else Color.parseColor("#94A3B8")
         val chevronColor = if (isLight) Color.parseColor("#94A3B8") else Color.parseColor("#64748B")
+
+        tvMenuTitleGuide.setTextColor(if (isLight) Color.parseColor("#B45309") else Color.parseColor("#F59E0B"))
+        tvChevronGuide.setTextColor(if (isLight) Color.parseColor("#B45309") else Color.parseColor("#F59E0B"))
+        tvHubGuideSummary.setTextColor(menuSubColor)
 
         tvMenuTitleGemini.setTextColor(menuTitleColor)
         tvMenuTitleBluetooth.setTextColor(menuTitleColor)
@@ -747,11 +830,28 @@ class PhoneMainActivity : AppCompatActivity() {
         cardApiKey.setBackgroundResource(config.cardDrawable)
         cardBluetoothRack.setBackgroundResource(config.bezelDrawable)
         cardQuickReplyPanel.setBackgroundResource(config.bezelDrawable)
+        cardOverlayPanel.setBackgroundResource(config.bezelDrawable)
         cardHistoryRack.setBackgroundResource(config.bezelDrawable)
         cardErrorLogsRack.setBackgroundResource(config.bezelDrawable)
         cardUpdatePanel.setBackgroundResource(config.panelDrawable)
         cardStep1Panel.setBackgroundResource(config.panelDrawable)
         cardAdbPanel.setBackgroundResource(config.panelDrawable)
+
+        val guideCardIds = listOf(
+            R.id.card_guide_header,
+            R.id.card_guide_media,
+            R.id.card_guide_alarm,
+            R.id.card_guide_timer,
+            R.id.card_guide_reply,
+            R.id.card_guide_tasks,
+            R.id.card_guide_remind,
+            R.id.card_guide_dictate,
+            R.id.card_guide_context,
+            R.id.card_guide_road
+        )
+        for (id in guideCardIds) {
+            findViewById<View?>(id)?.setBackgroundResource(config.cardDrawable)
+        }
 
         // Inputs & Buttons
         etGeminiApiKey.setBackgroundResource(config.inputDrawable)
@@ -804,6 +904,12 @@ class PhoneMainActivity : AppCompatActivity() {
         btnGrantNotificationAccess.setBackgroundResource(config.btnPrimaryDrawable)
         btnGrantNotificationAccess.setTextColor(if (isLight) Color.parseColor("#0F172A") else Color.parseColor("#FFFFFF"))
         updateNotificationAccessStatus()
+
+        tvOverlayHeader.setTextColor(if (isLight) Color.parseColor("#047857") else Color.parseColor("#34D399"))
+        tvOverlayDesc.setTextColor(if (isLight) Color.parseColor("#475569") else config.textSecondaryColor)
+        btnGrantOverlayAccess.setBackgroundResource(config.btnPrimaryDrawable)
+        btnGrantOverlayAccess.setTextColor(if (isLight) Color.parseColor("#0F172A") else Color.parseColor("#FFFFFF"))
+        updateOverlayPermissionStatus()
 
         tvUpdateHeader.setTextColor(if (isLight) Color.parseColor("#B45309") else Color.parseColor("#F59E0B"))
         tvAppVersion.setTextColor(if (isLight) Color.parseColor("#047857") else Color.parseColor("#34D399"))
@@ -1707,6 +1813,7 @@ class PhoneMainActivity : AppCompatActivity() {
         autoSyncApiKeyToWatch()
         updateHubSummaries()
         updateNotificationAccessStatus()
+        updateOverlayPermissionStatus()
         try {
             Wearable.getMessageClient(this).addListener(wearMessageListener)
         } catch (_: Exception) {}
@@ -1723,6 +1830,26 @@ class PhoneMainActivity : AppCompatActivity() {
             tvNotificationAccessBadge.text = "CHƯA BẬT"
             tvNotificationAccessBadge.setTextColor(Color.parseColor("#EF4444"))
             btnGrantNotificationAccess.text = "⚙️ CẤP QUYỀN TRUY CẬP THÔNG BÁO"
+        }
+    }
+
+    private fun updateOverlayPermissionStatus() {
+        if (!::tvOverlayAccessBadge.isInitialized) return
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            val hasOverlay = android.provider.Settings.canDrawOverlays(this)
+            if (hasOverlay) {
+                tvOverlayAccessBadge.text = "✓ ĐÃ BẬT"
+                tvOverlayAccessBadge.setTextColor(Color.parseColor("#34D399"))
+                btnGrantOverlayAccess.text = "✓ ĐÃ CẤP QUYỀN HIỂN THỊ NỔI"
+            } else {
+                tvOverlayAccessBadge.text = "CHƯA BẬT"
+                tvOverlayAccessBadge.setTextColor(Color.parseColor("#EF4444"))
+                btnGrantOverlayAccess.text = "⚙️ CẤP QUYỀN CỬA SỔ NỔI / OVERLAY"
+            }
+        } else {
+            tvOverlayAccessBadge.text = "✓ MẶC ĐỊNH BẬT"
+            tvOverlayAccessBadge.setTextColor(Color.parseColor("#34D399"))
+            btnGrantOverlayAccess.visibility = View.GONE
         }
     }
 

@@ -7,6 +7,40 @@ phiên bản tuân theo [Semantic Versioning](https://semver.org/lang/vi/).
 
 ---
 
+## [v1.3.3] - 2026-09-07
+
+### 📺 Điều Khiển Nhạc & Mở Video YouTube Morphe Bằng Giọng Nói (Media & YouTube Morphe Autoplay)
+- **Tự động tìm kiếm & phát ngay video đầu tiên trên YouTube Morphe (`app.morphe.android.youtube`):**
+  - Khẩu lệnh: *"Mở video Một con vịt"*, *"Bật bài hát Nắng ấm xa dần trên YouTube"*, *"Phát nhạc Sơn Tùng MTP"*.
+  - Cơ chế cào ngầm kết quả tìm kiếm YouTube để lấy chính xác `videoId` đầu tiên và kích hoạt `vnd.youtube:$videoId` nhắm thẳng tới gói ứng dụng Morphe.
+  - Tích hợp `SYSTEM_ALERT_WINDOW` và WakeLock giúp điện thoại tự đánh thức và mở video ngay cả khi màn hình đang tắt hoặc điện thoại ở trong túi quần.
+- **Điều khiển trình phát đa phương tiện từ xa qua Bluetooth:**
+  - *"Tạm dừng video / tạm dừng"* (`PAUSE`)
+  - *"Tiếp tục phát / nghe tiếp"* (`PLAY`)
+  - *"Chuyển bài / bài tiếp theo"* (`NEXT`)
+  - *"Quay lại bài trước / lùi bài"* (`PREV`)
+  - Tương thích qua `MediaSessionManager` và giả lập Media KeyEvent chuẩn của Android.
+
+### ⚡ Đồng Hồ Tự Nhận Diện Port & Đồng Bộ IP Wireless ADB Sang Điện Thoại
+- Đồng hồ OPPO Watch tự động lấy IPv4 cục bộ trên Wi-Fi, kiểm tra trạng thái socket `127.0.0.1:5555` (Gỡ lỗi Wi-Fi).
+- Tự động đóng gói gửi thông tin `{ip, port: 5555, adb_ready}` qua kênh Google Wearable Data Layer (`/watch_adb_info`).
+- Ứng dụng điện thoại tự động nhận và điền sẵn IP & Port vào form Wireless ADB, giúp người dùng không cần nhập thủ công.
+
+### 🎙️ Tái Cấu Trúc Giao Diện Phone Companion & Trang Tổng Hợp Khẩu Lệnh
+- Tái cấu trúc Hub chính thành mục **⚙️ CÀI ĐẶT HỆ THỐNG** khoa học, liền mạch.
+- Bổ sung nút nổi bật **🎙️ TỔNG HỢP KHẨU LỆNH GEMINI** dẫn đến giao diện chuyên biệt:
+  - 10 thẻ hướng dẫn trực quan (YouTube Morphe, Báo thức, Hẹn giờ, Trả lời tin nhắn, Google Tasks, Nhắc nhở, Chép chính tả Clipboard, Hội thoại ngữ cảnh 5 phút, Đi đường Road Mode).
+  - Hỗ trợ đồng bộ cả 3 phong cách giao diện (Skeuomorphism, Liquid Glass, Material 3) và 2 chế độ Sáng / Tối.
+
+### 🌙 Màn Hình Đồng Hồ Tối Dần Sau 10s & Tắt Đen Sau 3s (Smooth Auto-Dim & Blackout)
+- Sau khi trợ lý Gemini phản hồi hoàn tất:
+  - Giữ nguyên màn hình hiển thị 10 giây.
+  - Sau 10 giây: Màn hình chuyển sang làm mờ tối dần (alpha 0.85).
+  - Sau 3 giây tiếp theo: Màn hình tắt đen hoàn toàn (overlay đen 100%) và đóng Activity quay về mặt đồng hồ (Watch Face) nhằm tiết kiệm pin tối đa.
+  - Bất kỳ thao tác chạm màn hình nào sẽ lập tức hủy đếm ngược và trả lại độ sáng bình thường.
+
+---
+
 ## [v1.3.2] - 2026-09-07
 
 ### 📝 Chuyển Đổi Sang Đồng Bộ Google Tasks Trực Tiếp (Direct Google Tasks Integration)
