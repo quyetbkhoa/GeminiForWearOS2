@@ -49,7 +49,7 @@ jobs:
           EOF
 
       - name: Build APKs with Gradle
-        run: ./gradlew assembleRelease
+        run: ./gradlew assembleRelease -Dorg.gradle.jvmargs="-Xmx4096m"
 
       - name: Organize Release Artifacts
         run: |
