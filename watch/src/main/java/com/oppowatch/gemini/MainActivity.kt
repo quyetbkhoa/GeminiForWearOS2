@@ -584,7 +584,7 @@ class MainActivity : AppCompatActivity() {
                                         "💬 Đã gửi trả lời tin nhắn: \"${voiceAction.message}\""
                                     }
                                 }
-                                "CREATE_TASK" -> "📝 Đã lưu việc cần làm: \"${voiceAction.message}\""
+                                "CREATE_TASK" -> "📝 Đã thêm Google Task: \"${voiceAction.message}\""
                                 "SET_REMINDER" -> {
                                     val m = voiceAction.delaySeconds / 60
                                     if (m > 0) "⏰ Đã hẹn nhắc nhở sau $m phút: \"${voiceAction.message}\""
@@ -599,7 +599,7 @@ class MainActivity : AppCompatActivity() {
                             tvStatus.text = when (voiceAction.type) {
                                 "REPLY_MESSAGE" -> "✓ ĐÃ GỬI TIN"
                                 "COPY_CLIPBOARD" -> "✓ ĐÃ SAO CHÉP"
-                                "CREATE_TASK" -> "✓ ĐÃ LƯU VIỆC"
+                                "CREATE_TASK" -> "✓ ĐÃ THÊM TASK"
                                 "SET_REMINDER" -> "✓ ĐÃ HẸN NHẮC"
                                 else -> "✓ ĐÃ THỰC HIỆN"
                             }

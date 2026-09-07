@@ -82,13 +82,13 @@ object GeminiClient {
                     "- Hẹn giờ đếm ngược: {\"type\":\"SET_TIMER\",\"seconds\":<tổng giây>,\"message\":\"<nhãn>\"} " +
                     "- Trả lời tin nhắn gần nhất: {\"type\":\"REPLY_MESSAGE\",\"recipient\":\"\",\"message\":\"<nội dung tin nhắn>\"} " +
                     "- Trả lời tin nhắn của người cụ thể: {\"type\":\"REPLY_MESSAGE\",\"recipient\":\"<tên người nhận>\",\"message\":\"<nội dung tin nhắn>\"} " +
-                    "- Thêm việc cần làm (OPPO Task): {\"type\":\"CREATE_TASK\",\"title\":\"<tiêu đề việc cần làm>\",\"notes\":\"<chi tiết nếu có>\"} " +
+                    "- Thêm việc cần làm (Google Tasks): {\"type\":\"CREATE_TASK\",\"title\":\"<tiêu đề việc cần làm>\",\"notes\":\"<chi tiết nếu có>\"} " +
                     "- Nhắc nhở theo ngữ cảnh: {\"type\":\"SET_REMINDER\",\"message\":\"<nội dung nhắc nhở>\",\"delay_seconds\":<số giây tính từ hiện tại>} " +
                     "- Chép chính tả / Sao chép vào clipboard điện thoại: {\"type\":\"COPY_CLIPBOARD\",\"text\":\"<văn bản đã chuẩn hóa ngữ pháp và chính tả tiếng Việt, dấu chấm phẩy chuẩn xác>\"} " +
                     "Ví dụ đặt báo thức 6h30 sáng: {\"question\":\"Đặt báo thức 6 giờ 30 sáng\",\"answer\":\"Đã đặt báo thức lúc 06:30 cho bạn.\",\"action\":{\"type\":\"SET_ALARM\",\"hour\":6,\"minute\":30,\"message\":\"Báo thức sáng\"}} " +
                     "Ví dụ hẹn giờ 10 phút: {\"question\":\"Hẹn giờ 10 phút\",\"answer\":\"Đã bắt đầu hẹn giờ 10 phút.\",\"action\":{\"type\":\"SET_TIMER\",\"seconds\":600,\"message\":\"Hẹn giờ\"}} " +
                     "Ví dụ rep tin nhắn gần nhất: {\"question\":\"Rep là đang đi xe lát gọi lại\",\"answer\":\"Đã gửi trả lời tin nhắn: Đang đi xe lát gọi lại.\",\"action\":{\"type\":\"REPLY_MESSAGE\",\"recipient\":\"\",\"message\":\"Đang đi xe lát gọi lại\"}} " +
-                    "Ví dụ thêm việc cần làm: {\"question\":\"Thêm việc cần làm mua bánh mì và sữa chua\",\"answer\":\"Đã thêm vào việc cần làm: Mua bánh mì và sữa chua.\",\"action\":{\"type\":\"CREATE_TASK\",\"title\":\"Mua bánh mì và sữa chua\",\"notes\":\"\"}} " +
+                    "Ví dụ thêm việc vào Google Tasks: {\"question\":\"Thêm việc cần làm mua bánh mì và sữa chua\",\"answer\":\"Đã thêm vào Google Tasks: Mua bánh mì và sữa chua.\",\"action\":{\"type\":\"CREATE_TASK\",\"title\":\"Mua bánh mì và sữa chua\",\"notes\":\"\"}} " +
                     "Ví dụ nhắc nhở sau 15 phút: {\"question\":\"Nhắc tôi sau 15 phút nữa kiểm tra lò nướng\",\"answer\":\"Đã đặt nhắc nhở sau 15 phút.\",\"action\":{\"type\":\"SET_REMINDER\",\"message\":\"Kiểm tra lò nướng\",\"delay_seconds\":900}} " +
                     "Ví dụ chép chính tả: {\"question\":\"Chép chính tả ngày mai họp lúc chín giờ tại phòng hai\",\"answer\":\"Đã sao chép vào bộ nhớ tạm: Ngày mai họp lúc 9:00 tại phòng 2.\",\"action\":{\"type\":\"COPY_CLIPBOARD\",\"text\":\"Ngày mai họp lúc 9:00 tại phòng 2.\"}} " +
                     "4. Nếu KHÔNG phải yêu cầu hành động, KHÔNG cần trường action. " +

@@ -138,11 +138,11 @@ class PhoneWearableListenerService : WearableListenerService() {
             }
 
             if (title.isNotEmpty()) {
-                OppoTaskManager.addTask(this, title, notes)
-                val ttsResponse = "Đã lưu vào việc cần làm: $title"
+                GoogleTasksManager.addTask(this, title, notes)
+                val ttsResponse = "Đã thêm vào Google Tasks: $title"
 
                 historyManager.addEntry(
-                    "📝 Việc cần làm (OPPO Task)",
+                    "📝 Google Tasks",
                     title,
                     System.currentTimeMillis()
                 )

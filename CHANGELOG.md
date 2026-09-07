@@ -7,6 +7,21 @@ phiên bản tuân theo [Semantic Versioning](https://semver.org/lang/vi/).
 
 ---
 
+## [v1.3.2] - 2026-09-07
+
+### 📝 Chuyển Đổi Sang Đồng Bộ Google Tasks Trực Tiếp (Direct Google Tasks Integration)
+- **Hỗ trợ đầy đủ ứng dụng Google Tasks (`com.google.android.apps.tasks`):**
+  - Ra lệnh từ đồng hồ: *"Thêm việc cần làm: mua bánh mì và sữa chua"*, *"Thêm vào Google Tasks: nộp báo cáo tuần"*.
+  - AI Gemini tự động xuất action: `{"type":"CREATE_TASK","title":"...","notes":"..."}`.
+  - Phía điện thoại: `GoogleTasksManager` tích hợp sâu với Google Tasks:
+    - Kích hoạt giao diện thêm task của Google Tasks (`com.google.android.apps.tasks/.ui.ShareWithTaskListsActivity`) với nội dung đã được điền sẵn đầy đủ.
+    - Phát broadcast hệ thống `com.google.android.apps.tasks.AddTask` để đồng bộ dữ liệu vào Google Tasks.
+    - Hiển thị **Heads-up Notification** ưu tiên cao kèm nút tắt **"Mở Google Tasks"** giúp người dùng 1 chạm là vào xem ngay.
+    - Đọc TTS xác nhận: *"Đã thêm vào Google Tasks: [tiêu đề]"*.
+  - Đồng hồ hiển thị: `✓ ĐÃ THÊM TASK` và nhãn `📝 Đã thêm Google Task: "[tiêu đề]"`.
+
+---
+
 ## [v1.3.1] - 2026-09-07
 
 ### 📝 Lưu Việc Cần Làm Vào Task & Ghi Chú OPPO / ColorOS (OPPO Task Integration)

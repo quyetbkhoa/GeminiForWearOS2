@@ -1054,7 +1054,7 @@
                         android:id="@+id/tv_app_version"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="📱 Phiên bản Mobile: v1.3.1"
+                        android:text="📱 Phiên bản Mobile: v1.3.2"
                         android:textSize="10.5sp"
                         android:textColor="#34D399"
                         android:textStyle="bold" />

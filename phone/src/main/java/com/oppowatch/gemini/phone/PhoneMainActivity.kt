@@ -601,8 +601,8 @@ class PhoneMainActivity : AppCompatActivity() {
 
         // 3. ADB & Update
         val currentVersion = try {
-            packageManager.getPackageInfo(packageName, 0).versionName ?: "1.3.1"
-        } catch (_: Exception) { "1.3.1" }
+            packageManager.getPackageInfo(packageName, 0).versionName ?: "1.3.2"
+        } catch (_: Exception) { "1.3.2" }
         tvHubAdbBadge.text = "v$currentVersion"
         tvHubAdbSummary.text = "Wireless ADB Sideload • Mobile v$currentVersion"
         if (::tvAppVersion.isInitialized) {
