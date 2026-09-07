@@ -7,6 +7,31 @@ phiên bản tuân theo [Semantic Versioning](https://semver.org/lang/vi/).
 
 ---
 
+## [v1.2.7] - 2026-09-07
+
+### 📱 Tái Cấu Trúc Toàn Bộ UI/UX Flow: Hệ Thống Cài Đặt Với Menu Lồng Nhau (Hierarchical Settings)
+- **Thiết kế lại toàn diện giao diện Mobile Companion:**
+  - Chuyển từ bố cục một trang cuộn dài cũ sang **Hệ thống Cài đặt phân cấp (Hierarchical Settings Navigation)** hiện đại, thanh lịch tương tự phong cách Settings cao cấp của iOS / ColorOS / OneUI.
+- **Thanh điều hướng đỉnh (Sticky Top Navigation Bar):**
+  - Cố định ở đầu màn hình, thích ứng mượt mà theo vị trí:
+    - Ở màn hình chính: Hiển thị thương hiệu `GEMINI COMPANION`, trạng thái kết nối với đồng hồ (`🟢 OPPO WATCH` / `🟡 CHỜ KẾT NỐI`).
+    - Khi đi vào menu con: Tự động hiển thị nút `[← TRỞ VỀ]`, tiêu đề menu con và breadcrumb điều hướng (ví dụ: `Cài đặt > Mô hình AI & API Key`).
+- **Màn hình Cài đặt chính (Settings Hub) với các nhóm danh mục trực quan:**
+  - **Nhóm 1: Trí tuệ nhân tạo & Mô hình:** Thẻ `Mô hình Gemini & API Key` hiển thị tóm tắt trực tiếp mô hình đang chọn và tình trạng lưu khóa.
+  - **Nhóm 2: Kết nối & Thiết bị ngoại vi:** Thẻ `Tai nghe Bluetooth & Phát âm TTS` và thẻ `Cài đặt không dây (ADB) & Cập nhật`.
+  - **Nhóm 3: Cá nhân hóa & Chủ đề:** Thẻ `Giao diện & Chủ đề đồng bộ` hiển thị tóm tắt phong cách thiết kế và chế độ sáng/tối.
+  - **Nhóm 4: Nhật ký & Chẩn đoán hệ thống:** Thẻ `Lịch sử hỏi đáp giọng nói (Voice Q&A)` và thẻ `Nhật ký lỗi API (API Error Logs)` với huy hiệu badge cảnh báo số lỗi thời gian thực.
+  - Mỗi mục cài đặt đều có icon bo góc màu sắc biểu trưng, dòng tóm tắt trạng thái thời gian thực (Live Summary), huy hiệu badge và mũi tên điều hướng `›`.
+- **6 Menu con lồng nhau chuyên sâu (Sub-Menus):**
+  - Bố cục các thành phần điều khiển gọn gàng, cách ly chuyên biệt từng tính năng giúp người dùng tập trung và không bị rối mắt.
+- **Điều hướng mượt mà & Hỗ trợ Back vật lý:**
+  - Tự động cuộn lên đầu trang khi chuyển menu.
+  - Xử lý mượt mà sự kiện phím Back vật lý / cử chỉ vuốt cạnh của Android (`OnBackPressedDispatcher`): quay về Menu chính khi đang ở menu con và thoát/ẩn ứng dụng khi đang ở Menu chính.
+- **Hệ thống Theme đồng bộ hoàn hảo:**
+  - Cả 6 phong cách (Skeuomorphism Dark/Light, Liquid Glass Dark/Light, Material Dark/Light) áp dụng trơn tru cho toàn bộ Top Bar, thẻ danh mục Hub và các Menu con.
+
+---
+
 ## [v1.2.6] - 2026-09-07
 
 ### 🚨 Nhật Ký Lỗi API Chi Tiết Trên Mobile & Khắc Phục Lỗi Kết Nối Gemini (HTTP 403)

@@ -12,6 +12,7 @@ import android.graphics.Color
 import android.os.Build
 import android.os.Bundle
 import android.text.InputType
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.widget.Button
@@ -23,12 +24,12 @@ import android.widget.RadioButton
 import android.widget.RadioGroup
 import android.widget.TextView
 import android.widget.Toast
+import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.widget.NestedScrollView
 import com.google.android.gms.wearable.PutDataMapRequest
-import android.util.Log
 import com.google.android.gms.wearable.Wearable
 import org.json.JSONObject
 import java.io.File
@@ -40,31 +41,72 @@ class PhoneMainActivity : AppCompatActivity() {
         private const val TAG = "PhoneMainActivity"
     }
 
+    enum class NavPage {
+        HUB,
+        GEMINI_API,
+        BLUETOOTH,
+        ADB_UPDATE,
+        THEME,
+        QA_HISTORY,
+        ERROR_LOGS
+    }
+
+    private var currentPage = NavPage.HUB
+
     private lateinit var filterManager: BluetoothFilterManager
     private lateinit var qaHistoryManager: QaHistoryManager
     private lateinit var apiErrorLogManager: ApiErrorLogManager
 
-    // Containers & Roots for Theme Engine
+    // Root & Navigation Views
+    private lateinit var rootLayout: LinearLayout
+    private lateinit var layoutTopBar: LinearLayout
+    private lateinit var btnNavBack: Button
+    private lateinit var tvNavTitle: TextView
+    private lateinit var tvNavSubtitle: TextView
+    private lateinit var tvNavStatusPill: TextView
     private lateinit var scrollRoot: NestedScrollView
-    private lateinit var cardThemeSelector: LinearLayout
+
+    // Page Containers
+    private lateinit var layoutHub: LinearLayout
+    private lateinit var pageGeminiApi: LinearLayout
+    private lateinit var pageBluetooth: LinearLayout
+    private lateinit var pageAdbUpdate: LinearLayout
+    private lateinit var pageTheme: LinearLayout
+    private lateinit var pageQaHistory: LinearLayout
+    private lateinit var pageErrorLogs: LinearLayout
+
+    // Hub Menu Rows & Badges
     private lateinit var cardTitlePlate: LinearLayout
-    private lateinit var cardApiKey: LinearLayout
+    private lateinit var tvMainTitle: TextView
+    private lateinit var tvMainSubtitle: TextView
+    private lateinit var tvWatchConnectionBadge: TextView
+
+    private lateinit var rowMenuGeminiApi: LinearLayout
+    private lateinit var tvHubModelSummary: TextView
+    private lateinit var tvHubModelBadge: TextView
+
+    private lateinit var rowMenuBluetooth: LinearLayout
+    private lateinit var tvHubBluetoothSummary: TextView
+    private lateinit var tvHubBluetoothBadge: TextView
+
+    private lateinit var rowMenuAdbUpdate: LinearLayout
+    private lateinit var tvHubAdbSummary: TextView
+    private lateinit var tvHubAdbBadge: TextView
+
+    private lateinit var rowMenuTheme: LinearLayout
+    private lateinit var tvHubThemeSummary: TextView
+    private lateinit var tvHubThemeBadge: TextView
+
+    private lateinit var rowMenuQaHistory: LinearLayout
+    private lateinit var tvHubHistorySummary: TextView
+    private lateinit var tvHubHistoryBadge: TextView
+
+    private lateinit var rowMenuErrorLogs: LinearLayout
+    private lateinit var tvHubErrorSummary: TextView
+    private lateinit var tvHubErrorBadge: TextView
+
+    // Sub-Page 1: Gemini & API Key Views
     private lateinit var cardModelSelector: LinearLayout
-    private lateinit var cardBluetoothRack: LinearLayout
-    private lateinit var cardHistoryRack: LinearLayout
-    private lateinit var cardErrorLogsRack: LinearLayout
-    private lateinit var cardUpdatePanel: LinearLayout
-
-    // Theme Engine Views
-    private lateinit var tvThemeLabel: TextView
-    private lateinit var tvThemeSublabel: TextView
-    private lateinit var btnThemeSkeuo: Button
-    private lateinit var btnThemeGlass: Button
-    private lateinit var btnThemeMaterial: Button
-    private lateinit var btnWatchThemeDark: Button
-    private lateinit var btnWatchThemeLight: Button
-
-    // Gemini Model Selector Views
     private lateinit var tvModelHeader: TextView
     private lateinit var tvModelDesc: TextView
     private lateinit var rgGeminiModels: RadioGroup
@@ -76,11 +118,7 @@ class PhoneMainActivity : AppCompatActivity() {
     private lateinit var rbModel31Pro: RadioButton
     private lateinit var tvModelStatus: TextView
 
-    // UI elements - Header
-    private lateinit var tvMainTitle: TextView
-    private lateinit var tvMainSubtitle: TextView
-
-    // UI elements - Custom API Key
+    private lateinit var cardApiKey: LinearLayout
     private lateinit var tvApiKeyHeader: TextView
     private lateinit var tvApiKeyDesc: TextView
     private lateinit var etGeminiApiKey: EditText
@@ -90,33 +128,22 @@ class PhoneMainActivity : AppCompatActivity() {
     private lateinit var btnTestApiKey: Button
     private var isApiKeyVisible = false
 
-    // Bluetooth Section
+    // Sub-Page 2: Bluetooth Views
+    private lateinit var cardBluetoothRack: LinearLayout
     private lateinit var tvBluetoothHeader: TextView
     private lateinit var llBluetoothDevices: LinearLayout
     private lateinit var tvEmptyDevices: TextView
     private lateinit var btnReloadBluetooth: Button
     private lateinit var btnTestTts: Button
 
-    // Q&A History
-    private lateinit var tvHistoryHeader: TextView
-    private lateinit var llQaHistory: LinearLayout
-    private lateinit var tvEmptyHistory: TextView
-    private lateinit var btnClearHistory: Button
-
-    // API Error Logs
-    private lateinit var tvErrorLogsHeader: TextView
-    private lateinit var btnClearErrorLogs: Button
-    private lateinit var llErrorLogsList: LinearLayout
-    private lateinit var tvEmptyErrorLogs: TextView
-
-    // GitHub Update Section
+    // Sub-Page 3: Wireless ADB & GitHub Update Views
+    private lateinit var cardUpdatePanel: LinearLayout
     private lateinit var tvAppVersion: TextView
     private lateinit var tvRepoInfo: TextView
     private lateinit var tvUpdateStatus: TextView
     private lateinit var pbUpdateProgress: ProgressBar
     private lateinit var btnCheckUpdate: Button
 
-    // Wireless ADB Section
     private lateinit var cardAdbPanel: LinearLayout
     private lateinit var tvAdbHeader: TextView
     private lateinit var tvAdbBadge: TextView
@@ -128,6 +155,30 @@ class PhoneMainActivity : AppCompatActivity() {
     private lateinit var pbAdbProgress: ProgressBar
     private lateinit var tvAdbStatus: TextView
 
+    // Sub-Page 4: Theme Selector Views
+    private lateinit var cardThemeSelector: LinearLayout
+    private lateinit var tvThemeLabel: TextView
+    private lateinit var tvThemeSublabel: TextView
+    private lateinit var btnThemeSkeuo: Button
+    private lateinit var btnThemeGlass: Button
+    private lateinit var btnThemeMaterial: Button
+    private lateinit var btnWatchThemeDark: Button
+    private lateinit var btnWatchThemeLight: Button
+
+    // Sub-Page 5: Q&A History Views
+    private lateinit var cardHistoryRack: LinearLayout
+    private lateinit var tvHistoryHeader: TextView
+    private lateinit var llQaHistory: LinearLayout
+    private lateinit var tvEmptyHistory: TextView
+    private lateinit var btnClearHistory: Button
+
+    // Sub-Page 6: API Error Logs Views
+    private lateinit var cardErrorLogsRack: LinearLayout
+    private lateinit var tvErrorLogsHeader: TextView
+    private lateinit var btnClearErrorLogs: Button
+    private lateinit var llErrorLogsList: LinearLayout
+    private lateinit var tvEmptyErrorLogs: TextView
+
     private var currentThemeStyle = ThemeManager.ThemeStyle.SKEUOMORPHISM
     private var currentColorMode = ThemeManager.ColorMode.DARK
 
@@ -135,6 +186,7 @@ class PhoneMainActivity : AppCompatActivity() {
         override fun onReceive(context: Context?, intent: Intent?) {
             loadQaHistory()
             loadErrorLogs()
+            updateHubSummaries()
         }
     }
 
@@ -145,7 +197,7 @@ class PhoneMainActivity : AppCompatActivity() {
             var answer = rawPayload
             var timestamp = System.currentTimeMillis()
             try {
-                val json = org.json.JSONObject(rawPayload)
+                val json = JSONObject(rawPayload)
                 if (json.has("answer")) {
                     answer = json.optString("answer", rawPayload)
                     question = json.optString("question", "Câu hỏi bằng giọng nói")
@@ -155,11 +207,12 @@ class PhoneMainActivity : AppCompatActivity() {
             qaHistoryManager.addEntry(question, answer, timestamp)
             runOnUiThread {
                 loadQaHistory()
+                updateHubSummaries()
             }
         } else if (messageEvent.path == "/gemini_error_log") {
             val rawJson = String(messageEvent.data, Charsets.UTF_8)
             try {
-                val json = org.json.JSONObject(rawJson)
+                val json = JSONObject(rawJson)
                 val item = ApiErrorItem(
                     id = java.util.UUID.randomUUID().toString(),
                     timestamp = json.optLong("timestamp", System.currentTimeMillis()),
@@ -177,6 +230,7 @@ class PhoneMainActivity : AppCompatActivity() {
             } catch (_: Exception) {}
             runOnUiThread {
                 loadErrorLogs()
+                updateHubSummaries()
             }
         }
     }
@@ -192,26 +246,20 @@ class PhoneMainActivity : AppCompatActivity() {
         TtsSpeaker.init(this)
 
         initViews()
+        setupNavigationFlow()
         setupThemeEngine()
         setupModelSection()
         setupApiKeySection()
+        setupBluetoothSection()
+        setupAdbSection()
+        setupUpdateSection()
         setupQaHistorySection()
         setupErrorLogsSection()
-        setupUpdateSection()
-        setupAdbSection()
 
         checkPermissions()
         checkPermissionsAndLoadDevices(userInitiated = false)
         autoSyncApiKeyToWatch()
-
-        btnReloadBluetooth.setOnClickListener {
-            checkPermissionsAndLoadDevices(userInitiated = true)
-        }
-
-        btnTestTts.setOnClickListener {
-            TtsSpeaker.speak(this, "Đây là âm thanh thử nghiệm từ trợ lý Gemini trên đồng hồ OPPO Watch.")
-            Toast.makeText(this, "Đang phát âm thanh mẫu...", Toast.LENGTH_SHORT).show()
-        }
+        updateHubSummaries()
 
         val filter = IntentFilter().apply {
             addAction("com.oppowatch.gemini.TTS_RECEIVED")
@@ -227,24 +275,55 @@ class PhoneMainActivity : AppCompatActivity() {
     }
 
     private fun initViews() {
+        rootLayout = findViewById(R.id.root_layout)
+        layoutTopBar = findViewById(R.id.layout_top_bar)
+        btnNavBack = findViewById(R.id.btn_nav_back)
+        tvNavTitle = findViewById(R.id.tv_nav_title)
+        tvNavSubtitle = findViewById(R.id.tv_nav_subtitle)
+        tvNavStatusPill = findViewById(R.id.tv_nav_status_pill)
         scrollRoot = findViewById(R.id.scroll_root)
-        cardThemeSelector = findViewById(R.id.card_theme_selector)
-        cardModelSelector = findViewById(R.id.card_model_selector)
+
+        // Containers
+        layoutHub = findViewById(R.id.layout_hub)
+        pageGeminiApi = findViewById(R.id.page_gemini_api)
+        pageBluetooth = findViewById(R.id.page_bluetooth)
+        pageAdbUpdate = findViewById(R.id.page_adb_update)
+        pageTheme = findViewById(R.id.page_theme)
+        pageQaHistory = findViewById(R.id.page_qa_history)
+        pageErrorLogs = findViewById(R.id.page_error_logs)
+
+        // Hub Views
         cardTitlePlate = findViewById(R.id.card_title_plate)
-        cardApiKey = findViewById(R.id.card_api_key)
-        cardBluetoothRack = findViewById(R.id.card_bluetooth_rack)
-        cardHistoryRack = findViewById(R.id.card_history_rack)
-        cardErrorLogsRack = findViewById(R.id.card_error_logs_rack)
-        cardUpdatePanel = findViewById(R.id.card_update_panel)
+        tvMainTitle = findViewById(R.id.tv_main_title)
+        tvMainSubtitle = findViewById(R.id.tv_main_subtitle)
+        tvWatchConnectionBadge = findViewById(R.id.tv_watch_connection_badge)
 
-        tvThemeLabel = findViewById(R.id.tv_theme_label)
-        tvThemeSublabel = findViewById(R.id.tv_theme_sublabel)
-        btnThemeSkeuo = findViewById(R.id.btn_theme_skeuo)
-        btnThemeGlass = findViewById(R.id.btn_theme_glass)
-        btnThemeMaterial = findViewById(R.id.btn_theme_material)
-        btnWatchThemeDark = findViewById(R.id.btn_watch_theme_dark)
-        btnWatchThemeLight = findViewById(R.id.btn_watch_theme_light)
+        rowMenuGeminiApi = findViewById(R.id.row_menu_gemini_api)
+        tvHubModelSummary = findViewById(R.id.tv_hub_model_summary)
+        tvHubModelBadge = findViewById(R.id.tv_hub_model_badge)
 
+        rowMenuBluetooth = findViewById(R.id.row_menu_bluetooth)
+        tvHubBluetoothSummary = findViewById(R.id.tv_hub_bluetooth_summary)
+        tvHubBluetoothBadge = findViewById(R.id.tv_hub_bluetooth_badge)
+
+        rowMenuAdbUpdate = findViewById(R.id.row_menu_adb_update)
+        tvHubAdbSummary = findViewById(R.id.tv_hub_adb_summary)
+        tvHubAdbBadge = findViewById(R.id.tv_hub_adb_badge)
+
+        rowMenuTheme = findViewById(R.id.row_menu_theme)
+        tvHubThemeSummary = findViewById(R.id.tv_hub_theme_summary)
+        tvHubThemeBadge = findViewById(R.id.tv_hub_theme_badge)
+
+        rowMenuQaHistory = findViewById(R.id.row_menu_qa_history)
+        tvHubHistorySummary = findViewById(R.id.tv_hub_history_summary)
+        tvHubHistoryBadge = findViewById(R.id.tv_hub_history_badge)
+
+        rowMenuErrorLogs = findViewById(R.id.row_menu_error_logs)
+        tvHubErrorSummary = findViewById(R.id.tv_hub_error_summary)
+        tvHubErrorBadge = findViewById(R.id.tv_hub_error_badge)
+
+        // Subpage 1 Views
+        cardModelSelector = findViewById(R.id.card_model_selector)
         tvModelHeader = findViewById(R.id.tv_model_header)
         tvModelDesc = findViewById(R.id.tv_model_desc)
         rgGeminiModels = findViewById(R.id.rg_gemini_models)
@@ -256,9 +335,7 @@ class PhoneMainActivity : AppCompatActivity() {
         rbModel31Pro = findViewById(R.id.rb_model_31_pro)
         tvModelStatus = findViewById(R.id.tv_model_status)
 
-        tvMainTitle = findViewById(R.id.tv_main_title)
-        tvMainSubtitle = findViewById(R.id.tv_main_subtitle)
-
+        cardApiKey = findViewById(R.id.card_api_key)
         tvApiKeyHeader = findViewById(R.id.tv_api_key_header)
         tvApiKeyDesc = findViewById(R.id.tv_api_key_desc)
         etGeminiApiKey = findViewById(R.id.et_gemini_api_key)
@@ -267,22 +344,16 @@ class PhoneMainActivity : AppCompatActivity() {
         btnSaveApiKey = findViewById(R.id.btn_save_api_key)
         btnTestApiKey = findViewById(R.id.btn_test_api_key)
 
+        // Subpage 2 Views
+        cardBluetoothRack = findViewById(R.id.card_bluetooth_rack)
         tvBluetoothHeader = findViewById(R.id.tv_bluetooth_header)
         llBluetoothDevices = findViewById(R.id.ll_bluetooth_devices_list)
         tvEmptyDevices = findViewById(R.id.tv_empty_devices)
         btnReloadBluetooth = findViewById(R.id.btn_reload_bluetooth)
         btnTestTts = findViewById(R.id.btn_test_tts)
 
-        tvHistoryHeader = findViewById(R.id.tv_history_header)
-        llQaHistory = findViewById(R.id.ll_qa_history_list)
-        tvEmptyHistory = findViewById(R.id.tv_empty_history)
-        btnClearHistory = findViewById(R.id.btn_clear_history)
-
-        tvErrorLogsHeader = findViewById(R.id.tv_error_logs_header)
-        btnClearErrorLogs = findViewById(R.id.btn_clear_error_logs)
-        llErrorLogsList = findViewById(R.id.ll_error_logs_list)
-        tvEmptyErrorLogs = findViewById(R.id.tv_empty_error_logs)
-
+        // Subpage 3 Views
+        cardUpdatePanel = findViewById(R.id.card_update_panel)
         tvAppVersion = findViewById(R.id.tv_app_version)
         tvRepoInfo = findViewById(R.id.tv_repo_info)
         tvUpdateStatus = findViewById(R.id.tv_update_status)
@@ -299,6 +370,178 @@ class PhoneMainActivity : AppCompatActivity() {
         btnAdbInstall = findViewById(R.id.btn_adb_install)
         pbAdbProgress = findViewById(R.id.pb_adb_progress)
         tvAdbStatus = findViewById(R.id.tv_adb_status)
+
+        // Subpage 4 Views
+        cardThemeSelector = findViewById(R.id.card_theme_selector)
+        tvThemeLabel = findViewById(R.id.tv_theme_label)
+        tvThemeSublabel = findViewById(R.id.tv_theme_sublabel)
+        btnThemeSkeuo = findViewById(R.id.btn_theme_skeuo)
+        btnThemeGlass = findViewById(R.id.btn_theme_glass)
+        btnThemeMaterial = findViewById(R.id.btn_theme_material)
+        btnWatchThemeDark = findViewById(R.id.btn_watch_theme_dark)
+        btnWatchThemeLight = findViewById(R.id.btn_watch_theme_light)
+
+        // Subpage 5 Views
+        cardHistoryRack = findViewById(R.id.card_history_rack)
+        tvHistoryHeader = findViewById(R.id.tv_history_header)
+        llQaHistory = findViewById(R.id.ll_qa_history_list)
+        tvEmptyHistory = findViewById(R.id.tv_empty_history)
+        btnClearHistory = findViewById(R.id.btn_clear_history)
+
+        // Subpage 6 Views
+        cardErrorLogsRack = findViewById(R.id.card_error_logs_rack)
+        tvErrorLogsHeader = findViewById(R.id.tv_error_logs_header)
+        btnClearErrorLogs = findViewById(R.id.btn_clear_error_logs)
+        llErrorLogsList = findViewById(R.id.ll_error_logs_list)
+        tvEmptyErrorLogs = findViewById(R.id.tv_empty_error_logs)
+    }
+
+    private fun setupNavigationFlow() {
+        btnNavBack.setOnClickListener {
+            navigateTo(NavPage.HUB)
+        }
+
+        rowMenuGeminiApi.setOnClickListener { navigateTo(NavPage.GEMINI_API) }
+        rowMenuBluetooth.setOnClickListener { navigateTo(NavPage.BLUETOOTH) }
+        rowMenuAdbUpdate.setOnClickListener { navigateTo(NavPage.ADB_UPDATE) }
+        rowMenuTheme.setOnClickListener { navigateTo(NavPage.THEME) }
+        rowMenuQaHistory.setOnClickListener { navigateTo(NavPage.QA_HISTORY) }
+        rowMenuErrorLogs.setOnClickListener { navigateTo(NavPage.ERROR_LOGS) }
+
+        onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                if (currentPage != NavPage.HUB) {
+                    navigateTo(NavPage.HUB)
+                } else {
+                    isEnabled = false
+                    onBackPressedDispatcher.onBackPressed()
+                }
+            }
+        })
+    }
+
+    private fun navigateTo(page: NavPage) {
+        currentPage = page
+
+        layoutHub.visibility = if (page == NavPage.HUB) View.VISIBLE else View.GONE
+        pageGeminiApi.visibility = if (page == NavPage.GEMINI_API) View.VISIBLE else View.GONE
+        pageBluetooth.visibility = if (page == NavPage.BLUETOOTH) View.VISIBLE else View.GONE
+        pageAdbUpdate.visibility = if (page == NavPage.ADB_UPDATE) View.VISIBLE else View.GONE
+        pageTheme.visibility = if (page == NavPage.THEME) View.VISIBLE else View.GONE
+        pageQaHistory.visibility = if (page == NavPage.QA_HISTORY) View.VISIBLE else View.GONE
+        pageErrorLogs.visibility = if (page == NavPage.ERROR_LOGS) View.VISIBLE else View.GONE
+
+        if (page == NavPage.HUB) {
+            btnNavBack.visibility = View.GONE
+            tvNavTitle.text = "GEMINI COMPANION"
+            tvNavSubtitle.text = "Trợ lý giọng nói Wear OS"
+            updateHubSummaries()
+        } else {
+            btnNavBack.visibility = View.VISIBLE
+            when (page) {
+                NavPage.GEMINI_API -> {
+                    tvNavTitle.text = "🤖 CẤU HÌNH GEMINI"
+                    tvNavSubtitle.text = "Cài đặt > Mô hình AI & API Key"
+                }
+                NavPage.BLUETOOTH -> {
+                    tvNavTitle.text = "🎧 TAI NGHE BLUETOOTH"
+                    tvNavSubtitle.text = "Cài đặt > Bộ lọc thiết bị phát âm TTS"
+                }
+                NavPage.ADB_UPDATE -> {
+                    tvNavTitle.text = "⚡ WIRELESS ADB"
+                    tvNavSubtitle.text = "Cài đặt > Cài APK qua Wi-Fi & Cập nhật"
+                }
+                NavPage.THEME -> {
+                    tvNavTitle.text = "🎨 GIAO DIỆN & THEME"
+                    tvNavSubtitle.text = "Cài đặt > Đồng bộ Phone & Watch"
+                }
+                NavPage.QA_HISTORY -> {
+                    tvNavTitle.text = "💬 LỊCH SỬ VOICE Q&A"
+                    tvNavSubtitle.text = "Cài đặt > Xem lại & phát lại âm thanh"
+                }
+                NavPage.ERROR_LOGS -> {
+                    tvNavTitle.text = "🚨 NHẬT KÝ LỖI API"
+                    tvNavSubtitle.text = "Cài đặt > Chi tiết mã lỗi & Google JSON"
+                }
+                else -> {}
+            }
+        }
+
+        scrollRoot.smoothScrollTo(0, 0)
+    }
+
+    private fun updateHubSummaries() {
+        // 1. Model & Key
+        val model = ThemeManager.getSelectedModel(this)
+        val prefs = getSharedPreferences("gemini_prefs", Context.MODE_PRIVATE)
+        val hasKey = prefs.getString("custom_api_key", "")?.isNotEmpty() == true
+        val shortModel = when (model) {
+            "gemini-3.8-flash" -> "3.8 Flash"
+            "gemini-3.7-flash" -> "3.7 Flash"
+            "gemini-3.5-flash" -> "3.5 Flash"
+            "gemini-3.5-flash-lite" -> "3.5 Lite"
+            "gemini-2.5-flash" -> "2.5 Flash"
+            "gemini-3.1-pro-preview" -> "3.1 Pro"
+            else -> model
+        }
+        tvHubModelBadge.text = shortModel
+        tvHubModelSummary.text = "Mô hình: $shortModel • ${if (hasKey) "Đã lưu API Key riêng" else "Dùng key mặc định"}"
+
+        // 2. Bluetooth
+        val selectedCount = filterManager.getSelectedMacAddresses().size
+        tvHubBluetoothSummary.text = "Lọc phát âm TTS • $selectedCount thiết bị đang BẬT"
+        tvHubBluetoothBadge.text = "$selectedCount Bật"
+
+        // 3. ADB & Update
+        val currentVersion = try {
+            packageManager.getPackageInfo(packageName, 0).versionName ?: "1.2.6"
+        } catch (_: Exception) { "1.2.6" }
+        tvHubAdbBadge.text = "v$currentVersion"
+        tvHubAdbSummary.text = "Wireless ADB Sideload • Phiên bản v$currentVersion"
+
+        // 4. Theme
+        val style = ThemeManager.getStyle(this)
+        val mode = ThemeManager.getColorMode(this)
+        tvHubThemeBadge.text = when (style) {
+            ThemeManager.ThemeStyle.SKEUOMORPHISM -> "Skeuo"
+            ThemeManager.ThemeStyle.LIQUID_GLASS -> "Glass"
+            ThemeManager.ThemeStyle.MATERIAL -> "M3"
+        }
+        tvHubThemeSummary.text = "${style.title} • ${if (mode == ThemeManager.ColorMode.LIGHT) "Sáng (Light)" else "Tối (Dark)"}"
+
+        // 5. Q&A History
+        val historyCount = qaHistoryManager.getHistory().size
+        tvHubHistoryBadge.text = "$historyCount mục"
+        tvHubHistorySummary.text = "$historyCount câu hỏi đã ghi nhận từ đồng hồ"
+
+        // 6. Error Logs
+        val errorCount = apiErrorLogManager.getErrorLogs().size
+        if (errorCount == 0) {
+            tvHubErrorBadge.text = "0 lỗi"
+            tvHubErrorBadge.setTextColor(Color.parseColor("#34D399"))
+            tvHubErrorSummary.text = "Hệ thống hoạt động bình thường • 0 lỗi"
+        } else {
+            tvHubErrorBadge.text = "🔴 $errorCount lỗi"
+            tvHubErrorBadge.setTextColor(Color.parseColor("#EF4444"))
+            tvHubErrorSummary.text = "Phát hiện $errorCount lỗi kết nối gần đây"
+        }
+
+        // 7. Watch Connection Status
+        Wearable.getNodeClient(this).connectedNodes.addOnSuccessListener { nodes ->
+            if (nodes.isNotEmpty()) {
+                tvWatchConnectionBadge.text = "🟢 ${nodes.size} ĐỒNG HỒ"
+                tvWatchConnectionBadge.setTextColor(Color.parseColor("#34D399"))
+                tvNavStatusPill.text = "🟢 OPPO WATCH"
+                tvNavStatusPill.setTextColor(Color.parseColor("#34D399"))
+            } else {
+                tvWatchConnectionBadge.text = "🟡 CHỜ KẾT NỐI"
+                tvWatchConnectionBadge.setTextColor(Color.parseColor("#F59E0B"))
+                tvNavStatusPill.text = "⌚ OPPO WATCH"
+                tvNavStatusPill.setTextColor(Color.parseColor("#38BDF8"))
+            }
+        }.addOnFailureListener {
+            tvWatchConnectionBadge.text = "⌚ WEAR OS"
+        }
     }
 
     private fun setupThemeEngine() {
@@ -335,13 +578,26 @@ class PhoneMainActivity : AppCompatActivity() {
         val isLight = (mode == ThemeManager.ColorMode.LIGHT)
         val config = ThemeManager.getConfig(style, mode)
 
-        // Root Background
+        // Root & Top Bar
+        rootLayout.setBackgroundColor(config.rootBgColor)
         scrollRoot.setBackgroundColor(config.rootBgColor)
+        layoutTopBar.setBackgroundColor(if (isLight) Color.parseColor("#FFFFFF") else Color.parseColor("#0F131D"))
+        tvNavTitle.setTextColor(config.titleTextColor)
+        tvNavSubtitle.setTextColor(config.textSecondaryColor)
+        btnNavBack.setBackgroundResource(config.btnPrimaryDrawable)
 
-        // Cards & Containers
+        // Hub Elements
+        cardTitlePlate.setBackgroundResource(config.cardDrawable)
+        rowMenuGeminiApi.setBackgroundResource(config.cardDrawable)
+        rowMenuBluetooth.setBackgroundResource(config.cardDrawable)
+        rowMenuAdbUpdate.setBackgroundResource(config.cardDrawable)
+        rowMenuTheme.setBackgroundResource(config.cardDrawable)
+        rowMenuQaHistory.setBackgroundResource(config.cardDrawable)
+        rowMenuErrorLogs.setBackgroundResource(config.cardDrawable)
+
+        // Subpage Cards & Containers
         cardThemeSelector.setBackgroundResource(config.cardDrawable)
         cardModelSelector.setBackgroundResource(config.cardDrawable)
-        cardTitlePlate.setBackgroundResource(config.cardDrawable)
         cardApiKey.setBackgroundResource(config.cardDrawable)
         cardBluetoothRack.setBackgroundResource(config.bezelDrawable)
         cardHistoryRack.setBackgroundResource(config.bezelDrawable)
@@ -349,7 +605,7 @@ class PhoneMainActivity : AppCompatActivity() {
         cardUpdatePanel.setBackgroundResource(config.panelDrawable)
         cardAdbPanel.setBackgroundResource(config.panelDrawable)
 
-        // Input & Controls
+        // Inputs & Buttons
         etGeminiApiKey.setBackgroundResource(config.inputDrawable)
         etWatchAdbIp.setBackgroundResource(config.inputDrawable)
         etWatchAdbPort.setBackgroundResource(config.inputDrawable)
@@ -407,10 +663,11 @@ class PhoneMainActivity : AppCompatActivity() {
             if (isLight) config.btnGoldDrawable else config.btnPrimaryDrawable
         )
 
-        // Refresh dynamic device & history views to adopt new theme drawables
+        // Refresh child views
         loadPairedBluetoothDevices(userInitiated = false)
         loadQaHistory()
         loadErrorLogs()
+        updateHubSummaries()
 
         if (syncToWatch) {
             syncThemeToWatch(style.id, mode.id)
@@ -430,7 +687,6 @@ class PhoneMainActivity : AppCompatActivity() {
             put("combined", combined)
         }.toString()
 
-        // 1. Persistent sync qua DataClient (tự động đồng bộ ngay khi đồng hồ kết nối)
         try {
             val putDataReq = PutDataMapRequest.create("/gemini_theme_config").apply {
                 dataMap.putString("style", styleId)
@@ -441,15 +697,14 @@ class PhoneMainActivity : AppCompatActivity() {
             }.asPutDataRequest().setUrgent()
 
             Wearable.getDataClient(this).putDataItem(putDataReq).addOnSuccessListener {
-                android.util.Log.d("PhoneMainActivity", "Đã lưu theme vào DataClient: $combined")
+                Log.d("PhoneMainActivity", "Đã lưu theme vào DataClient: $combined")
             }.addOnFailureListener { e ->
-                android.util.Log.e("PhoneMainActivity", "Lỗi lưu theme DataClient: ${e.message}")
+                Log.e("PhoneMainActivity", "Lỗi lưu theme DataClient: ${e.message}")
             }
         } catch (e: Exception) {
-            android.util.Log.e("PhoneMainActivity", "Exception PutDataMapRequest: ${e.message}")
+            Log.e("PhoneMainActivity", "Exception PutDataMapRequest: ${e.message}")
         }
 
-        // 2. Real-time broadcast qua MessageClient tới các node đang kết nối
         Wearable.getNodeClient(this).connectedNodes.addOnSuccessListener { nodes ->
             for (node in nodes) {
                 Wearable.getMessageClient(this).sendMessage(
@@ -492,6 +747,7 @@ class PhoneMainActivity : AppCompatActivity() {
             ThemeManager.setSelectedModel(this, selectedId)
             updateModelStatusText(selectedId)
             syncModelToWatch(selectedId, name)
+            updateHubSummaries()
         }
     }
 
@@ -555,12 +811,14 @@ class PhoneMainActivity : AppCompatActivity() {
                 tvApiKeyStatus.text = "Đã xóa API Key riêng. Đang dùng cấu hình mặc định."
                 tvApiKeyStatus.setTextColor(0xFF94A3B8.toInt())
                 Toast.makeText(this, "Đã xóa API Key riêng", Toast.LENGTH_SHORT).show()
+                updateHubSummaries()
                 return@setOnClickListener
             }
 
             prefs.edit().putString("custom_api_key", key).apply()
             tvApiKeyStatus.text = "✓ Đang đồng bộ sang đồng hồ qua Bluetooth..."
             tvApiKeyStatus.setTextColor(0xFFF59E0B.toInt())
+            updateHubSummaries()
 
             Wearable.getNodeClient(this).connectedNodes.addOnSuccessListener { nodes ->
                 if (nodes.isEmpty()) {
@@ -632,6 +890,7 @@ class PhoneMainActivity : AppCompatActivity() {
                             tvApiKeyStatus.text = "✓ API Key hoạt động hoàn hảo (HTTP $code)!"
                             tvApiKeyStatus.setTextColor(0xFF34D399.toInt())
                             Toast.makeText(this@PhoneMainActivity, "✓ API Key hợp lệ và hoạt động tốt!", Toast.LENGTH_SHORT).show()
+                            updateHubSummaries()
                         }
                     } else {
                         val errorStream = connection.errorStream?.bufferedReader()?.use { it.readText() } ?: ""
@@ -673,6 +932,7 @@ class PhoneMainActivity : AppCompatActivity() {
                             tvApiKeyStatus.text = "❌ Lỗi: HTTP $code - $errorMsg"
                             tvApiKeyStatus.setTextColor(0xFFEF4444.toInt())
                             loadErrorLogs()
+                            updateHubSummaries()
                             Toast.makeText(this@PhoneMainActivity, "Lỗi kiểm tra API Key ($code): $errorMsg", Toast.LENGTH_LONG).show()
                         }
                     }
@@ -698,6 +958,7 @@ class PhoneMainActivity : AppCompatActivity() {
                         tvApiKeyStatus.text = "❌ Lỗi kết nối: ${e.message}"
                         tvApiKeyStatus.setTextColor(0xFFEF4444.toInt())
                         loadErrorLogs()
+                        updateHubSummaries()
                         Toast.makeText(this@PhoneMainActivity, "Lỗi kết nối: ${e.message}", Toast.LENGTH_LONG).show()
                     }
                 }
@@ -705,10 +966,22 @@ class PhoneMainActivity : AppCompatActivity() {
         }
     }
 
+    private fun setupBluetoothSection() {
+        btnReloadBluetooth.setOnClickListener {
+            checkPermissionsAndLoadDevices(userInitiated = true)
+        }
+
+        btnTestTts.setOnClickListener {
+            TtsSpeaker.speak(this, "Đây là âm thanh thử nghiệm từ trợ lý Gemini trên đồng hồ OPPO Watch.")
+            Toast.makeText(this, "Đang phát âm thanh mẫu...", Toast.LENGTH_SHORT).show()
+        }
+    }
+
     private fun setupQaHistorySection() {
         btnClearHistory.setOnClickListener {
             qaHistoryManager.clearHistory()
             loadQaHistory()
+            updateHubSummaries()
             Toast.makeText(this, "Đã xóa toàn bộ lịch sử hỏi đáp.", Toast.LENGTH_SHORT).show()
         }
         loadQaHistory()
@@ -759,6 +1032,7 @@ class PhoneMainActivity : AppCompatActivity() {
         btnClearErrorLogs.setOnClickListener {
             apiErrorLogManager.clearLogs()
             loadErrorLogs()
+            updateHubSummaries()
             Toast.makeText(this, "Đã xóa toàn bộ nhật ký lỗi API.", Toast.LENGTH_SHORT).show()
         }
         loadErrorLogs()
@@ -980,7 +1254,6 @@ class PhoneMainActivity : AppCompatActivity() {
             etWatchAdbIp.setText(savedIp)
         }
 
-        // Tự động quét IP đồng hồ khi mở app
         WatchAdbInstaller.autoDetectWatchAdbIp(this) { foundIp ->
             if (foundIp != null) {
                 etWatchAdbIp.setText(foundIp)
@@ -1033,7 +1306,6 @@ class PhoneMainActivity : AppCompatActivity() {
                         try {
                             val archiveInfo = packageManager.getPackageArchiveInfo(watchApkFile.absolutePath, 0)
                             val cachedVer = archiveInfo?.versionName ?: ""
-                            // Nếu file trong cache cũ hơn tag mới nhất trên GitHub, xóa đi tải mới
                             if (cachedVer.isNotEmpty() && !info.tagName.contains(cachedVer)) {
                                 Log.i(TAG, "File APK trong cache ($cachedVer) cũ hơn bản mới (${info.tagName}), xóa để tải lại...")
                                 watchApkFile.delete()
@@ -1100,7 +1372,6 @@ class PhoneMainActivity : AppCompatActivity() {
                         executeAdbInstall(ip, port, watchApkFile)
                     }
                 }.onFailure { err ->
-                    // Nếu mất mạng nhưng máy đã có APK sẵn
                     if (watchApkFile.exists() && watchApkFile.length() > 0L) {
                         tvAdbStatus.text = "⚠️ Không kiểm tra được GitHub, đang cài file APK có sẵn sang $ip..."
                         executeAdbInstall(ip, port, watchApkFile)
@@ -1126,6 +1397,7 @@ class PhoneMainActivity : AppCompatActivity() {
             override fun onSuccess() {
                 btnAdbInstall.isEnabled = true
                 pbAdbProgress.visibility = View.GONE
+                updateHubSummaries()
                 Toast.makeText(this@PhoneMainActivity, "🎉 ĐÃ CÀI ĐẶT THÀNH CÔNG LÊN ĐỒNG HỒ!", Toast.LENGTH_LONG).show()
             }
 
@@ -1172,6 +1444,7 @@ class PhoneMainActivity : AppCompatActivity() {
         loadQaHistory()
         loadErrorLogs()
         autoSyncApiKeyToWatch()
+        updateHubSummaries()
         try {
             Wearable.getMessageClient(this).addListener(wearMessageListener)
         } catch (_: Exception) {}
@@ -1285,7 +1558,7 @@ class PhoneMainActivity : AppCompatActivity() {
         val paired = try {
             adapter.bondedDevices?.toList() ?: emptyList()
         } catch (e: SecurityException) {
-            android.util.Log.e("PhoneMainActivity", "Lỗi quyền đọc bondedDevices", e)
+            Log.e("PhoneMainActivity", "Lỗi quyền đọc bondedDevices", e)
             emptyList()
         }
 
@@ -1348,6 +1621,7 @@ class PhoneMainActivity : AppCompatActivity() {
                 val newSelected = !wasSelected
                 filterManager.setDeviceSelected(mac, newSelected)
                 updateSwitchUi(newSelected)
+                updateHubSummaries()
                 Toast.makeText(
                     this,
                     "${if (newSelected) "Đã bật phát TTS" else "Đã tắt phát TTS"}: $name",
