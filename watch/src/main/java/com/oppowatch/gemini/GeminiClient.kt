@@ -37,7 +37,7 @@ object GeminiClient {
         }
     }
 
-    fun askGemini(context: Context, audioBase64: String, onResult: (Boolean, String, String) -> Unit) {
+    fun askGemini(context: Context, audioBase64: String, onResult: (Boolean, String, String, VoiceAction?) -> Unit) {
         thread {
             var connection: HttpURLConnection? = null
             try {
@@ -74,10 +74,16 @@ object GeminiClient {
                     "Hãy luôn căn cứ vào mốc thời gian này để trả lời chuẩn xác ngày, tháng, năm hôm nay, hôm qua, ngày mai khi người dùng hỏi. " +
                     "QUY TẮC BẮT BUỘC: " +
                     "1. Hãy nghe file âm thanh giọng nói của người dùng và nhận diện chính xác câu hỏi. " +
-                    "2. Trả lời theo đúng định dạng JSON chuẩn gồm 2 trường: " +
+                    "2. Trả lời theo đúng định dạng JSON chuẩn gồm các trường: " +
                     "\"question\": câu hỏi hoặc yêu cầu của người dùng được viết lại chuẩn tiếng Việt; " +
                     "\"answer\": câu trả lời siêu ngắn gọn, súc tích, đi thẳng vào đáp án trong 1 đến 2 câu ngắn. " +
-                    "3. Tuyệt đối chỉ trả về chuỗi JSON thuần túy, không dùng markdown code block ```json."
+                    "3. NẾU người dùng yêu cầu ĐẶT BÁO THỨC hoặc HẸN GIỜ/TIMER, hãy thêm trường \"action\" vào JSON: " +
+                    "- Đặt báo thức: {\"type\":\"SET_ALARM\",\"hour\":<0-23>,\"minute\":<0-59>,\"message\":\"<nhãn>\"} " +
+                    "- Hẹn giờ đếm ngược: {\"type\":\"SET_TIMER\",\"seconds\":<tổng giây>,\"message\":\"<nhãn>\"} " +
+                    "Ví dụ đặt báo thức 6h30 sáng: {\"question\":\"Đặt báo thức 6 giờ 30 sáng\",\"answer\":\"Đã đặt báo thức lúc 06:30 cho bạn.\",\"action\":{\"type\":\"SET_ALARM\",\"hour\":6,\"minute\":30,\"message\":\"Báo thức sáng\"}} " +
+                    "Ví dụ hẹn giờ 10 phút: {\"question\":\"Hẹn giờ 10 phút\",\"answer\":\"Đã bắt đầu hẹn giờ 10 phút.\",\"action\":{\"type\":\"SET_TIMER\",\"seconds\":600,\"message\":\"Hẹn giờ\"}} " +
+                    "4. Nếu KHÔNG phải yêu cầu báo thức/hẹn giờ, KHÔNG cần trường action. " +
+                    "5. Tuyệt đối chỉ trả về chuỗi JSON thuần túy, không dùng markdown code block ```json."
 
                 // Build Request JSON
                 val rootJson = JSONObject()
@@ -138,6 +144,7 @@ object GeminiClient {
 
                         var question = "Câu hỏi từ đồng hồ"
                         var answer = rawText
+                        var voiceAction: VoiceAction? = null
 
                         try {
                             val clean = rawText.removePrefix("```json").removePrefix("```").removeSuffix("```").trim()
@@ -149,15 +156,22 @@ object GeminiClient {
                                 answer = parsed.optString("a", rawText)
                                 question = parsed.optString("q", "Câu hỏi bằng giọng nói")
                             }
+                            // Trích xuất action từ JSON trả về của Gemini
+                            voiceAction = VoiceActionHelper.parseFromJson(parsed)
                         } catch (_: Exception) {}
 
-                        onResult(true, question, answer)
+                        // Fallback regex: nếu Gemini không trả action JSON, quét câu hỏi bằng regex
+                        if (voiceAction == null) {
+                            voiceAction = VoiceActionHelper.parseFallback(question)
+                        }
+
+                        onResult(true, question, answer, voiceAction)
                     } else {
-                        onResult(false, "Không rõ câu hỏi", "Không có câu trả lời từ Gemini.")
+                        onResult(false, "Không rõ câu hỏi", "Không có câu trả lời từ Gemini.", null)
                     }
                 } else {
                     Log.e(TAG, "API Error $responseCode: $responseText")
-                    onResult(false, "Lỗi kết nối", "Lỗi kết nối Gemini ($responseCode)")
+                    onResult(false, "Lỗi kết nối", "Lỗi kết nối Gemini ($responseCode)", null)
                 }
             } catch (e: Exception) {
                 // Nếu bị cancel thì ngắt êm thấm, không báo lỗi ra màn hình
@@ -168,7 +182,7 @@ object GeminiClient {
                     }
                 }
                 Log.e(TAG, "Exception: ${e.message}")
-                onResult(false, "Lỗi ngoại lệ", "Lỗi: ${e.localizedMessage}")
+                onResult(false, "Lỗi ngoại lệ", "Lỗi: ${e.localizedMessage}", null)
             } finally {
                 synchronized(connectionLock) {
                     if (activeConnection == connection) {

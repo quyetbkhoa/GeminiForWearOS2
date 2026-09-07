@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Liquid Glass Dark: Authentic Frosted Acrylic Glass with Luminous Cyan Refractive Rim -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Ambient Diffuse Shadow -->
+    <item>
+        <shape android:shape="rectangle">
+            <corners android:radius="18dp" />
+            <solid android:color="#40000000" />
+        </shape>
+    </item>
+    <!-- Refractive Glass Specular Rim -->
+    <item
+        android:left="1dp"
+        android:top="1dp"
+        android:right="1dp"
+        android:bottom="1dp">
+        <shape android:shape="rectangle">
+            <corners android:radius="18dp" />
+            <stroke
+                android:width="1.5dp"
+                android:color="#707DD3FC" />
+            <solid android:color="#00000000" />
+        </shape>
+    </item>
+    <!-- Translucent Frosted Glass Core -->
+    <item
+        android:left="2dp"
+        android:top="2dp"
+        android:right="2dp"
+        android:bottom="2dp">
+        <shape android:shape="rectangle">
+            <corners android:radius="17dp" />
+            <gradient
+                android:type="linear"
+                android:angle="270"
+                android:startColor="#452A4A7A"
+                android:centerColor="#301A2E50"
+                android:endColor="#20101E35" />
+            <padding
+                android:left="12dp"
+                android:top="12dp"
+                android:right="12dp"
+                android:bottom="12dp" />
+        </shape>
+    </item>
+</layer-list>

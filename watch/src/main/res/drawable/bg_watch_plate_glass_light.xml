@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Liquid Glass Light: Crystal Frosted Ice Glass with Refractive Sky Blue Specular Rim -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Ambient Soft Ice Shadow -->
+    <item>
+        <shape android:shape="rectangle">
+            <corners android:radius="18dp" />
+            <solid android:color="#1A0284C7" />
+        </shape>
+    </item>
+    <!-- Refractive Ice Rim -->
+    <item
+        android:left="1dp"
+        android:top="1dp"
+        android:right="1dp"
+        android:bottom="1dp">
+        <shape android:shape="rectangle">
+            <corners android:radius="18dp" />
+            <stroke
+                android:width="1.5dp"
+                android:color="#907DD3FC" />
+            <solid android:color="#00000000" />
+        </shape>
+    </item>
+    <!-- Translucent Frosted Snow/Ice Core -->
+    <item
+        android:left="2dp"
+        android:top="2dp"
+        android:right="2dp"
+        android:bottom="2dp">
+        <shape android:shape="rectangle">
+            <corners android:radius="17dp" />
+            <gradient
+                android:type="linear"
+                android:angle="270"
+                android:startColor="#D8FFFFFF"
+                android:centerColor="#B8F0F9FF"
+                android:endColor="#95E0F2FE" />
+            <padding
+                android:left="12dp"
+                android:top="12dp"
+                android:right="12dp"
+                android:bottom="12dp" />
+        </shape>
+    </item>
+</layer-list>

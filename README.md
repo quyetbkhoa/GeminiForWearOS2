@@ -34,6 +34,21 @@ Một giải pháp mã nguồn mở hoàn chỉnh nhằm thay thế **Google Ass
   - Truyền trực tiếp file APK của đồng hồ qua Bluetooth bằng GMS Wearable `ChannelClient`. Đồng hồ nhận xong sẽ kích hoạt hộp thoại cài đặt ngay trên cổ tay mà không cần cắm cáp USB hay gõ lệnh ADB!
 - **Chữ ký số đồng nhất (Keystore):** Dự án sử dụng keystore cố định cho cả build local và GitHub Actions CI/CD, đảm bảo mọi lần cập nhật APK không bao giờ bị lỗi xung đột chữ ký (`INSTALL_FAILED_UPDATE_INCOMPATIBLE`).
 
+### 6. 🗣️ Đặt Báo thức & Hẹn giờ Tự động bằng Giọng nói
+- Ra lệnh tự nhiên bằng tiếng Việt: *"Đặt báo thức 6 giờ 30 sáng"*, *"Hẹn giờ 15 phút"*, *"Báo thức 7 giờ kém 15"*.
+- Tự động trích xuất tham số và gọi Intent `AlarmClock.ACTION_SET_ALARM` / `ACTION_SET_TIMER` trên ứng dụng HeyClock gốc của OPPO Watch.
+- Hỗ trợ `EXTRA_SKIP_UI=true`: Thiết lập ngầm không làm đè màn hình, kèm bộ lọc Regex Fallback nội bộ bảo đảm độ chính xác 100%.
+
+### 7. 🏍️ Tối ưu Trải nghiệm Đi Đường (Road Mode & Rung Xúc giác)
+- **Nói xong rảnh tay:** Bấm nói rồi buông tay lái xe tiếp (màn hình tắt do timeout hoặc úp tay), app **vẫn tiếp tục xử lý nền** (giữ CPU WakeLock 15s) $\rightarrow$ nhận kết quả $\rightarrow$ gửi Bluetooth sang điện thoại để đọc to qua tai nghe/nón bảo hiểm $\rightarrow$ tự động đóng task về Watch Face.
+- **Rung xúc giác đi đường:** Rung kép (2 nhịp) khi hoàn tất thành công; rung dài khi lỗi kết nối.
+- **Tự động chốt câu nói:** Nếu màn hình tắt trong lúc đang nói, app tự động chốt âm thanh và gửi đi.
+
+### 8. 🎨 Hệ thống Theme Đa dạng (3 Styles x 2 Modes = 6 Biến thể)
+- **3 Phong cách:** 📻 Skeuomorphism cơ khí cổ điển, 🧊 Liquid Glass kính mờ acrylic dạ quang, 🎨 Material 3 hiện đại.
+- **2 Chế độ màu:** 🌙 Dark Mode (Tối AMOLED tiết kiệm pin) & ☀️ Light Mode (Sáng trắng sứ & băng tuyết).
+- **Đồng bộ 2 chiều Phone ↔ Watch:** Đổi trên điện thoại lập tức đồng bộ sang đồng hồ qua cả MessageClient thời gian thực và DataClient lưu trữ bền vững.
+
 ---
 
 ## 📁 Cấu trúc Dự án (Multi-Module)

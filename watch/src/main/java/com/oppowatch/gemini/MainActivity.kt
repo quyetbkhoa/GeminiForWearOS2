@@ -9,6 +9,7 @@ import android.content.pm.PackageManager
 import android.graphics.Color
 import android.os.Build
 import android.os.Bundle
+import android.os.PowerManager
 import android.os.VibrationEffect
 import android.os.Vibrator
 import android.util.Log
@@ -36,37 +37,57 @@ class MainActivity : AppCompatActivity() {
 
     // Chỉ tự động kích hoạt thu âm khi người dùng chủ động mở app (từ launcher, shortcut, tile...)
     private var isAppActivelyLaunched = false
-    // Đánh dấu người dùng đã thoát app (swipe back) hoặc tắt màn hình để hủy bỏ toàn bộ tác vụ
-    private var isDismissedOrCancelled = false
+    // Người dùng chủ động huỷ (vuốt Back): huỷ toàn bộ tác vụ
+    private var isUserExplicitlyCancelled = false
 
-    // Chế độ giao diện đồng hồ: skeuo, glass, material, light
-    private var currentThemeMode = "skeuo"
+    // Trạng thái xử lý nền khi đi đường (Road Mode)
+    @Volatile
+    private var isProcessingGemini = false
+    private var isScreenOffPendingExit = false
+    private var wakeLock: PowerManager.WakeLock? = null
+
+    // Chế độ giao diện đồng hồ: 3 Styles x 2 Modes = 6 biến thể
+    private var currentThemeStyle = "skeuo"
+    private var currentThemeMode = "dark"
+    private var currentThemeCombined = "skeuo_dark"
 
     private val themeReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
-            val theme = intent?.getStringExtra("theme") ?: "skeuo"
-            currentThemeMode = theme
-            getSharedPreferences("gemini_prefs", Context.MODE_PRIVATE)
-                .edit()
-                .putString("app_theme_mode", theme)
-                .apply()
+            val combined = intent?.getStringExtra("theme") ?: "skeuo_dark"
+            val style = intent?.getStringExtra("style") ?: combined.substringBefore("_", "skeuo")
+            val mode = intent?.getStringExtra("mode") ?: combined.substringAfter("_", "dark")
+            currentThemeStyle = style
+            currentThemeMode = mode
+            currentThemeCombined = "${style}_${mode}"
             runOnUiThread {
                 applyWatchTheme()
             }
         }
     }
 
-    // Khi người dùng đập tay tắt màn hình (palm gesture) hoặc màn hình tắt do timeout:
-    // Tự động đóng hoàn toàn app để khi mở lại sẽ hiển thị màn hình chính (Watch Face)
+    // Khi người dùng đập tay tắt màn hình (palm gesture) hoặc màn hình tắt do timeout khi đi đường:
     private val screenOffReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
             if (intent?.action == Intent.ACTION_SCREEN_OFF) {
-                Log.d("MainActivity", "Đã tắt màn hình -> Thoát app về màn hình chính")
-                isDismissedOrCancelled = true
-                if (::recorderHelper.isInitialized) {
-                    recorderHelper.cancelRecording()
+                Log.d("MainActivity", "Màn hình đã tắt (Screen Off). isProcessing=$isProcessingGemini, isRecording=${if (::recorderHelper.isInitialized) recorderHelper.isRecording else false}")
+
+                // 1. Nếu người dùng đang nói dở mà màn hình vụt tắt: tự động chốt câu nói và gửi đi (Auto-commit)
+                if (::recorderHelper.isInitialized && recorderHelper.isRecording) {
+                    Log.d("MainActivity", "Road Mode: Tự động chốt câu nói và gửi Gemini khi màn hình tắt")
+                    isScreenOffPendingExit = true
+                    finishVoiceRecording()
+                    return
                 }
-                GeminiClient.cancelCurrentRequest()
+
+                // 2. Nếu đang chờ Gemini xử lý: giữ nguyên tác vụ nền, đánh dấu thoát sau khi gửi TTS
+                if (isProcessingGemini) {
+                    Log.d("MainActivity", "Road Mode: Đang chờ Gemini trả lời -> Giữ WakeLock, chờ phát TTS vào tai nghe")
+                    isScreenOffPendingExit = true
+                    acquireWakeLock()
+                    return
+                }
+
+                // 3. Nếu đang ở màn hình tĩnh (nhàn rỗi): thoát êm về Màn hình chính (Watch Face)
                 finishAndRemoveTask()
             }
         }
@@ -95,16 +116,18 @@ class MainActivity : AppCompatActivity() {
         recorderHelper = AudioRecorderHelper(this)
         recorderHelper.onSilenceDetected = {
             runOnUiThread {
-                if (recorderHelper.isRecording && !isDismissedOrCancelled && !isFinishing) {
+                if (recorderHelper.isRecording && !isUserExplicitlyCancelled && !isFinishing) {
                     finishVoiceRecording()
                 }
             }
         }
 
-        // Đọc giao diện đã lưu (mặc định skeuo)
+        // Đọc giao diện đã lưu (Style + Mode)
         val prefs = getSharedPreferences("gemini_prefs", Context.MODE_PRIVATE)
+        currentThemeStyle = prefs.getString("app_theme_style", "skeuo") ?: "skeuo"
         currentThemeMode = prefs.getString("app_theme_mode", null)
-            ?: (if (prefs.getString("watch_color_theme", "dark") == "light") "light" else "skeuo")
+            ?: (if (prefs.getString("watch_color_theme", "dark") == "light") "light" else "dark")
+        currentThemeCombined = prefs.getString("app_theme_combined", "${currentThemeStyle}_${currentThemeMode}") ?: "skeuo_dark"
         applyWatchTheme()
 
         setupPttListener()
@@ -129,79 +152,102 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun getPttIdleDrawable(): Int {
-        return when (currentThemeMode) {
-            "light", "ceramic_light" -> R.drawable.bg_watch_ptt_light
-            "glass", "liquid_glass" -> R.drawable.bg_watch_ptt_glass
-            "material" -> R.drawable.bg_watch_ptt_m3
-            else -> R.drawable.bg_watch_ptt_dark
+        return when (currentThemeCombined) {
+            "skeuo_light" -> R.drawable.bg_watch_ptt_skeuo_light
+            "glass_dark" -> R.drawable.bg_watch_ptt_glass_dark
+            "glass_light" -> R.drawable.bg_watch_ptt_glass_light
+            "material_dark" -> R.drawable.bg_watch_ptt_m3
+            "material_light" -> R.drawable.bg_watch_ptt_light
+            else -> R.drawable.bg_watch_ptt_dark // skeuo_dark
         }
     }
 
     private fun getStatusIdleColor(): Int {
-        return when (currentThemeMode) {
-            "light", "ceramic_light" -> Color.parseColor("#475569")
-            "glass", "liquid_glass" -> Color.parseColor("#7DD3FC")
-            "material" -> Color.parseColor("#A7F3D0")
-            else -> Color.parseColor("#94A3B8")
+        return when (currentThemeCombined) {
+            "skeuo_light" -> Color.parseColor("#475569")
+            "glass_dark" -> Color.parseColor("#7DD3FC")
+            "glass_light" -> Color.parseColor("#0284C7")
+            "material_dark" -> Color.parseColor("#A7F3D0")
+            "material_light" -> Color.parseColor("#334155")
+            else -> Color.parseColor("#94A3B8") // skeuo_dark
         }
     }
 
     private fun getStatusAccentColor(): Int {
-        return when (currentThemeMode) {
-            "light", "ceramic_light" -> Color.parseColor("#B45309")
-            "glass", "liquid_glass" -> Color.parseColor("#38BDF8")
-            "material" -> Color.parseColor("#80CBC4")
-            else -> Color.parseColor("#E5C158")
+        return when (currentThemeCombined) {
+            "skeuo_light" -> Color.parseColor("#B45309")
+            "glass_dark" -> Color.parseColor("#38BDF8")
+            "glass_light" -> Color.parseColor("#0284C7")
+            "material_dark" -> Color.parseColor("#80CBC4")
+            "material_light" -> Color.parseColor("#0F766E")
+            else -> Color.parseColor("#E5C158") // skeuo_dark
+        }
+    }
+
+    private fun getStatusSuccessColor(): Int {
+        return when (currentThemeCombined) {
+            "skeuo_light", "glass_light", "material_light" -> Color.parseColor("#059669")
+            else -> Color.parseColor("#34D399")
         }
     }
 
     private fun applyWatchTheme() {
         val isRec = if (::recorderHelper.isInitialized) recorderHelper.isRecording else false
 
-        when (currentThemeMode) {
-            "light", "ceramic_light" -> {
-                // Chế độ Trắng Ceramic sang trọng cho đồng hồ
-                layoutRoot.setBackgroundColor(Color.parseColor("#F1F5F9"))
-                tvHeaderTitle.setTextColor(Color.parseColor("#B45309")) // Champagne Gold
+        when (currentThemeCombined) {
+            "skeuo_light" -> {
+                // Skeuomorphism Light: Thép không gỉ chải xước viền đồng cổ
+                layoutRoot.setBackgroundColor(Color.parseColor("#E2E8F0"))
+                tvHeaderTitle.setTextColor(Color.parseColor("#92400E"))
                 tvStatus.setTextColor(Color.parseColor("#475569"))
-                containerResultCard.setBackgroundResource(R.drawable.bg_watch_plate_light)
-                tvResult.setTextColor(Color.parseColor("#0F172A")) // Slate Black cực kỳ sắc nét
-                if (!isRec) {
-                    pttContainer.setBackgroundResource(R.drawable.bg_watch_ptt_light)
-                }
+                containerResultCard.setBackgroundResource(R.drawable.bg_watch_plate_skeuo_light)
+                tvResult.setTextColor(Color.parseColor("#0F172A"))
+                if (!isRec) pttContainer.setBackgroundResource(R.drawable.bg_watch_ptt_skeuo_light)
             }
-            "glass", "liquid_glass" -> {
-                // Chế độ Kính lỏng dạ quang (Liquid Glass)
-                layoutRoot.setBackgroundColor(Color.parseColor("#0A1128")) // Deep cosmic sapphire
-                tvHeaderTitle.setTextColor(Color.parseColor("#38BDF8")) // Glowing Cyan
+            "glass_dark" -> {
+                // Liquid Glass Dark: Kính mờ acrylic phát quang trên nền Cosmic Deep Sapphire
+                layoutRoot.setBackgroundColor(Color.parseColor("#070B18"))
+                tvHeaderTitle.setTextColor(Color.parseColor("#38BDF8"))
                 tvStatus.setTextColor(Color.parseColor("#7DD3FC"))
-                containerResultCard.setBackgroundResource(R.drawable.bg_watch_plate_glass)
-                tvResult.setTextColor(Color.parseColor("#F8FAFC")) // Crystal Diamond White
-                if (!isRec) {
-                    pttContainer.setBackgroundResource(R.drawable.bg_watch_ptt_glass)
-                }
+                containerResultCard.setBackgroundResource(R.drawable.bg_watch_plate_glass_dark)
+                tvResult.setTextColor(Color.parseColor("#F8FAFC"))
+                if (!isRec) pttContainer.setBackgroundResource(R.drawable.bg_watch_ptt_glass_dark)
             }
-            "material" -> {
-                // Chế độ Google Material 3 Slate Dark
+            "glass_light" -> {
+                // Liquid Glass Light: Kính băng tuyết mờ acrylic trên nền Crystal Ice
+                layoutRoot.setBackgroundColor(Color.parseColor("#EDF5FC"))
+                tvHeaderTitle.setTextColor(Color.parseColor("#0284C7"))
+                tvStatus.setTextColor(Color.parseColor("#0369A1"))
+                containerResultCard.setBackgroundResource(R.drawable.bg_watch_plate_glass_light)
+                tvResult.setTextColor(Color.parseColor("#0C4A6E"))
+                if (!isRec) pttContainer.setBackgroundResource(R.drawable.bg_watch_ptt_glass_light)
+            }
+            "material_dark" -> {
+                // Material 3 Dark
                 layoutRoot.setBackgroundColor(Color.parseColor("#121418"))
-                tvHeaderTitle.setTextColor(Color.parseColor("#80CBC4")) // Mint Teal
+                tvHeaderTitle.setTextColor(Color.parseColor("#80CBC4"))
                 tvStatus.setTextColor(Color.parseColor("#A7F3D0"))
                 containerResultCard.setBackgroundResource(R.drawable.bg_watch_plate_m3)
                 tvResult.setTextColor(Color.parseColor("#E2E8F0"))
-                if (!isRec) {
-                    pttContainer.setBackgroundResource(R.drawable.bg_watch_ptt_m3)
-                }
+                if (!isRec) pttContainer.setBackgroundResource(R.drawable.bg_watch_ptt_m3)
+            }
+            "material_light" -> {
+                // Material 3 Light: Ceramic trắng tinh tế
+                layoutRoot.setBackgroundColor(Color.parseColor("#F8FAFC"))
+                tvHeaderTitle.setTextColor(Color.parseColor("#0F766E"))
+                tvStatus.setTextColor(Color.parseColor("#334155"))
+                containerResultCard.setBackgroundResource(R.drawable.bg_watch_plate_light)
+                tvResult.setTextColor(Color.parseColor("#0F172A"))
+                if (!isRec) pttContainer.setBackgroundResource(R.drawable.bg_watch_ptt_light)
             }
             else -> {
-                // Chế độ Đen Obsidian AMOLED Skeuomorphism tiết kiệm pin chuẩn OPPO Watch
+                // Skeuomorphism Dark: Cơ khí Obsidian Titanium sang trọng
                 layoutRoot.setBackgroundColor(Color.parseColor("#000000"))
-                tvHeaderTitle.setTextColor(Color.parseColor("#E5C158")) // Pure Gold
+                tvHeaderTitle.setTextColor(Color.parseColor("#E5C158"))
                 tvStatus.setTextColor(Color.parseColor("#94A3B8"))
                 containerResultCard.setBackgroundResource(R.drawable.bg_watch_plate_dark)
                 tvResult.setTextColor(Color.parseColor("#F1F5F9"))
-                if (!isRec) {
-                    pttContainer.setBackgroundResource(R.drawable.bg_watch_ptt_dark)
-                }
+                if (!isRec) pttContainer.setBackgroundResource(R.drawable.bg_watch_ptt_dark)
             }
         }
     }
@@ -225,17 +271,19 @@ class MainActivity : AppCompatActivity() {
         } else {
             isAppActivelyLaunched = true // Bật từ launcher icon hoặc shortcut phím tắt
         }
-        isDismissedOrCancelled = false
+        isUserExplicitlyCancelled = false
     }
 
     override fun onResume() {
         super.onResume()
-        isDismissedOrCancelled = false
+        isUserExplicitlyCancelled = false
 
         // Kiểm tra lại theme khi vào lại app
         val prefs = getSharedPreferences("gemini_prefs", Context.MODE_PRIVATE)
+        currentThemeStyle = prefs.getString("app_theme_style", "skeuo") ?: "skeuo"
         currentThemeMode = prefs.getString("app_theme_mode", null)
-            ?: (if (prefs.getString("watch_color_theme", "dark") == "light") "light" else "skeuo")
+            ?: (if (prefs.getString("watch_color_theme", "dark") == "light") "light" else "dark")
+        currentThemeCombined = prefs.getString("app_theme_combined", "${currentThemeStyle}_${currentThemeMode}") ?: "skeuo_dark"
         applyWatchTheme()
 
         // CHỈ tự động thu âm khi người dùng vừa chủ động bấm mở app
@@ -246,8 +294,8 @@ class MainActivity : AppCompatActivity() {
                 startVoiceRecording()
             }
         } else {
-            // Khi người dùng tắt màn hình đi vào lại: TUYỆT ĐỐI KHÔNG TỰ ĐỘNG GHI ÂM
-            if (!recorderHelper.isRecording) {
+            // Khi người dùng bật lại màn hình: TUYỆT ĐỐI KHÔNG TỰ ĐỘNG GHI ÂM
+            if (!recorderHelper.isRecording && !isProcessingGemini) {
                 pttContainer.setBackgroundResource(getPttIdleDrawable())
                 tvStatus.text = "NHẤN ĐỂ NÓI"
                 tvStatus.setTextColor(getStatusIdleColor())
@@ -258,43 +306,40 @@ class MainActivity : AppCompatActivity() {
     override fun onPause() {
         super.onPause()
         isAppActivelyLaunched = false
-        isDismissedOrCancelled = true
-
-        // Thoát app bằng swipe back hoặc tắt màn hình: HỦY NGAY ghi âm và HỦY cuộc gọi API Gemini đang dở
-        if (recorderHelper.isRecording) {
-            recorderHelper.cancelRecording()
-        }
-        GeminiClient.cancelCurrentRequest()
-
-        pttContainer.setBackgroundResource(getPttIdleDrawable())
-        tvStatus.text = "NHẤN ĐỂ NÓI"
-        tvStatus.setTextColor(getStatusIdleColor())
+        // LƯU Ý: Không huỷ Gemini request ở đây để hỗ trợ Road Mode khi màn hình tắt / hạ tay lái xe
     }
 
     override fun onStop() {
         super.onStop()
         isAppActivelyLaunched = false
-        isDismissedOrCancelled = true
+        // Nếu không có request Gemini nào đang xử lý nền và không ghi âm:
+        if (!isProcessingGemini && (::recorderHelper.isInitialized && !recorderHelper.isRecording)) {
+            val pm = getSystemService(Context.POWER_SERVICE) as? PowerManager
+            if (pm?.isInteractive == false) {
+                // Màn hình tắt khi rảnh rỗi: đóng task để lần mở tới về Watch Face
+                finishAndRemoveTask()
+            }
+        }
+    }
+
+    override fun finish() {
+        isUserExplicitlyCancelled = true
         if (::recorderHelper.isInitialized) {
             recorderHelper.cancelRecording()
         }
         GeminiClient.cancelCurrentRequest()
-        // Khi màn hình tắt (đập tay hoặc timeout): Đóng và giải phóng hoàn toàn task
-        // để khi mở lại màn hình sẽ là Màn hình chính (Watch Face) chứ không lưu giữ app
-        finishAndRemoveTask()
-    }
-
-    override fun finish() {
-        isDismissedOrCancelled = true
-        recorderHelper.cancelRecording()
-        GeminiClient.cancelCurrentRequest()
+        releaseWakeLock()
         super.finish()
     }
 
     override fun onBackPressed() {
-        isDismissedOrCancelled = true
-        recorderHelper.cancelRecording()
+        // Người dùng chủ động vuốt Back: HUỶ TOÀN BỘ tác vụ
+        isUserExplicitlyCancelled = true
+        if (::recorderHelper.isInitialized) {
+            recorderHelper.cancelRecording()
+        }
         GeminiClient.cancelCurrentRequest()
+        releaseWakeLock()
         super.onBackPressed()
     }
 
@@ -350,7 +395,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun startVoiceRecording() {
-        isDismissedOrCancelled = false
+        isUserExplicitlyCancelled = false
+        isScreenOffPendingExit = false
         vibrateTick(80, 100)
         pttContainer.setBackgroundResource(R.drawable.bg_watch_ptt_recording)
         tvStatus.text = "🔴 ĐANG LẮNG NGHE..."
@@ -366,7 +412,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun finishVoiceRecording() {
-        if (!recorderHelper.isRecording || isDismissedOrCancelled || isFinishing) return
+        if (!recorderHelper.isRecording || isUserExplicitlyCancelled || isFinishing) return
 
         vibrateTick(120, 150)
         pttContainer.setBackgroundResource(getPttIdleDrawable())
@@ -379,31 +425,117 @@ class MainActivity : AppCompatActivity() {
             tvStatus.text = "NHẤN ĐỂ NÓI"
             tvStatus.setTextColor(getStatusIdleColor())
             tvResult.text = "Chưa thu được âm thanh. Hãy nhấn giữ hoặc chạm để nói lại."
+            if (isScreenOffPendingExit) {
+                finishAndRemoveTask()
+            }
             return
         }
 
-        GeminiClient.askGemini(this, audioBase64) { success, question, answer ->
+        // Kích hoạt chế độ xử lý nền (Road Mode WakeLock)
+        isProcessingGemini = true
+        acquireWakeLock()
+
+        GeminiClient.askGemini(this, audioBase64) { success, question, answer, voiceAction ->
             runOnUiThread {
-                if (isDismissedOrCancelled || isFinishing || isDestroyed) {
-                    Log.d("MainActivity", "Bỏ qua kết quả vì người dùng đã thoát app hoặc hủy.")
+                isProcessingGemini = false
+
+                if (isUserExplicitlyCancelled) {
+                    Log.d("MainActivity", "Bỏ qua kết quả vì người dùng đã chủ động vuốt Back.")
+                    releaseWakeLock()
                     return@runOnUiThread
                 }
 
                 tvStatus.text = if (success) "✓ ĐÃ TRẢ LỜI" else "LỖI"
-                tvStatus.setTextColor(if (success) (if (currentThemeMode == "light" || currentThemeMode == "ceramic_light") Color.parseColor("#059669") else Color.parseColor("#34D399")) else Color.parseColor("#EF4444"))
+                tvStatus.setTextColor(if (success) getStatusSuccessColor() else Color.parseColor("#EF4444"))
                 tvResult.text = answer
                 scrollResult.smoothScrollTo(0, 0)
 
                 if (success) {
-                    vibrateTick(180, 200)
+                    // Rung haptic nhịp kép xác nhận thành công (chuyên dụng khi đi đường)
+                    vibrateRoadHaptic(success = true)
+
+                    // Tự động thực thi tác vụ báo thức / hẹn giờ nếu Gemini nhận diện được
+                    if (voiceAction != null) {
+                        val executed = VoiceActionHelper.execute(this, voiceAction)
+                        if (executed) {
+                            val actionLabel = when (voiceAction.type) {
+                                "SET_ALARM" -> "⏰ Đã đặt báo thức ${voiceAction.hour}:${String.format("%02d", voiceAction.minute)}"
+                                "SET_TIMER" -> {
+                                    val m = voiceAction.seconds / 60
+                                    val s = voiceAction.seconds % 60
+                                    if (s > 0) "⏱ Đã hẹn giờ ${m} phút ${s} giây"
+                                    else "⏱ Đã hẹn giờ ${m} phút"
+                                }
+                                else -> ""
+                            }
+                            if (actionLabel.isNotEmpty()) {
+                                tvResult.text = "$answer\n\n$actionLabel"
+                            }
+                            tvStatus.text = "✓ ĐÃ THỰC HIỆN"
+                        }
+                    }
+
+                    // Gửi payload sang điện thoại để đọc TTS vào tai nghe / nón bảo hiểm
                     val payload = org.json.JSONObject().apply {
                         put("question", question)
                         put("answer", answer)
                         put("timestamp", System.currentTimeMillis())
                     }.toString()
                     PhoneCommunicator.sendTextToPhone(this, payload)
+                } else {
+                    // Rung 1 nhịp dài báo lỗi kết nối
+                    vibrateRoadHaptic(success = false)
+                }
+
+                // Nếu màn hình đã tắt trong lúc chờ Gemini (người dùng hạ tay lái xe):
+                // Sau khi đã phát kết quả / gửi Bluetooth TTS xong, tự động thoát app về Màn hình chính
+                val pm = getSystemService(Context.POWER_SERVICE) as? PowerManager
+                val isInteractive = pm?.isInteractive ?: true
+                if (isScreenOffPendingExit || !isInteractive) {
+                    Log.d("MainActivity", "Road Mode: Đã gửi TTS xong trong nền -> Tự động đóng task về Watch Face")
+                    releaseWakeLock()
+                    finishAndRemoveTask()
+                } else {
+                    releaseWakeLock()
                 }
             }
+        }
+    }
+
+    private fun acquireWakeLock() {
+        try {
+            if (wakeLock == null) {
+                val pm = getSystemService(Context.POWER_SERVICE) as? PowerManager
+                wakeLock = pm?.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "Gemini:RoadModeProcessing")
+            }
+            wakeLock?.let {
+                if (!it.isHeld) {
+                    it.acquire(15000) // Tối đa 15s tự động nhả
+                }
+            }
+        } catch (e: Exception) {
+            Log.e("MainActivity", "Lỗi acquireWakeLock: ${e.message}")
+        }
+    }
+
+    private fun releaseWakeLock() {
+        try {
+            wakeLock?.let {
+                if (it.isHeld) {
+                    it.release()
+                }
+            }
+        } catch (_: Exception) {}
+    }
+
+    private fun vibrateRoadHaptic(success: Boolean) {
+        val vibrator = getSystemService(Context.VIBRATOR_SERVICE) as? Vibrator ?: return
+        val pattern = if (success) longArrayOf(0, 80, 60, 100) else longArrayOf(0, 300)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            vibrator.vibrate(VibrationEffect.createWaveform(pattern, -1))
+        } else {
+            @Suppress("DEPRECATION")
+            vibrator.vibrate(pattern, -1)
         }
     }
 

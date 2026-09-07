@@ -26,7 +26,9 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.widget.NestedScrollView
+import com.google.android.gms.wearable.PutDataMapRequest
 import com.google.android.gms.wearable.Wearable
+import org.json.JSONObject
 
 class PhoneMainActivity : AppCompatActivity() {
 
@@ -38,11 +40,12 @@ class PhoneMainActivity : AppCompatActivity() {
     private lateinit var cardThemeSelector: LinearLayout
     private lateinit var cardTitlePlate: LinearLayout
     private lateinit var cardApiKey: LinearLayout
+    private lateinit var cardModelSelector: LinearLayout
     private lateinit var cardBluetoothRack: LinearLayout
     private lateinit var cardHistoryRack: LinearLayout
     private lateinit var cardUpdatePanel: LinearLayout
 
-    // Theme Selector Buttons & Labels
+    // Theme Engine Views
     private lateinit var tvThemeLabel: TextView
     private lateinit var tvThemeSublabel: TextView
     private lateinit var btnThemeSkeuo: Button
@@ -51,8 +54,7 @@ class PhoneMainActivity : AppCompatActivity() {
     private lateinit var btnWatchThemeDark: Button
     private lateinit var btnWatchThemeLight: Button
 
-    // Model Selector Card
-    private lateinit var cardModelSelector: LinearLayout
+    // Gemini Model Selector Views
     private lateinit var tvModelHeader: TextView
     private lateinit var tvModelDesc: TextView
     private lateinit var rgGeminiModels: RadioGroup
@@ -64,11 +66,11 @@ class PhoneMainActivity : AppCompatActivity() {
     private lateinit var rbModel31Pro: RadioButton
     private lateinit var tvModelStatus: TextView
 
-    // Title Elements
+    // UI elements - Header
     private lateinit var tvMainTitle: TextView
     private lateinit var tvMainSubtitle: TextView
 
-    // API Key Section
+    // UI elements - Custom API Key
     private lateinit var tvApiKeyHeader: TextView
     private lateinit var tvApiKeyDesc: TextView
     private lateinit var etGeminiApiKey: EditText
@@ -97,7 +99,8 @@ class PhoneMainActivity : AppCompatActivity() {
     private lateinit var pbUpdateProgress: ProgressBar
     private lateinit var btnCheckUpdate: Button
 
-    private var currentThemeMode = ThemeManager.ThemeMode.SKEUOMORPHISM
+    private var currentThemeStyle = ThemeManager.ThemeStyle.SKEUOMORPHISM
+    private var currentColorMode = ThemeManager.ColorMode.DARK
 
     private val receiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
@@ -220,32 +223,38 @@ class PhoneMainActivity : AppCompatActivity() {
     }
 
     private fun setupThemeEngine() {
-        currentThemeMode = ThemeManager.getTheme(this)
-        applyTheme(currentThemeMode, syncToWatch = false)
+        currentThemeStyle = ThemeManager.getStyle(this)
+        currentColorMode = ThemeManager.getColorMode(this)
+        applyTheme(currentThemeStyle, currentColorMode, syncToWatch = false)
 
         btnThemeSkeuo.setOnClickListener {
-            applyTheme(ThemeManager.ThemeMode.SKEUOMORPHISM, syncToWatch = true)
+            applyTheme(ThemeManager.ThemeStyle.SKEUOMORPHISM, currentColorMode, syncToWatch = true)
         }
         btnThemeGlass.setOnClickListener {
-            applyTheme(ThemeManager.ThemeMode.LIQUID_GLASS, syncToWatch = true)
+            applyTheme(ThemeManager.ThemeStyle.LIQUID_GLASS, currentColorMode, syncToWatch = true)
         }
         btnThemeMaterial.setOnClickListener {
-            applyTheme(ThemeManager.ThemeMode.MATERIAL, syncToWatch = true)
+            applyTheme(ThemeManager.ThemeStyle.MATERIAL, currentColorMode, syncToWatch = true)
         }
         btnWatchThemeDark.setOnClickListener {
-            applyTheme(ThemeManager.ThemeMode.SKEUOMORPHISM, syncToWatch = true)
+            applyTheme(currentThemeStyle, ThemeManager.ColorMode.DARK, syncToWatch = true)
         }
         btnWatchThemeLight.setOnClickListener {
-            applyTheme(ThemeManager.ThemeMode.CERAMIC_LIGHT, syncToWatch = true)
+            applyTheme(currentThemeStyle, ThemeManager.ColorMode.LIGHT, syncToWatch = true)
         }
     }
 
-    private fun applyTheme(mode: ThemeManager.ThemeMode, syncToWatch: Boolean) {
-        currentThemeMode = mode
-        ThemeManager.setTheme(this, mode)
-        val isLight = (mode == ThemeManager.ThemeMode.CERAMIC_LIGHT)
-        ThemeManager.setWatchColorTheme(this, if (isLight) "light" else "dark")
-        val config = ThemeManager.getConfig(mode)
+    private fun applyTheme(
+        style: ThemeManager.ThemeStyle,
+        mode: ThemeManager.ColorMode,
+        syncToWatch: Boolean
+    ) {
+        currentThemeStyle = style
+        currentColorMode = mode
+        ThemeManager.setStyle(this, style)
+        ThemeManager.setColorMode(this, mode)
+        val isLight = (mode == ThemeManager.ColorMode.LIGHT)
+        val config = ThemeManager.getConfig(style, mode)
 
         // Root Background
         scrollRoot.setBackgroundColor(config.rootBgColor)
@@ -287,16 +296,18 @@ class PhoneMainActivity : AppCompatActivity() {
         rbModel25Flash.setTextColor(radioTextColor)
         rbModel31Pro.setTextColor(radioTextColor)
 
-        // Active State of Theme Buttons
+        // Highlight Active Style Button
         btnThemeSkeuo.setBackgroundResource(
-            if (mode == ThemeManager.ThemeMode.SKEUOMORPHISM) config.btnGoldDrawable else config.btnPrimaryDrawable
+            if (style == ThemeManager.ThemeStyle.SKEUOMORPHISM) config.btnGoldDrawable else config.btnPrimaryDrawable
         )
         btnThemeGlass.setBackgroundResource(
-            if (mode == ThemeManager.ThemeMode.LIQUID_GLASS) config.btnGoldDrawable else config.btnPrimaryDrawable
+            if (style == ThemeManager.ThemeStyle.LIQUID_GLASS) config.btnGoldDrawable else config.btnPrimaryDrawable
         )
         btnThemeMaterial.setBackgroundResource(
-            if (mode == ThemeManager.ThemeMode.MATERIAL) config.btnGoldDrawable else config.btnPrimaryDrawable
+            if (style == ThemeManager.ThemeStyle.MATERIAL) config.btnGoldDrawable else config.btnPrimaryDrawable
         )
+
+        // Highlight Active Mode Button
         btnWatchThemeDark.setBackgroundResource(
             if (!isLight) config.btnGoldDrawable else config.btnPrimaryDrawable
         )
@@ -309,29 +320,54 @@ class PhoneMainActivity : AppCompatActivity() {
         loadQaHistory()
 
         if (syncToWatch) {
-            syncThemeToWatch(mode.id, if (isLight) "light" else "dark")
+            syncThemeToWatch(style.id, mode.id)
             Toast.makeText(
                 this,
-                "✓ Đã áp dụng giao diện ${mode.title} (Đồng bộ Phone & Watch)!",
+                "✓ Đã áp dụng: ${style.title} - ${mode.title} (Đồng bộ Phone & Watch)!",
                 Toast.LENGTH_SHORT
             ).show()
         }
     }
 
-    private fun syncThemeToWatch(themeId: String, watchColor: String) {
+    private fun syncThemeToWatch(styleId: String, modeId: String) {
+        val combined = "${styleId}_${modeId}"
+        val payload = JSONObject().apply {
+            put("style", styleId)
+            put("mode", modeId)
+            put("combined", combined)
+        }.toString()
+
+        // 1. Persistent sync qua DataClient (tự động đồng bộ ngay khi đồng hồ kết nối)
+        try {
+            val putDataReq = PutDataMapRequest.create("/gemini_theme_config").apply {
+                dataMap.putString("style", styleId)
+                dataMap.putString("mode", modeId)
+                dataMap.putString("combined", combined)
+                dataMap.putLong("timestamp", System.currentTimeMillis())
+                setUrgent()
+            }.asPutDataRequest().setUrgent()
+
+            Wearable.getDataClient(this).putDataItem(putDataReq).addOnSuccessListener {
+                android.util.Log.d("PhoneMainActivity", "Đã lưu theme vào DataClient: $combined")
+            }.addOnFailureListener { e ->
+                android.util.Log.e("PhoneMainActivity", "Lỗi lưu theme DataClient: ${e.message}")
+            }
+        } catch (e: Exception) {
+            android.util.Log.e("PhoneMainActivity", "Exception PutDataMapRequest: ${e.message}")
+        }
+
+        // 2. Real-time broadcast qua MessageClient tới các node đang kết nối
         Wearable.getNodeClient(this).connectedNodes.addOnSuccessListener { nodes ->
             for (node in nodes) {
-                // Gửi theme mode chi tiết (skeuo, glass, material, light)
                 Wearable.getMessageClient(this).sendMessage(
                     node.id,
                     "/app_theme_sync",
-                    themeId.toByteArray(Charsets.UTF_8)
+                    payload.toByteArray(Charsets.UTF_8)
                 )
-                // Gửi watch color (light/dark) để tương thích ngược
                 Wearable.getMessageClient(this).sendMessage(
                     node.id,
                     "/watch_color_theme",
-                    watchColor.toByteArray(Charsets.UTF_8)
+                    modeId.toByteArray(Charsets.UTF_8)
                 )
             }
         }
@@ -476,7 +512,7 @@ class PhoneMainActivity : AppCompatActivity() {
         }
 
         tvEmptyHistory.visibility = View.GONE
-        val config = ThemeManager.getConfig(currentThemeMode)
+        val config = ThemeManager.getConfig(currentThemeStyle, currentColorMode)
 
         for (item in history) {
             val itemView = LayoutInflater.from(this).inflate(
@@ -722,7 +758,7 @@ class PhoneMainActivity : AppCompatActivity() {
         }
 
         tvEmptyDevices.visibility = View.GONE
-        val config = ThemeManager.getConfig(currentThemeMode)
+        val config = ThemeManager.getConfig(currentThemeStyle, currentColorMode)
 
         for (device in paired) {
             val itemView = LayoutInflater.from(this).inflate(

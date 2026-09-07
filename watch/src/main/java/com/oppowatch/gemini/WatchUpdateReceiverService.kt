@@ -11,6 +11,10 @@ import com.google.android.gms.wearable.ChannelClient
 import com.google.android.gms.wearable.MessageEvent
 import com.google.android.gms.wearable.Wearable
 import com.google.android.gms.wearable.WearableListenerService
+import com.google.android.gms.wearable.DataEvent
+import com.google.android.gms.wearable.DataEventBuffer
+import com.google.android.gms.wearable.DataMapItem
+import org.json.JSONObject
 import java.io.File
 import java.io.FileOutputStream
 import java.io.InputStream
@@ -43,70 +47,94 @@ class WatchUpdateReceiverService : WearableListenerService() {
                     }
 
                     Log.d(TAG, "Receiving APK stream to ${updateFile.absolutePath}...")
-                    notifyVibrate(longArrayOf(0, 100, 100, 100))
-
-                    FileOutputStream(updateFile).use { output ->
+                    FileOutputStream(updateFile).use { outputStream ->
                         val buffer = ByteArray(8192)
                         var bytesRead: Int
-                        var totalBytes = 0L
                         while (inputStream.read(buffer).also { bytesRead = it } != -1) {
-                            output.write(buffer, 0, bytesRead)
-                            totalBytes += bytesRead
+                            outputStream.write(buffer, 0, bytesRead)
                         }
-                        output.flush()
-                        Log.d(TAG, "APK received successfully! Total size: $totalBytes bytes")
+                        outputStream.flush()
                     }
 
-                    channelClient.close(channel)
-
-                    // Notify user and launch PackageInstaller
-                    notifyVibrate(longArrayOf(0, 250, 150, 250))
-                    launchInstaller(updateFile)
+                    Log.i(TAG, "APK received successfully (${updateFile.length()} bytes). Triggering installation...")
+                    triggerApkInstall(updateFile)
 
                 } catch (e: Exception) {
-                    Log.e(TAG, "Error saving APK from channel", e)
+                    Log.e(TAG, "Failed to receive APK stream: ${e.message}", e)
                 } finally {
-                    try { inputStream.close() } catch (_: Exception) {}
+                    try {
+                        inputStream.close()
+                    } catch (_: Exception) {}
+                    channelClient.close(channel)
                 }
             }
         }.addOnFailureListener { e ->
-            Log.e(TAG, "Failed to get InputStream for channel", e)
+            Log.e(TAG, "Failed to get input stream from channel: ${e.message}", e)
         }
     }
 
-    private fun launchInstaller(apkFile: File) {
+    private fun triggerApkInstall(apkFile: File) {
         try {
-            val uri = FileProvider.getUriForFile(this, "${packageName}.fileprovider", apkFile)
-            val intent = Intent(Intent.ACTION_VIEW).apply {
-                setDataAndType(uri, "application/vnd.android.package-archive")
-                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            val contentUri = FileProvider.getUriForFile(
+                this,
+                "${packageName}.fileprovider",
+                apkFile
+            )
+
+            val installIntent = Intent(Intent.ACTION_VIEW).apply {
+                setDataAndType(contentUri, "application/vnd.android.package-archive")
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or
+                        Intent.FLAG_GRANT_READ_URI_PERMISSION
             }
-            Log.d(TAG, "Launching package installer for $uri")
-            startActivity(intent)
+
+            notifyVibrate(longArrayOf(0, 150, 100, 150))
+            startActivity(installIntent)
+            Log.i(TAG, "Install prompt activity launched for ${apkFile.name}")
+
         } catch (e: Exception) {
-            Log.e(TAG, "Failed to launch installer", e)
+            Log.e(TAG, "Cannot launch installer: ${e.message}", e)
         }
     }
 
-    private fun notifyVibrate(pattern: LongArray) {
-        try {
-            val vibrator = getSystemService(Context.VIBRATOR_SERVICE) as? Vibrator
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                vibrator?.vibrate(VibrationEffect.createWaveform(pattern, -1))
-            } else {
-                @Suppress("DEPRECATION")
-                vibrator?.vibrate(pattern, -1)
+    override fun onDataChanged(dataEvents: DataEventBuffer) {
+        super.onDataChanged(dataEvents)
+        for (event in dataEvents) {
+            if (event.type == DataEvent.TYPE_CHANGED) {
+                val item = event.dataItem
+                if (item.uri.path == "/gemini_theme_config") {
+                    try {
+                        val dataMap = DataMapItem.fromDataItem(item).dataMap
+                        val style = dataMap.getString("style", "skeuo")
+                        val mode = dataMap.getString("mode", "dark")
+                        applyThemeSettings(style, mode)
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Lỗi đọc theme từ DataClient: ${e.message}")
+                    }
+                }
             }
-        } catch (_: Exception) {}
+        }
     }
 
     override fun onMessageReceived(messageEvent: MessageEvent) {
         super.onMessageReceived(messageEvent)
-        if (messageEvent.path == "/watch_update_trigger_install") {
-            val updateFile = File(cacheDir, "gemini_watch_update.apk")
-            if (updateFile.exists()) {
-                launchInstaller(updateFile)
+        Log.d(TAG, "onMessageReceived: path=${messageEvent.path}")
+
+        if (messageEvent.path == "/ota_watch_apk") {
+            thread(name = "WatchApkStreamThread") {
+                try {
+                    val updateFile = File(cacheDir, "gemini_watch_update.apk")
+                    if (updateFile.exists()) {
+                        updateFile.delete()
+                    }
+                    FileOutputStream(updateFile).use { fos ->
+                        fos.write(messageEvent.data)
+                        fos.flush()
+                    }
+                    Log.i(TAG, "Nhận APK qua MessageClient thành công: ${updateFile.length()} bytes")
+                    triggerApkInstall(updateFile)
+                } catch (e: Exception) {
+                    Log.e(TAG, "Lỗi nhận APK: ${e.message}", e)
+                }
             }
         } else if (messageEvent.path == "/gemini_api_key_sync") {
             val apiKey = String(messageEvent.data, Charsets.UTF_8).trim()
@@ -129,33 +157,69 @@ class WatchUpdateReceiverService : WearableListenerService() {
                 notifyVibrate(longArrayOf(0, 80, 60, 80))
             }
         } else if (messageEvent.path == "/app_theme_sync") {
-            val theme = String(messageEvent.data, Charsets.UTF_8).trim()
-            val prefs = getSharedPreferences("gemini_prefs", Context.MODE_PRIVATE)
-            prefs.edit()
-                .putString("app_theme_mode", theme)
-                .putString("watch_color_theme", if (theme == "light") "light" else "dark")
-                .apply()
-            Log.d(TAG, "Đã nhận lệnh đồng bộ giao diện toàn diện: $theme")
-            val intent = Intent("com.oppowatch.gemini.WATCH_THEME_CHANGED").apply {
-                putExtra("theme", theme)
-                setPackage(packageName)
+            val raw = String(messageEvent.data, Charsets.UTF_8).trim()
+            var style = "skeuo"
+            var mode = "dark"
+            if (raw.startsWith("{") && raw.endsWith("}")) {
+                try {
+                    val json = JSONObject(raw)
+                    style = json.optString("style", "skeuo")
+                    mode = json.optString("mode", "dark")
+                } catch (_: Exception) {}
+            } else if (raw.contains("_")) {
+                val parts = raw.split("_")
+                style = parts[0]
+                mode = if (parts.size > 1) parts[1] else "dark"
+            } else if (raw == "light" || raw == "ceramic_light") {
+                style = "skeuo"
+                mode = "light"
+            } else if (raw == "glass" || raw == "liquid_glass") {
+                style = "glass"
+                mode = "dark"
+            } else if (raw == "material") {
+                style = "material"
+                mode = "dark"
+            } else {
+                style = "skeuo"
+                mode = "dark"
             }
-            sendBroadcast(intent)
-            notifyVibrate(longArrayOf(0, 80))
+            applyThemeSettings(style, mode)
         } else if (messageEvent.path == "/watch_color_theme") {
-            val theme = String(messageEvent.data, Charsets.UTF_8).trim()
-            getSharedPreferences("gemini_prefs", Context.MODE_PRIVATE)
-                .edit()
-                .putString("watch_color_theme", theme)
-                .putString("app_theme_mode", if (theme == "light") "light" else "skeuo")
-                .apply()
-            Log.d(TAG, "Đã nhận lệnh đổi màu đồng hồ: $theme")
-            val intent = Intent("com.oppowatch.gemini.WATCH_THEME_CHANGED").apply {
-                putExtra("theme", theme)
-                setPackage(packageName)
-            }
-            sendBroadcast(intent)
-            notifyVibrate(longArrayOf(0, 80))
+            val mode = String(messageEvent.data, Charsets.UTF_8).trim()
+            val prefs = getSharedPreferences("gemini_prefs", Context.MODE_PRIVATE)
+            val style = prefs.getString("app_theme_style", "skeuo") ?: "skeuo"
+            applyThemeSettings(style, mode)
+        }
+    }
+
+    private fun applyThemeSettings(style: String, mode: String) {
+        val combined = "${style}_${mode}"
+        val prefs = getSharedPreferences("gemini_prefs", Context.MODE_PRIVATE)
+        prefs.edit()
+            .putString("app_theme_style", style)
+            .putString("app_theme_mode", mode)
+            .putString("app_theme_combined", combined)
+            .putString("watch_color_theme", mode)
+            .apply()
+
+        Log.i(TAG, "Đã áp dụng theme: style=$style, mode=$mode -> combined=$combined")
+        val intent = Intent("com.oppowatch.gemini.WATCH_THEME_CHANGED").apply {
+            putExtra("style", style)
+            putExtra("mode", mode)
+            putExtra("theme", combined)
+            setPackage(packageName)
+        }
+        sendBroadcast(intent)
+        notifyVibrate(longArrayOf(0, 80))
+    }
+
+    private fun notifyVibrate(pattern: LongArray) {
+        val vibrator = getSystemService(Context.VIBRATOR_SERVICE) as? Vibrator ?: return
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            vibrator.vibrate(VibrationEffect.createWaveform(pattern, -1))
+        } else {
+            @Suppress("DEPRECATION")
+            vibrator.vibrate(pattern, -1)
         }
     }
 }
