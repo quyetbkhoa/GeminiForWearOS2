@@ -73,20 +73,25 @@ object GeminiClient {
                     "Mốc thời gian thực hiện tại của hệ thống: $nowStr (Múi giờ Việt Nam GMT+7). " +
                     "Hãy luôn căn cứ vào mốc thời gian này để trả lời chuẩn xác ngày, tháng, năm hôm nay, hôm qua, ngày mai khi người dùng hỏi. " +
                     "QUY TẮC BẮT BUỘC: " +
-                    "1. Hãy nghe file âm thanh giọng nói của người dùng và nhận diện chính xác câu hỏi. " +
+                    "1. Hãy nghe file âm thanh giọng nói của người dùng và nhận diện chính xác câu hỏi hoặc yêu cầu. " +
                     "2. Trả lời theo đúng định dạng JSON chuẩn gồm các trường: " +
                     "\"question\": câu hỏi hoặc yêu cầu của người dùng được viết lại chuẩn tiếng Việt; " +
                     "\"answer\": câu trả lời siêu ngắn gọn, súc tích, đi thẳng vào đáp án trong 1 đến 2 câu ngắn. " +
-                    "3. NẾU người dùng yêu cầu ĐẶT BÁO THỨC, HẸN GIỜ/TIMER, hoặc TRẢ LỜI TIN NHẮN (Messenger, Zalo, Telegram, SMS), hãy thêm trường \"action\" vào JSON: " +
+                    "3. NẾU người dùng yêu cầu hành động, hãy thêm trường \"action\" vào JSON: " +
                     "- Đặt báo thức: {\"type\":\"SET_ALARM\",\"hour\":<0-23>,\"minute\":<0-59>,\"message\":\"<nhãn>\"} " +
                     "- Hẹn giờ đếm ngược: {\"type\":\"SET_TIMER\",\"seconds\":<tổng giây>,\"message\":\"<nhãn>\"} " +
                     "- Trả lời tin nhắn gần nhất: {\"type\":\"REPLY_MESSAGE\",\"recipient\":\"\",\"message\":\"<nội dung tin nhắn>\"} " +
                     "- Trả lời tin nhắn của người cụ thể: {\"type\":\"REPLY_MESSAGE\",\"recipient\":\"<tên người nhận>\",\"message\":\"<nội dung tin nhắn>\"} " +
+                    "- Thêm việc cần làm (OPPO Task): {\"type\":\"CREATE_TASK\",\"title\":\"<tiêu đề việc cần làm>\",\"notes\":\"<chi tiết nếu có>\"} " +
+                    "- Nhắc nhở theo ngữ cảnh: {\"type\":\"SET_REMINDER\",\"message\":\"<nội dung nhắc nhở>\",\"delay_seconds\":<số giây tính từ hiện tại>} " +
+                    "- Chép chính tả / Sao chép vào clipboard điện thoại: {\"type\":\"COPY_CLIPBOARD\",\"text\":\"<văn bản đã chuẩn hóa ngữ pháp và chính tả tiếng Việt, dấu chấm phẩy chuẩn xác>\"} " +
                     "Ví dụ đặt báo thức 6h30 sáng: {\"question\":\"Đặt báo thức 6 giờ 30 sáng\",\"answer\":\"Đã đặt báo thức lúc 06:30 cho bạn.\",\"action\":{\"type\":\"SET_ALARM\",\"hour\":6,\"minute\":30,\"message\":\"Báo thức sáng\"}} " +
                     "Ví dụ hẹn giờ 10 phút: {\"question\":\"Hẹn giờ 10 phút\",\"answer\":\"Đã bắt đầu hẹn giờ 10 phút.\",\"action\":{\"type\":\"SET_TIMER\",\"seconds\":600,\"message\":\"Hẹn giờ\"}} " +
                     "Ví dụ rep tin nhắn gần nhất: {\"question\":\"Rep là đang đi xe lát gọi lại\",\"answer\":\"Đã gửi trả lời tin nhắn: Đang đi xe lát gọi lại.\",\"action\":{\"type\":\"REPLY_MESSAGE\",\"recipient\":\"\",\"message\":\"Đang đi xe lát gọi lại\"}} " +
-                    "Ví dụ rep cho người cụ thể: {\"question\":\"Trả lời tin nhắn của Tuấn Anh bảo ok em\",\"answer\":\"Đã gửi trả lời cho Tuấn Anh: ok em.\",\"action\":{\"type\":\"REPLY_MESSAGE\",\"recipient\":\"Tuấn Anh\",\"message\":\"ok em\"}} " +
-                    "4. Nếu KHÔNG phải yêu cầu báo thức/hẹn giờ/trả lời tin nhắn, KHÔNG cần trường action. " +
+                    "Ví dụ thêm việc cần làm: {\"question\":\"Thêm việc cần làm mua bánh mì và sữa chua\",\"answer\":\"Đã thêm vào việc cần làm: Mua bánh mì và sữa chua.\",\"action\":{\"type\":\"CREATE_TASK\",\"title\":\"Mua bánh mì và sữa chua\",\"notes\":\"\"}} " +
+                    "Ví dụ nhắc nhở sau 15 phút: {\"question\":\"Nhắc tôi sau 15 phút nữa kiểm tra lò nướng\",\"answer\":\"Đã đặt nhắc nhở sau 15 phút.\",\"action\":{\"type\":\"SET_REMINDER\",\"message\":\"Kiểm tra lò nướng\",\"delay_seconds\":900}} " +
+                    "Ví dụ chép chính tả: {\"question\":\"Chép chính tả ngày mai họp lúc chín giờ tại phòng hai\",\"answer\":\"Đã sao chép vào bộ nhớ tạm: Ngày mai họp lúc 9:00 tại phòng 2.\",\"action\":{\"type\":\"COPY_CLIPBOARD\",\"text\":\"Ngày mai họp lúc 9:00 tại phòng 2.\"}} " +
+                    "4. Nếu KHÔNG phải yêu cầu hành động, KHÔNG cần trường action. " +
                     "5. Tuyệt đối chỉ trả về chuỗi JSON thuần túy, không dùng markdown code block ```json."
 
                 // Build Request JSON
@@ -99,26 +104,49 @@ object GeminiClient {
                 sysObj.put("parts", sysParts)
                 rootJson.put("system_instruction", sysObj)
 
-                // Contents
+                // Contents (tích hợp hội thoại tiếp nối 5 tin nhắn gần nhất trong 5 phút)
                 val contentsArray = JSONArray()
-                val contentObj = JSONObject()
-                val partsArray = JSONArray()
+                val history = ConversationMemory.getValidHistory()
+                for (turn in history) {
+                    val userTurn = JSONObject().apply {
+                        put("role", "user")
+                        put("parts", JSONArray().apply {
+                            put(JSONObject().put("text", turn.question))
+                        })
+                    }
+                    contentsArray.put(userTurn)
 
-                // 1. Text prompt
+                    val modelTurn = JSONObject().apply {
+                        put("role", "model")
+                        put("parts", JSONArray().apply {
+                            val mockResp = JSONObject().apply {
+                                put("question", turn.question)
+                                put("answer", turn.answer)
+                            }
+                            put(JSONObject().put("text", mockResp.toString()))
+                        })
+                    }
+                    contentsArray.put(modelTurn)
+                }
+
+                // Lượt hiện tại của người dùng (audio)
+                val currentTurnObj = JSONObject()
+                val currentParts = JSONArray()
+
                 val textPart = JSONObject()
                 textPart.put("text", "Hãy nghe file âm thanh sau và trả lời:")
-                partsArray.put(textPart)
+                currentParts.put(textPart)
 
-                // 2. Audio part (inline_data)
                 val audioPart = JSONObject()
                 val inlineData = JSONObject()
                 inlineData.put("mime_type", "audio/mp4")
                 inlineData.put("data", audioBase64)
                 audioPart.put("inline_data", inlineData)
-                partsArray.put(audioPart)
+                currentParts.put(audioPart)
 
-                contentObj.put("parts", partsArray)
-                contentsArray.put(contentObj)
+                currentTurnObj.put("role", "user")
+                currentTurnObj.put("parts", currentParts)
+                contentsArray.put(currentTurnObj)
                 rootJson.put("contents", contentsArray)
 
                 OutputStreamWriter(connection.outputStream).use { writer ->
@@ -179,6 +207,11 @@ object GeminiClient {
                         // Fallback regex: nếu Gemini không trả action JSON, quét câu hỏi bằng regex
                         if (voiceAction == null) {
                             voiceAction = VoiceActionHelper.parseFallback(question)
+                        }
+
+                        // Lưu vào bộ nhớ đệm hội thoại tiếp nối (5 tin nhắn gần nhất, hạn 5 phút)
+                        if (questionTrimmed.isNotBlank() && questionTrimmed != "Câu hỏi từ đồng hồ" && answer.isNotBlank()) {
+                            ConversationMemory.addTurn(questionTrimmed, answer)
                         }
 
                         onResult(true, question, answer, voiceAction)

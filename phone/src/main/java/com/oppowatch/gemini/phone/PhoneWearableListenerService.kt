@@ -123,6 +123,99 @@ class PhoneWearableListenerService : WearableListenerService() {
                     TtsSpeaker.speak(this, ttsResponse)
                 }
             }
+        } else if (messageEvent.path == "/gemini_task") {
+            val rawPayload = String(messageEvent.data, Charsets.UTF_8)
+            Log.d("PhoneListener", "Received task command from watch: $rawPayload")
+
+            var title = ""
+            var notes = ""
+            try {
+                val json = org.json.JSONObject(rawPayload)
+                title = json.optString("title", "").trim()
+                notes = json.optString("notes", "").trim()
+            } catch (_: Exception) {
+                title = rawPayload
+            }
+
+            if (title.isNotEmpty()) {
+                OppoTaskManager.addTask(this, title, notes)
+                val ttsResponse = "Đã lưu vào việc cần làm: $title"
+
+                historyManager.addEntry(
+                    "📝 Việc cần làm (OPPO Task)",
+                    title,
+                    System.currentTimeMillis()
+                )
+
+                filterManager.checkAndPlayTtsIfAllowed(ttsResponse) { allowed, _ ->
+                    if (allowed) {
+                        TtsSpeaker.speak(this, ttsResponse)
+                    }
+                }
+            }
+        } else if (messageEvent.path == "/gemini_reminder") {
+            val rawPayload = String(messageEvent.data, Charsets.UTF_8)
+            Log.d("PhoneListener", "Received reminder command from watch: $rawPayload")
+
+            var message = ""
+            var delaySeconds = 300
+            try {
+                val json = org.json.JSONObject(rawPayload)
+                message = json.optString("message", "").trim()
+                delaySeconds = json.optInt("delay_seconds", 300)
+            } catch (_: Exception) {
+                message = rawPayload
+            }
+
+            if (message.isNotEmpty()) {
+                ReminderManager.scheduleReminder(this, message, delaySeconds)
+                val m = delaySeconds / 60
+                val ttsResponse = if (m > 0) "Đã hẹn nhắc nhở sau $m phút: $message" else "Đã hẹn nhắc nhở: $message"
+
+                historyManager.addEntry(
+                    "⏰ Nhắc nhở theo ngữ cảnh",
+                    ttsResponse,
+                    System.currentTimeMillis()
+                )
+
+                filterManager.checkAndPlayTtsIfAllowed(ttsResponse) { allowed, _ ->
+                    if (allowed) {
+                        TtsSpeaker.speak(this, ttsResponse)
+                    }
+                }
+            }
+        } else if (messageEvent.path == "/gemini_clipboard") {
+            val rawPayload = String(messageEvent.data, Charsets.UTF_8)
+            Log.d("PhoneListener", "Received clipboard/dictation command from watch: $rawPayload")
+
+            var text = ""
+            try {
+                val json = org.json.JSONObject(rawPayload)
+                text = json.optString("text", "").trim()
+            } catch (_: Exception) {
+                text = rawPayload
+            }
+
+            if (text.isNotEmpty()) {
+                val trampolineIntent = Intent(this, ClipboardTrampolineActivity::class.java).apply {
+                    putExtra("text", text)
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_NO_ANIMATION)
+                }
+                startActivity(trampolineIntent)
+
+                val ttsResponse = "Đã sao chép vào bộ nhớ tạm"
+                historyManager.addEntry(
+                    "📋 Chép chính tả vào Clipboard",
+                    text,
+                    System.currentTimeMillis()
+                )
+
+                filterManager.checkAndPlayTtsIfAllowed(ttsResponse) { allowed, _ ->
+                    if (allowed) {
+                        TtsSpeaker.speak(this, ttsResponse)
+                    }
+                }
+            }
         }
     }
 }

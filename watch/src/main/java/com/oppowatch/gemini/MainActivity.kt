@@ -584,15 +584,33 @@ class MainActivity : AppCompatActivity() {
                                         "💬 Đã gửi trả lời tin nhắn: \"${voiceAction.message}\""
                                     }
                                 }
+                                "CREATE_TASK" -> "📝 Đã lưu việc cần làm: \"${voiceAction.message}\""
+                                "SET_REMINDER" -> {
+                                    val m = voiceAction.delaySeconds / 60
+                                    if (m > 0) "⏰ Đã hẹn nhắc nhở sau $m phút: \"${voiceAction.message}\""
+                                    else "⏰ Đã hẹn nhắc nhở: \"${voiceAction.message}\""
+                                }
+                                "COPY_CLIPBOARD" -> "📋 Đã sao chép vào bộ nhớ tạm điện thoại"
                                 else -> ""
                             }
                             if (actionLabel.isNotEmpty()) {
                                 tvResult.text = "$answer\n\n$actionLabel"
                             }
-                            tvStatus.text = if (voiceAction.type == "REPLY_MESSAGE") "✓ ĐÃ GỬI TIN" else "✓ ĐÃ THỰC HIỆN"
+                            tvStatus.text = when (voiceAction.type) {
+                                "REPLY_MESSAGE" -> "✓ ĐÃ GỬI TIN"
+                                "COPY_CLIPBOARD" -> "✓ ĐÃ SAO CHÉP"
+                                "CREATE_TASK" -> "✓ ĐÃ LƯU VIỆC"
+                                "SET_REMINDER" -> "✓ ĐÃ HẸN NHẮC"
+                                else -> "✓ ĐÃ THỰC HIỆN"
+                            }
 
-                            // Xây dựng câu xác nhận TTS cho báo thức / hẹn giờ (REPLY_MESSAGE do điện thoại tự phát TTS sau khi gửi ngầm)
-                            if (voiceAction.type != "REPLY_MESSAGE") {
+                            // Xây dựng câu xác nhận TTS cho báo thức / hẹn giờ
+                            // Các tác vụ qua điện thoại (REPLY_MESSAGE, CREATE_TASK, SET_REMINDER, COPY_CLIPBOARD)
+                            // sẽ do Phone Companion tự phát TTS sau khi xử lý thành công để tránh phát lặp
+                            val handledByPhoneDirectly = voiceAction.type in listOf(
+                                "REPLY_MESSAGE", "CREATE_TASK", "SET_REMINDER", "COPY_CLIPBOARD"
+                            )
+                            if (!handledByPhoneDirectly) {
                                 val ttsConfirm = when (voiceAction.type) {
                                     "SET_ALARM" -> {
                                         val h = voiceAction.hour

@@ -12,6 +12,9 @@
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+    <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
+    <uses-permission android:name="android.permission.VIBRATE" />
 
     <application
         android:allowBackup="true"
@@ -29,6 +32,16 @@
             </intent-filter>
         </activity>
 
+        <activity
+            android:name=".ClipboardTrampolineActivity"
+            android:exported="false"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar"
+            android:excludeFromRecents="true" />
+
+        <receiver
+            android:name=".ReminderReceiver"
+            android:exported="false" />
+
         <service
             android:name=".PhoneWearableListenerService"
             android:exported="true">
@@ -45,6 +58,18 @@
                 <data
                     android:host="*"
                     android:pathPrefix="/gemini_error_log"
+                    android:scheme="wear" />
+                <data
+                    android:host="*"
+                    android:pathPrefix="/gemini_task"
+                    android:scheme="wear" />
+                <data
+                    android:host="*"
+                    android:pathPrefix="/gemini_reminder"
+                    android:scheme="wear" />
+                <data
+                    android:host="*"
+                    android:pathPrefix="/gemini_clipboard"
                     android:scheme="wear" />
             </intent-filter>
             <intent-filter>

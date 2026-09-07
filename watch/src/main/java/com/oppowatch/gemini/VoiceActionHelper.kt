@@ -8,12 +8,14 @@ import org.json.JSONObject
 import java.util.regex.Pattern
 
 data class VoiceAction(
-    val type: String, // "SET_ALARM", "SET_TIMER", "REPLY_MESSAGE"
+    val type: String, // "SET_ALARM", "SET_TIMER", "REPLY_MESSAGE", "CREATE_TASK", "SET_REMINDER", "COPY_CLIPBOARD"
     val hour: Int = 0,
     val minute: Int = 0,
     val seconds: Int = 0,
     val message: String = "",
-    val recipient: String = "" // Tên người nhận (rỗng nếu là tin nhắn gần nhất)
+    val recipient: String = "", // Tên người nhận (rỗng nếu là tin nhắn gần nhất)
+    val text: String = "",       // Văn bản chi tiết / ghi chú / clipboard
+    val delaySeconds: Int = 0   // Số giây delay cho reminder
 )
 
 object VoiceActionHelper {
@@ -51,6 +53,27 @@ object VoiceActionHelper {
                         VoiceAction(type = "REPLY_MESSAGE", recipient = recipient, message = msg)
                     } else null
                 }
+                "CREATE_TASK" -> {
+                    val title = actObj.optString("title", "").ifEmpty { actObj.optString("message", "") }.trim()
+                    val notes = actObj.optString("notes", "").trim()
+                    if (title.isNotEmpty()) {
+                        VoiceAction(type = "CREATE_TASK", message = title, text = notes)
+                    } else null
+                }
+                "SET_REMINDER" -> {
+                    val msg = actObj.optString("message", "").ifEmpty { actObj.optString("content", "") }.trim()
+                    var delay = actObj.optInt("delay_seconds", 0)
+                    if (delay <= 0) delay = 300 // Mặc định 5 phút nếu không rõ
+                    if (msg.isNotEmpty()) {
+                        VoiceAction(type = "SET_REMINDER", message = msg, delaySeconds = delay)
+                    } else null
+                }
+                "COPY_CLIPBOARD" -> {
+                    val txt = actObj.optString("text", "").ifEmpty { actObj.optString("message", "") }.trim()
+                    if (txt.isNotEmpty()) {
+                        VoiceAction(type = "COPY_CLIPBOARD", text = txt, message = txt)
+                    } else null
+                }
                 else -> null
             }
         } catch (e: Exception) {
@@ -66,25 +89,57 @@ object VoiceActionHelper {
     fun parseFallback(text: String): VoiceAction? {
         val lower = text.lowercase().trim()
 
-        // 1. Nhận diện ĐẶT BÁO THỨC
+        // 1. Nhận diện CHÉP CHÍNH TẢ / SAO CHÉP VÀO CLIPBOARD ĐIỆN THOẠI
+        if (lower.startsWith("chép chính tả") || lower.startsWith("chép văn bản") ||
+            lower.startsWith("sao chép") || lower.startsWith("copy vào") || lower.startsWith("copy clipboard") ||
+            lower.contains("chép vào clipboard") || lower.contains("copy vào điện thoại")) {
+            val cleanText = text.replace(
+                Regex("^(?:chép chính tả|chép văn bản|sao chép|copy vào điện thoại|copy vào máy|copy clipboard|chép vào clipboard)(?:\\s*[:là-]?\\s*)", RegexOption.IGNORE_CASE),
+                ""
+            ).trim()
+            if (cleanText.isNotEmpty()) {
+                return VoiceAction(type = "COPY_CLIPBOARD", text = cleanText, message = cleanText)
+            }
+        }
+
+        // 2. Nhận diện ĐẶT BÁO THỨC
         if (lower.contains("báo thức") || lower.contains("nhắc tôi lúc") ||
             lower.contains("dậy lúc") || lower.contains("đánh thức")) {
             val alarmAction = parseAlarmFallback(lower)
             if (alarmAction != null) return alarmAction
         }
 
-        // 2. Nhận diện HẸN GIỜ / ĐẾM NGƯỢC
+        // 3. Nhận diện NHẮC NHỞ THEO NGỮ CẢNH
+        if (lower.startsWith("nhắc tôi") || lower.startsWith("nhắc nhở") || lower.startsWith("nhắc mình") ||
+            lower.contains("nhắc tôi") || lower.contains("nhắc nhở")) {
+            val reminderAction = parseReminderFallback(text)
+            if (reminderAction != null) return reminderAction
+        }
+
+        // 4. Nhận diện HẸN GIỜ / ĐẾM NGƯỢC
         if (lower.contains("hẹn giờ") || lower.contains("đếm ngược") ||
             lower.contains("bấm giờ") || lower.contains("timer")) {
             val timerAction = parseTimerFallback(lower)
             if (timerAction != null) return timerAction
         }
 
-        // 3. Nhận diện TRẢ LỜI TIN NHẮN (Messenger, Zalo, Telegram, SMS)
+        // 5. Nhận diện TRẢ LỜI TIN NHẮN (Messenger, Zalo, Telegram, SMS)
         if (lower.startsWith("rep") || lower.startsWith("trả lời") || lower.startsWith("nhắn lại") ||
             lower.contains("rep tin") || lower.contains("trả lời tin")) {
             val replyAction = parseReplyFallback(text)
             if (replyAction != null) return replyAction
+        }
+
+        // 6. Nhận diện THÊM VIỆC CẦN LÀM / OPPO TASK
+        if (lower.startsWith("thêm việc") || lower.startsWith("tạo việc") || lower.startsWith("ghi việc cần làm") ||
+            lower.startsWith("lưu task") || lower.startsWith("thêm task") || lower.startsWith("việc cần làm")) {
+            val cleanTask = text.replace(
+                Regex("^(?:thêm việc(?: cần làm)?|tạo việc(?: cần làm)?|ghi việc cần làm|lưu task|thêm task|việc cần làm)(?:\\s*[:là-]?\\s*)", RegexOption.IGNORE_CASE),
+                ""
+            ).trim()
+            if (cleanTask.isNotEmpty()) {
+                return VoiceAction(type = "CREATE_TASK", message = cleanTask)
+            }
         }
 
         return null
@@ -211,8 +266,69 @@ object VoiceActionHelper {
         return null
     }
 
+    private fun parseReminderFallback(text: String): VoiceAction? {
+        try {
+            val lower = text.lowercase().trim()
+            var delaySeconds = 0
+
+            // 1. Nhận diện dạng khoảng thời gian tương đối: "sau 15 phút", "sau 1 tiếng", "sau 30 giây"
+            val minMatcher = Pattern.compile("sau\\s*(\\d+)\\s*(?:phút|p)").matcher(lower)
+            if (minMatcher.find()) {
+                val m = minMatcher.group(1)?.toIntOrNull() ?: 5
+                delaySeconds += m * 60
+            }
+            val hourMatcher = Pattern.compile("sau\\s*(\\d+)\\s*(?:tiếng|giờ|h)").matcher(lower)
+            if (hourMatcher.find()) {
+                val h = hourMatcher.group(1)?.toIntOrNull() ?: 1
+                delaySeconds += h * 3600
+            }
+            val secMatcher = Pattern.compile("sau\\s*(\\d+)\\s*(?:giây|s)").matcher(lower)
+            if (secMatcher.find()) {
+                val s = secMatcher.group(1)?.toIntOrNull() ?: 0
+                delaySeconds += s
+            }
+
+            // 2. Nếu không có "sau X", nhận diện mốc giờ tuyệt đối: "lúc 8h tối", "lúc 14 giờ"
+            if (delaySeconds == 0) {
+                val timeMatcher = Pattern.compile("(?:lúc|vào)\\s*(\\d{1,2})(?:\\s*(?:h|:| giờ)\\s*(\\d{1,2})?|\\s*giờ)").matcher(lower)
+                if (timeMatcher.find()) {
+                    var targetH = timeMatcher.group(1)?.toIntOrNull() ?: 0
+                    val targetM = timeMatcher.group(2)?.toIntOrNull() ?: 0
+                    val isPm = lower.contains("chiều") || lower.contains("tối") || lower.contains("pm")
+                    val isNight = lower.contains("đêm")
+                    if (isPm && targetH < 12) targetH += 12
+                    if (isNight && targetH == 12) targetH = 0
+
+                    val now = java.util.Calendar.getInstance()
+                    val targetCal = java.util.Calendar.getInstance().apply {
+                        set(java.util.Calendar.HOUR_OF_DAY, targetH)
+                        set(java.util.Calendar.MINUTE, targetM)
+                        set(java.util.Calendar.SECOND, 0)
+                        if (before(now)) {
+                            add(java.util.Calendar.DAY_OF_YEAR, 1) // Chuyển sang ngày hôm sau
+                        }
+                    }
+                    delaySeconds = ((targetCal.timeInMillis - now.timeInMillis) / 1000).toInt()
+                }
+            }
+
+            if (delaySeconds <= 0) delaySeconds = 300 // Mặc định 5 phút nếu người dùng chỉ nói "nhắc tôi làm việc gì đó"
+
+            // Làm sạch phần dẫn để trích xuất nội dung nhắc
+            val cleanContent = text.replace(
+                Regex("^(?:nhắc tôi|nhắc nhở|nhắc mình)(?:\\s+(?:sau|lúc|vào)[^:]+)?(?:\\s*[:là-]?\\s*)", RegexOption.IGNORE_CASE),
+                ""
+            ).trim()
+            val msg = if (cleanContent.isNotEmpty()) cleanContent else "Nhắc nhở công việc"
+            return VoiceAction(type = "SET_REMINDER", message = msg, delaySeconds = delaySeconds)
+        } catch (e: Exception) {
+            Log.e(TAG, "Lỗi parseReminderFallback: ${e.message}")
+        }
+        return null
+    }
+
     /**
-     * Kích hoạt gọi Intent hệ thống HeyClock hoặc gửi lệnh trả lời tin nhắn sang điện thoại
+     * Kích hoạt gọi Intent hệ thống HeyClock hoặc gửi lệnh sang điện thoại
      */
     fun execute(context: Context, action: VoiceAction): Boolean {
         return try {
@@ -245,6 +361,21 @@ object VoiceActionHelper {
                 "REPLY_MESSAGE" -> {
                     PhoneCommunicator.sendReplyMessageToPhone(context, action.recipient, action.message)
                     Log.i(TAG, "REPLY_MESSAGE: recipient='${action.recipient}', message='${action.message}'")
+                    true
+                }
+                "CREATE_TASK" -> {
+                    PhoneCommunicator.sendTaskToPhone(context, action.message, action.text)
+                    Log.i(TAG, "CREATE_TASK: title='${action.message}'")
+                    true
+                }
+                "SET_REMINDER" -> {
+                    PhoneCommunicator.sendReminderToPhone(context, action.message, action.delaySeconds)
+                    Log.i(TAG, "SET_REMINDER: msg='${action.message}', delay=${action.delaySeconds}s")
+                    true
+                }
+                "COPY_CLIPBOARD" -> {
+                    PhoneCommunicator.sendClipboardToPhone(context, action.text)
+                    Log.i(TAG, "COPY_CLIPBOARD: text='${action.text}'")
                     true
                 }
                 else -> false

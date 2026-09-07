@@ -10,6 +10,9 @@ object PhoneCommunicator {
     const val PATH_TTS = "/gemini_tts_payload"
     const val PATH_ERROR_LOG = "/gemini_error_log"
     const val PATH_REPLY_MESSAGE = "/gemini_reply_message"
+    const val PATH_TASK = "/gemini_task"
+    const val PATH_REMINDER = "/gemini_reminder"
+    const val PATH_CLIPBOARD = "/gemini_clipboard"
 
     fun sendReplyMessageToPhone(context: Context, recipient: String, message: String) {
         val nodeClient = Wearable.getNodeClient(context)
@@ -86,6 +89,59 @@ object PhoneCommunicator {
             }
         }.addOnFailureListener { e ->
             Log.e(TAG, "Failed finding connected nodes for error log: ${e.message}")
+        }
+    }
+
+    fun sendTaskToPhone(context: Context, title: String, notes: String) {
+        val nodeClient = Wearable.getNodeClient(context)
+        val messageClient = Wearable.getMessageClient(context)
+
+        nodeClient.connectedNodes.addOnSuccessListener { nodes ->
+            if (nodes.isEmpty()) return@addOnSuccessListener
+            val payload = org.json.JSONObject().apply {
+                put("title", title)
+                put("notes", notes)
+                put("timestamp", System.currentTimeMillis())
+            }.toString()
+            val bytes = payload.toByteArray(Charsets.UTF_8)
+            for (node in nodes) {
+                messageClient.sendMessage(node.id, PATH_TASK, bytes)
+            }
+        }
+    }
+
+    fun sendReminderToPhone(context: Context, message: String, delaySeconds: Int) {
+        val nodeClient = Wearable.getNodeClient(context)
+        val messageClient = Wearable.getMessageClient(context)
+
+        nodeClient.connectedNodes.addOnSuccessListener { nodes ->
+            if (nodes.isEmpty()) return@addOnSuccessListener
+            val payload = org.json.JSONObject().apply {
+                put("message", message)
+                put("delay_seconds", delaySeconds)
+                put("timestamp", System.currentTimeMillis())
+            }.toString()
+            val bytes = payload.toByteArray(Charsets.UTF_8)
+            for (node in nodes) {
+                messageClient.sendMessage(node.id, PATH_REMINDER, bytes)
+            }
+        }
+    }
+
+    fun sendClipboardToPhone(context: Context, text: String) {
+        val nodeClient = Wearable.getNodeClient(context)
+        val messageClient = Wearable.getMessageClient(context)
+
+        nodeClient.connectedNodes.addOnSuccessListener { nodes ->
+            if (nodes.isEmpty()) return@addOnSuccessListener
+            val payload = org.json.JSONObject().apply {
+                put("text", text)
+                put("timestamp", System.currentTimeMillis())
+            }.toString()
+            val bytes = payload.toByteArray(Charsets.UTF_8)
+            for (node in nodes) {
+                messageClient.sendMessage(node.id, PATH_CLIPBOARD, bytes)
+            }
         }
     }
 }

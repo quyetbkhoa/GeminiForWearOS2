@@ -7,6 +7,39 @@ phiên bản tuân theo [Semantic Versioning](https://semver.org/lang/vi/).
 
 ---
 
+## [v1.3.1] - 2026-09-07
+
+### 📝 Lưu Việc Cần Làm Vào Task & Ghi Chú OPPO / ColorOS (OPPO Task Integration)
+- **Tích hợp sâu hệ sinh thái ColorOS:**
+  - Ra lệnh từ đồng hồ: *"Thêm việc cần làm: mua bánh mì và sữa chua"*, *"Ghi việc cần làm: hoàn thiện báo cáo tuần"*.
+  - Gemini tự động xuất action: `{"type":"CREATE_TASK","title":"...","notes":"..."}` kèm Fallback Regex cục bộ.
+  - Phía điện thoại: `OppoTaskManager` tự động lưu trữ danh mục task, đồng thời phát **Heads-up Notification** ưu tiên cao kèm nút tắt **"Mở Ghi chú ColorOS"** (`com.coloros.note`) giúp người dùng 1 chạm vào ngay ứng dụng Ghi chú gốc của máy.
+
+### ⏰ Nhắc Nhở Theo Ngữ Cảnh Thời Gian Thực (Contextual Reminders via AlarmManager)
+- **Hẹn giờ nhắc nhở công việc linh hoạt:**
+  - Hỗ trợ câu lệnh phong phú: *"Nhắc tôi sau 15 phút nữa kiểm tra tin nhắn"*, *"Nhắc tôi lúc 8 giờ tối uống thuốc"*.
+  - Gemini tự động tính toán thời gian `delay_seconds` hoặc phân tích regex cục bộ `parseReminderFallback`.
+  - Điện thoại lập lịch bằng `AlarmManager.setExactAndAllowWhileIdle()` qua `ReminderReceiver`:
+    - Đổ chuông, rung phản hồi mạnh mẽ kể cả khi thiết bị đang ở chế độ ngủ sâu (Doze Mode).
+    - Hiển thị thông báo Heads-up khẩn cấp (`PRIORITY_MAX`).
+    - Đọc to câu nhắc nhở qua tai nghe Bluetooth hoặc loa ngoài điện thoại: *"Đã đến giờ nhắc nhở: [nội dung]"*.
+
+### 🧠 Hội Thoại Tiếp Nối Đa Lượt (Multi-turn Context Memory - 5 Messages / 5 Min Cache)
+- **AI ghi nhớ ngữ cảnh thông minh trên đồng hồ:**
+  - Xây dựng `ConversationMemory` trên Wear OS lưu trữ tối đa **5 lượt hỏi - đáp gần nhất**.
+  - **Cơ chế Cache trượt 5 phút:** Nếu lần tương tác tiếp theo diễn ra trong vòng 5 phút, toàn bộ ngữ cảnh trước đó được tự động đóng gói vào mảng `contents` gửi tới Gemini API.
+  - Sau 5 phút không tương tác, bộ nhớ đệm tự động làm mới để sẵn sàng cho chủ đề hội thoại mới.
+  - Cho phép người dùng hỏi tiếp các câu phụ thuộc ngữ cảnh: *"Thời tiết hôm nay thế nào?"* $\rightarrow$ *"Trời nắng 32 độ"* $\rightarrow$ *"Thế còn ngày mai?"* (AI tự hiểu là hỏi thời tiết ngày mai).
+
+### 📋 Chép Chính Tả Tự Động Vào Clipboard Điện Thoại (Voice Dictation to Phone Clipboard)
+- **Giải quyết triệt để vấn đề gõ tiếng Việt khó khăn trên màn hình nhỏ Wear OS:**
+  - Khẩu lệnh: *"Chép chính tả: ngày mai họp lúc chín giờ sáng tại phòng hai"*, *"Sao chép văn bản: ..."*, *"Copy vào điện thoại: ..."*.
+  - Gemini chuẩn hóa câu chữ, viết hoa đầu câu, ngắt câu và chấm phẩy chuẩn xác theo ngữ pháp tiếng Việt.
+  - Phía điện thoại: Sử dụng `ClipboardTrampolineActivity` (Activity trong suốt) để ghi đè an toàn vào `ClipboardManager` trên Android 10, 11, 12, 13, 14 kể cả khi điện thoại tắt màn hình trong túi quần.
+  - Phản hồi rung, Toast thông báo và đọc TTS xác nhận: *"Đã sao chép vào bộ nhớ tạm"*.
+
+---
+
 ## [v1.3.0] - 2026-09-07
 
 ### 💬 Trả Lời Nhanh Tin Nhắn Bằng Giọng Nói Từ Đồng Hồ (Quick Voice Reply for Messages)
