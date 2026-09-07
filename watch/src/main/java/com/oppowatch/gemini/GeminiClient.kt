@@ -171,7 +171,56 @@ object GeminiClient {
                     }
                 } else {
                     Log.e(TAG, "API Error $responseCode: $responseText")
-                    onResult(false, "Lỗi kết nối", "Lỗi kết nối Gemini ($responseCode)", null)
+
+                    var errorMsg = "Lỗi kết nối Gemini ($responseCode)"
+                    var errorStatus = ""
+                    try {
+                        val errObj = JSONObject(responseText).optJSONObject("error")
+                        if (errObj != null) {
+                            errorMsg = errObj.optString("message", errorMsg)
+                            errorStatus = errObj.optString("status", "")
+                        }
+                    } catch (_: Exception) {}
+
+                    val watchDisplayText = when (responseCode) {
+                        403 -> "Lỗi 403: Thiếu hoặc sai API Key. Hãy mở app điện thoại để đồng bộ lại Key!"
+                        400 -> "Lỗi 400: Yêu cầu không hợp lệ ($errorMsg)."
+                        429 -> "Lỗi 429: Đạt giới hạn gọi AI (Quota). Thử lại sau 30s."
+                        500, 502, 503 -> "Lỗi máy chủ Google Gemini ($responseCode). Thử lại sau."
+                        else -> "Lỗi kết nối Gemini ($responseCode)"
+                    }
+
+                    val maskedKey = if (activeApiKey.isNullOrEmpty()) {
+                        "TRỐNG (Chưa cài đặt API Key trên đồng hồ)"
+                    } else if (activeApiKey.length > 10) {
+                        "${activeApiKey.take(6)}...${activeApiKey.takeLast(4)}"
+                    } else {
+                        "***"
+                    }
+
+                    val suggestion = when (responseCode) {
+                        403 -> "Lỗi 403 (Permission Denied / Invalid Key): 1) Mở app Gemini trên điện thoại, nhập API Key từ aistudio.google.com và bấm 'LƯU & ĐỒNG BỘ SANG ĐỒNG HỒ' (khi gỡ cài đặt trên đồng hồ, dữ liệu key cũ đã bị xóa sạch). 2) Kiểm tra hạn mức/tài khoản Google AI Studio."
+                        400 -> "Lỗi 400: Mô hình '$model' hoặc định dạng không hỗ trợ. Thử đổi sang Gemini 3.8 Flash."
+                        429 -> "Lỗi 429: Vượt hạn mức gọi API miễn phí mỗi phút (RPM). Vui lòng chờ 30 giây rồi thử lại."
+                        else -> "Kiểm tra kết nối mạng của đồng hồ hoặc thử lại sau."
+                    }
+
+                    val errorLogJson = JSONObject().apply {
+                        put("timestamp", System.currentTimeMillis())
+                        put("statusCode", responseCode)
+                        put("errorType", "HTTP_ERROR")
+                        put("model", model)
+                        put("apiKeyMasked", maskedKey)
+                        put("errorMessage", errorMsg)
+                        put("errorStatus", errorStatus)
+                        put("rawResponse", responseText)
+                        put("suggestion", suggestion)
+                        put("source", "WATCH")
+                    }.toString()
+
+                    PhoneCommunicator.sendErrorLogToPhone(context, errorLogJson)
+
+                    onResult(false, "Lỗi kết nối", watchDisplayText, null)
                 }
             } catch (e: Exception) {
                 // Nếu bị cancel thì ngắt êm thấm, không báo lỗi ra màn hình
@@ -182,6 +231,22 @@ object GeminiClient {
                     }
                 }
                 Log.e(TAG, "Exception: ${e.message}")
+
+                val errorLogJson = JSONObject().apply {
+                    put("timestamp", System.currentTimeMillis())
+                    put("statusCode", -1)
+                    put("errorType", "NETWORK_EXCEPTION")
+                    put("model", "N/A")
+                    put("apiKeyMasked", "N/A")
+                    put("errorMessage", e.localizedMessage ?: e.message ?: "Unknown Exception")
+                    put("errorStatus", "EXCEPTION")
+                    put("rawResponse", e.stackTraceToString())
+                    put("suggestion", "Kiểm tra kết nối Wi-Fi hoặc Bluetooth giữa đồng hồ và điện thoại.")
+                    put("source", "WATCH")
+                }.toString()
+
+                PhoneCommunicator.sendErrorLogToPhone(context, errorLogJson)
+
                 onResult(false, "Lỗi ngoại lệ", "Lỗi: ${e.localizedMessage}", null)
             } finally {
                 synchronized(connectionLock) {

@@ -9,6 +9,7 @@ class PhoneWearableListenerService : WearableListenerService() {
 
     private val filterManager by lazy { BluetoothFilterManager(this) }
     private val historyManager by lazy { QaHistoryManager(this) }
+    private val errorLogManager by lazy { ApiErrorLogManager(this) }
 
     override fun onMessageReceived(messageEvent: MessageEvent) {
         super.onMessageReceived(messageEvent)
@@ -48,6 +49,34 @@ class PhoneWearableListenerService : WearableListenerService() {
                 if (allowed) {
                     TtsSpeaker.speak(this, answer)
                 }
+            }
+        } else if (messageEvent.path == "/gemini_error_log") {
+            val rawJson = String(messageEvent.data, Charsets.UTF_8)
+            Log.e("PhoneListener", "Nhận được log lỗi API từ đồng hồ: $rawJson")
+            try {
+                val json = org.json.JSONObject(rawJson)
+                val item = ApiErrorItem(
+                    id = java.util.UUID.randomUUID().toString(),
+                    timestamp = json.optLong("timestamp", System.currentTimeMillis()),
+                    statusCode = json.optInt("statusCode", 0),
+                    errorType = json.optString("errorType", "HTTP_ERROR"),
+                    model = json.optString("model", ""),
+                    apiKeyMasked = json.optString("apiKeyMasked", ""),
+                    errorMessage = json.optString("errorMessage", ""),
+                    errorStatus = json.optString("errorStatus", ""),
+                    rawResponse = json.optString("rawResponse", ""),
+                    suggestion = json.optString("suggestion", ""),
+                    source = json.optString("source", "WATCH")
+                )
+                errorLogManager.addError(item)
+
+                val broadcastIntent = Intent("com.oppowatch.gemini.ERROR_LOG_RECEIVED").apply {
+                    setPackage(packageName)
+                    putExtra("raw_json", rawJson)
+                }
+                sendBroadcast(broadcastIntent)
+            } catch (e: Exception) {
+                Log.e("PhoneListener", "Lỗi xử lý error log từ đồng hồ: ${e.message}")
             }
         }
     }

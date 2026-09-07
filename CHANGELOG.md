@@ -7,6 +7,46 @@ phiên bản tuân theo [Semantic Versioning](https://semver.org/lang/vi/).
 
 ---
 
+## [v1.2.6] - 2026-09-07
+
+### 🚨 Nhật Ký Lỗi API Chi Tiết Trên Mobile & Khắc Phục Lỗi Kết Nối Gemini (HTTP 403)
+- **Mục Nhật Ký Lỗi API Chuyên Sâu (API Error Logs) Trên Ứng Dụng Điện Thoại:**
+  - Bổ sung bảng điều khiển **🚨 NHẬT KÝ LỖI API (CHI TIẾT MÃ LỖI & PHẢN HỒI GOOGLE)** trực tiếp trên Phone Companion.
+  - **Đồng bộ thời gian thực qua Wearable Data Layer (`/gemini_error_log`):** Khi đồng hồ gặp bất kỳ sự cố nào khi gọi Gemini (HTTP 403, 400, 429, 500, lỗi mạng timeout), đồng hồ sẽ tự động gói toàn bộ thông tin kỹ thuật gửi ngay sang điện thoại.
+  - **Báo cáo sự cố toàn diện:** Mỗi mục log hiển thị:
+    - Huy hiệu mã lỗi: `HTTP 403 (PERMISSION_DENIED)`, `HTTP 429 (RESOURCE_EXHAUSTED)`, `HTTP 400 (BAD_REQUEST)`,...
+    - Nguồn phát sinh: `⌚ ĐỒNG HỒ` hoặc `📱 TEST TRÊN MÁY`.
+    - Dấu thời gian chính xác (`HH:mm:ss - dd/MM/yyyy`).
+    - Mô hình Gemini được sử dụng (`gemini-3.8-flash`,...).
+    - Khóa API bị che bảo mật (`AQ.Ab...VoMg`).
+    - Nguyên nhân cụ thể từ Google (`Method doesn't allow unregistered callers`,...).
+    - Hộp hướng dẫn xử lý từng bước theo ngữ cảnh cho người dùng.
+    - Chức năng mở rộng xem toàn bộ **JSON thô** phản hồi từ server Google.
+    - Nút **📋 SAO CHÉP** một chạm để người dùng dễ dàng copy log gửi trợ giúp hoặc tra cứu.
+    - Nút **🗑️ XÓA NHẬT KÝ LỖI** để dọn sạch danh sách.
+- **Nút "🧪 TEST API TRÊN MÁY" (Test API Key Ngay Lập Tức):**
+  - Cho phép người dùng kiểm tra API Key trực tiếp trên điện thoại trước khi dùng trên đồng hồ.
+  - Gửi request thử nghiệm đến mô hình Gemini đang chọn, trả kết quả HTTP 200 tức thì hoặc ghi lại mã lỗi chi tiết vào bảng log nếu key không hợp lệ.
+- **Tự Động Đồng Bộ API Key Sang Đồng Hồ (Auto-Sync on Resume/Connect):**
+  - **Khắc phục lỗi HTTP 403:** Khi người dùng xóa app trên đồng hồ rồi cài lại, toàn bộ SharedPreferences (`custom_api_key`) bị mất. Giờ đây, mỗi khi mở app điện thoại hoặc khi đồng hồ kết nối lại Bluetooth/Wi-Fi, điện thoại sẽ **tự động bắn API Key đã lưu sang đồng hồ ngầm** mà người dùng không cần phải vào gõ lại hay bấm lưu thủ công.
+  - Tích hợp sẵn khóa API dự phòng trong quy trình CI/CD GitHub Actions (`build_and_release.yml`), đảm bảo file APK phát hành không bao giờ bị rỗng key.
+
+### 🔄 Sửa Triệt Để Lỗi Cập Nhật Không Ghi Đè (Update In-Place Fix & ADB Robustness)
+- **Khắc phục lỗi phải xóa ứng dụng trên đồng hồ mới cập nhật được:**
+  - **Nguyên nhân cốt lõi:** Lệnh cài đặt ngầm qua ADB trên Wear OS 2 (Android 9) trước đó thiếu cờ `-r` (reinstall/replace application), khiến hệ thống Android từ chối ghi đè với mã lỗi `INSTALL_FAILED_ALREADY_EXISTS`. Thư viện ADB client nuốt lỗi này và báo thành công trong khi ứng dụng trên đồng hồ vẫn là phiên bản cũ. Đồng thời, điện thoại giữ file APK cũ trong cache mà không đối chiếu với GitHub Release mới nhất.
+  - **Giải pháp xử lý triệt để:**
+    - Cập nhật lệnh cài đặt hệ thống sang `pm install -r -d -t -g <path>`:
+      - `-r`: Cho phép ghi đè hoàn toàn lên ứng dụng đang có, giữ nguyên dữ liệu và cài đặt.
+      - `-d`: Cho phép hạ cấp hoặc cài cùng phiên bản nếu cần thiết.
+      - `-t`: Cho phép cài đặt các gói thử nghiệm.
+      - `-g`: Tự động cấp toàn bộ quyền runtime (Ghi âm, WakeLock) ngay sau khi cài.
+    - **Kiểm tra kết quả thực tế:** Bắt và kiểm tra chuỗi phản hồi từ Android Package Manager. Chỉ báo thành công khi có xác nhận `Success`.
+    - **Tự động xử lý chữ ký không khớp (`INSTALL_FAILED_UPDATE_INCOMPATIBLE`):** Nếu bản cũ cài từ nguồn khác hoặc debug keystore khác, hệ thống sẽ tự động gỡ sạch bản cũ và cài đặt bản mới liền mạch.
+    - **Xác thực phiên bản thời gian thực:** Sau khi cài đặt xong, điện thoại tự động truy vấn `dumpsys package com.oppowatch.gemini` để hiển thị chính xác phiên bản vừa cập nhật (`v1.2.6`) trên giao diện.
+    - **Xóa cache thông minh trên điện thoại:** Khi bấm nút cài đặt qua ADB, ứng dụng điện thoại kiểm tra thông tin tag mới nhất trên GitHub, tự động dọn dẹp file APK cũ trong bộ nhớ đệm nếu phiên bản không trùng khớp để luôn cài bản mới nhất.
+
+---
+
 ## [v1.2.5] - 2026-09-07
 
 ### ⌚ Cập Nhật Giao Diện Wear OS: Hiển Thị Version Ở Góc & Bổ Sung Nút Hủy Lệnh (Cancel)

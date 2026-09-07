@@ -17,7 +17,8 @@ Một giải pháp mã nguồn mở hoàn chỉnh nhằm thay thế **Google Ass
 ### 2. Thiết kế Tối ưu cho OPPO Watch 46mm
 - Kích thước chuẩn màn hình 402 x 476 px với vùng đệm lề an toàn chống méo ở viền cong 3D.
 - Nút bấm micro cơ học 3D, hiệu ứng dập nổi/chìm và viền sáng đỏ/vàng khi thu âm.
-- **Hiển thị phiên bản ở góc màn hình:** Bổ sung số phiên bản (`v1.2.5`) ngay tại góc màn hình, giúp người dùng dễ dàng kiểm tra bản cập nhật đang chạy.
+- **Hiển thị phiên bản ở góc màn hình:** Bổ sung số phiên bản (`v1.2.6`) ngay tại góc màn hình, giúp người dùng dễ dàng kiểm tra bản cập nhật đang chạy.
+- **Cài đặt đè trực tiếp (In-Place Update via ADB):** Cập nhật với đầy đủ cờ hệ thống `pm install -r -d -t -g`, cho phép ghi đè mượt mà không cần gỡ ứng dụng cũ, tự động cấp quyền và dọn dẹp cache.
 - **Nút HỦY LỆNH (Cancel Button - "Ấn vào không gửi"):** Bổ sung nút tròn **[✕]** chuyên dụng ở góc dưới bên phải. Khi đang nói hoặc đang chờ trả lời, bấm nút **✕** sẽ dừng ngay lập tức, hủy bỏ file ghi âm và **tuyệt đối không gửi** câu hỏi đến AI. Hỗ trợ thêm cử chỉ trượt ngón tay ra xa nút mic (*Slide-To-Cancel*).
 
 ### 3. Prompt thông minh tối ưu màn hình nhỏ

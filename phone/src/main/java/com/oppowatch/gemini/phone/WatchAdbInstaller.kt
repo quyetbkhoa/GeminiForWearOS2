@@ -193,31 +193,85 @@ object WatchAdbInstaller {
 
                 dadb.use { adb ->
                     mainHandler.post {
-                        callback.onStatus("✓ Đã kết nối ADB thành công! Đang truyền và cài đặt file APK...")
+                        callback.onStatus("✓ Đã kết nối ADB thành công! Đang truyền file APK sang đồng hồ...")
                     }
 
-                    Log.i(TAG, "Bắt đầu gọi adb.install cho ${apkFile.absolutePath}...")
                     val startTime = System.currentTimeMillis()
+                    val remotePath = "/data/local/tmp/gemini_watch_update.apk"
 
-                    // Gọi cài đặt trực tiếp qua giao thức ADB (pm install -r)
-                    adb.install(apkFile)
+                    Log.i(TAG, "Đang đẩy file APK (${apkFile.length()} bytes) sang $remotePath...")
+                    adb.push(apkFile, remotePath)
+
+                    mainHandler.post {
+                        callback.onStatus("Đang ghi đè cài đặt trên đồng hồ (pm install -r -d -t)...")
+                    }
+
+                    Log.i(TAG, "Thực thi: pm install -r -d -t -g $remotePath")
+                    var installResp = adb.shell("pm install -r -d -t -g $remotePath")
+                    var output = (installResp.output + "\n" + installResp.errorOutput).trim()
+                    Log.i(TAG, "Kết quả pm install: $output (exitCode=${installResp.exitCode})")
+
+                    // Nếu lỗi chữ ký chứng chỉ không khớp (INSTALL_FAILED_UPDATE_INCOMPATIBLE)
+                    if (output.contains("INSTALL_FAILED_UPDATE_INCOMPATIBLE", ignoreCase = true) ||
+                        output.contains("INSTALL_FAILED_SHARED_USER_INCOMPATIBLE", ignoreCase = true)
+                    ) {
+                        Log.w(TAG, "Phát hiện khác chữ ký bảo mật. Tự động gỡ sạch bản cũ và cài lại...")
+                        mainHandler.post {
+                            callback.onStatus("Phát hiện bản cũ khác chữ ký bảo mật. Đang tự động gỡ sạch để cài bản mới...")
+                        }
+                        val uninstResp = adb.shell("pm uninstall com.oppowatch.gemini")
+                        Log.i(TAG, "Kết quả gỡ bỏ: ${uninstResp.allOutput}")
+                        installResp = adb.shell("pm install -r -d -t -g $remotePath")
+                        output = (installResp.output + "\n" + installResp.errorOutput).trim()
+                        Log.i(TAG, "Kết quả cài lại: $output")
+                    }
+
+                    // Dọn dẹp file tạm trên đồng hồ
+                    try {
+                        adb.shell("rm -f $remotePath")
+                    } catch (_: Exception) {}
+
+                    if (!output.contains("Success", ignoreCase = true)) {
+                        throw java.io.IOException("Package Manager từ chối cài đặt:\n$output")
+                    }
 
                     val elapsedSec = (System.currentTimeMillis() - startTime) / 1000.0
                     Log.i(TAG, "✓ Cài đặt APK hoàn tất thành công trong ${elapsedSec}s!")
 
-                    // Gửi thêm lệnh mở app nếu cần
+                    // Kiểm tra phiên bản thực tế đã cài đặt trên đồng hồ
+                    var actualVersionName = ""
+                    try {
+                        val dumpResp = adb.shell("dumpsys package com.oppowatch.gemini")
+                        val match = Regex("versionName=([^\\s]+)").find(dumpResp.allOutput)
+                        if (match != null) {
+                            actualVersionName = match.groupValues[1]
+                        }
+                    } catch (e: Exception) {
+                        Log.w(TAG, "Không đọc được versionName từ dumpsys: ${e.message}")
+                    }
+
+                    // Khởi chạy ứng dụng trên đồng hồ
                     try {
                         adb.shell("am start -n com.oppowatch.gemini/.MainActivity")
                     } catch (_: Exception) {}
 
-                    mainHandler.post {
-                        callback.onStatus(
-                            String.format(
-                                Locale.US,
-                                "✓ CÀI ĐẶT THÀNH CÔNG trong %.1fs! Ứng dụng Gemini trên đồng hồ đã sẵn sàng.",
-                                elapsedSec
-                            )
+                    val statusMsg = if (actualVersionName.isNotEmpty()) {
+                        String.format(
+                            Locale.US,
+                            "✓ CÀI ĐẶT THÀNH CÔNG v%s trong %.1fs! Ứng dụng trên đồng hồ đã cập nhật.",
+                            actualVersionName,
+                            elapsedSec
                         )
+                    } else {
+                        String.format(
+                            Locale.US,
+                            "✓ CÀI ĐẶT THÀNH CÔNG trong %.1fs! Ứng dụng trên đồng hồ đã sẵn sàng.",
+                            elapsedSec
+                        )
+                    }
+
+                    mainHandler.post {
+                        callback.onStatus(statusMsg)
                         callback.onSuccess()
                     }
                 }

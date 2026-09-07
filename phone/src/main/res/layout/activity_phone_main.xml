@@ -356,16 +356,37 @@
                 android:layout_marginTop="6dp"
                 android:layout_marginBottom="8dp" />
 
-            <Button
-                android:id="@+id/btn_save_api_key"
+            <LinearLayout
                 android:layout_width="match_parent"
-                android:layout_height="40dp"
-                android:text="💾 LƯU &amp; ĐỒNG BỘ SANG ĐỒNG HỒ"
-                android:textSize="11sp"
-                android:textStyle="bold"
-                android:textColor="#FFFFFF"
-                android:background="@drawable/bg_btn_emerald"
-                android:backgroundTint="@null" />
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+
+                <Button
+                    android:id="@+id/btn_save_api_key"
+                    android:layout_width="0dp"
+                    android:layout_height="40dp"
+                    android:layout_weight="1"
+                    android:text="💾 LƯU &amp; ĐỒNG BỘ"
+                    android:textSize="10.5sp"
+                    android:textStyle="bold"
+                    android:textColor="#FFFFFF"
+                    android:background="@drawable/bg_btn_emerald"
+                    android:backgroundTint="@null"
+                    android:layout_marginEnd="4dp" />
+
+                <Button
+                    android:id="@+id/btn_test_api_key"
+                    android:layout_width="0dp"
+                    android:layout_height="40dp"
+                    android:layout_weight="1"
+                    android:text="🧪 TEST API TRÊN MÁY"
+                    android:textSize="10.5sp"
+                    android:textStyle="bold"
+                    android:textColor="#FFFFFF"
+                    android:background="@drawable/bg_btn_metallic"
+                    android:backgroundTint="@null"
+                    android:layout_marginStart="4dp" />
+            </LinearLayout>
         </LinearLayout>
 
         <!-- Bluetooth Device Selector Header -->
@@ -487,6 +508,66 @@
                 android:textColor="#64748B"
                 android:textSize="12sp"
                 android:padding="16dp" />
+        </LinearLayout>
+
+        <!-- API Error Logs Section Header -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginBottom="6dp">
+
+            <TextView
+                android:id="@+id/tv_error_logs_header"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="🚨 NHẬT KÝ LỖI API &amp; ĐỒNG HỒ:"
+                android:textSize="11sp"
+                android:textStyle="bold"
+                android:textColor="#F87171"
+                android:letterSpacing="0.04" />
+
+            <Button
+                android:id="@+id/btn_clear_error_logs"
+                android:layout_width="wrap_content"
+                android:layout_height="30dp"
+                android:text="🗑️ XÓA LOG"
+                android:textSize="10sp"
+                android:textStyle="bold"
+                android:textColor="#FFFFFF"
+                android:background="@drawable/bg_btn_crimson"
+                android:backgroundTint="@null"
+                android:paddingLeft="10dp"
+                android:paddingRight="10dp" />
+        </LinearLayout>
+
+        <!-- API Error Logs Rack Card -->
+        <LinearLayout
+            android:id="@+id/card_error_logs_rack"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="@drawable/bg_screen_bezel"
+            android:padding="6dp"
+            android:layout_marginBottom="12dp">
+
+            <LinearLayout
+                android:id="@+id/ll_error_logs_list"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical" />
+
+            <TextView
+                android:id="@+id/tv_empty_error_logs"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:text="✓ Chưa ghi nhận lỗi kết nối nào.\nMọi phản hồi từ đồng hồ và API đều đang hoạt động tốt."
+                android:textColor="#94A3B8"
+                android:textSize="11.5sp"
+                android:padding="14dp" />
         </LinearLayout>
 
         <!-- Test TTS Push Button -->

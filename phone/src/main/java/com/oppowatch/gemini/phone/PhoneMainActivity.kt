@@ -16,6 +16,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.widget.Button
 import android.widget.EditText
+import android.widget.HorizontalScrollView
 import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.RadioButton
@@ -27,6 +28,7 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.widget.NestedScrollView
 import com.google.android.gms.wearable.PutDataMapRequest
+import android.util.Log
 import com.google.android.gms.wearable.Wearable
 import org.json.JSONObject
 import java.io.File
@@ -34,8 +36,13 @@ import kotlin.concurrent.thread
 
 class PhoneMainActivity : AppCompatActivity() {
 
+    companion object {
+        private const val TAG = "PhoneMainActivity"
+    }
+
     private lateinit var filterManager: BluetoothFilterManager
     private lateinit var qaHistoryManager: QaHistoryManager
+    private lateinit var apiErrorLogManager: ApiErrorLogManager
 
     // Containers & Roots for Theme Engine
     private lateinit var scrollRoot: NestedScrollView
@@ -45,6 +52,7 @@ class PhoneMainActivity : AppCompatActivity() {
     private lateinit var cardModelSelector: LinearLayout
     private lateinit var cardBluetoothRack: LinearLayout
     private lateinit var cardHistoryRack: LinearLayout
+    private lateinit var cardErrorLogsRack: LinearLayout
     private lateinit var cardUpdatePanel: LinearLayout
 
     // Theme Engine Views
@@ -79,6 +87,7 @@ class PhoneMainActivity : AppCompatActivity() {
     private lateinit var btnToggleApiVisibility: Button
     private lateinit var tvApiKeyStatus: TextView
     private lateinit var btnSaveApiKey: Button
+    private lateinit var btnTestApiKey: Button
     private var isApiKeyVisible = false
 
     // Bluetooth Section
@@ -93,6 +102,12 @@ class PhoneMainActivity : AppCompatActivity() {
     private lateinit var llQaHistory: LinearLayout
     private lateinit var tvEmptyHistory: TextView
     private lateinit var btnClearHistory: Button
+
+    // API Error Logs
+    private lateinit var tvErrorLogsHeader: TextView
+    private lateinit var btnClearErrorLogs: Button
+    private lateinit var llErrorLogsList: LinearLayout
+    private lateinit var tvEmptyErrorLogs: TextView
 
     // GitHub Update Section
     private lateinit var tvAppVersion: TextView
@@ -119,6 +134,7 @@ class PhoneMainActivity : AppCompatActivity() {
     private val receiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
             loadQaHistory()
+            loadErrorLogs()
         }
     }
 
@@ -140,6 +156,28 @@ class PhoneMainActivity : AppCompatActivity() {
             runOnUiThread {
                 loadQaHistory()
             }
+        } else if (messageEvent.path == "/gemini_error_log") {
+            val rawJson = String(messageEvent.data, Charsets.UTF_8)
+            try {
+                val json = org.json.JSONObject(rawJson)
+                val item = ApiErrorItem(
+                    id = java.util.UUID.randomUUID().toString(),
+                    timestamp = json.optLong("timestamp", System.currentTimeMillis()),
+                    statusCode = json.optInt("statusCode", 0),
+                    errorType = json.optString("errorType", "HTTP_ERROR"),
+                    model = json.optString("model", ""),
+                    apiKeyMasked = json.optString("apiKeyMasked", ""),
+                    errorMessage = json.optString("errorMessage", ""),
+                    errorStatus = json.optString("errorStatus", ""),
+                    rawResponse = json.optString("rawResponse", ""),
+                    suggestion = json.optString("suggestion", ""),
+                    source = json.optString("source", "WATCH")
+                )
+                apiErrorLogManager.addError(item)
+            } catch (_: Exception) {}
+            runOnUiThread {
+                loadErrorLogs()
+            }
         }
     }
 
@@ -150,6 +188,7 @@ class PhoneMainActivity : AppCompatActivity() {
 
         filterManager = BluetoothFilterManager(this)
         qaHistoryManager = QaHistoryManager(this)
+        apiErrorLogManager = ApiErrorLogManager(this)
         TtsSpeaker.init(this)
 
         initViews()
@@ -157,11 +196,13 @@ class PhoneMainActivity : AppCompatActivity() {
         setupModelSection()
         setupApiKeySection()
         setupQaHistorySection()
+        setupErrorLogsSection()
         setupUpdateSection()
         setupAdbSection()
 
         checkPermissions()
         checkPermissionsAndLoadDevices(userInitiated = false)
+        autoSyncApiKeyToWatch()
 
         btnReloadBluetooth.setOnClickListener {
             checkPermissionsAndLoadDevices(userInitiated = true)
@@ -172,12 +213,17 @@ class PhoneMainActivity : AppCompatActivity() {
             Toast.makeText(this, "Đang phát âm thanh mẫu...", Toast.LENGTH_SHORT).show()
         }
 
-        val filter = IntentFilter("com.oppowatch.gemini.TTS_RECEIVED")
+        val filter = IntentFilter().apply {
+            addAction("com.oppowatch.gemini.TTS_RECEIVED")
+            addAction("com.oppowatch.gemini.ERROR_LOG_RECEIVED")
+        }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             registerReceiver(receiver, filter, Context.RECEIVER_NOT_EXPORTED)
         } else {
             registerReceiver(receiver, filter)
         }
+
+        Wearable.getMessageClient(this).addListener(wearMessageListener)
     }
 
     private fun initViews() {
@@ -188,6 +234,7 @@ class PhoneMainActivity : AppCompatActivity() {
         cardApiKey = findViewById(R.id.card_api_key)
         cardBluetoothRack = findViewById(R.id.card_bluetooth_rack)
         cardHistoryRack = findViewById(R.id.card_history_rack)
+        cardErrorLogsRack = findViewById(R.id.card_error_logs_rack)
         cardUpdatePanel = findViewById(R.id.card_update_panel)
 
         tvThemeLabel = findViewById(R.id.tv_theme_label)
@@ -218,6 +265,7 @@ class PhoneMainActivity : AppCompatActivity() {
         btnToggleApiVisibility = findViewById(R.id.btn_toggle_api_visibility)
         tvApiKeyStatus = findViewById(R.id.tv_api_key_status)
         btnSaveApiKey = findViewById(R.id.btn_save_api_key)
+        btnTestApiKey = findViewById(R.id.btn_test_api_key)
 
         tvBluetoothHeader = findViewById(R.id.tv_bluetooth_header)
         llBluetoothDevices = findViewById(R.id.ll_bluetooth_devices_list)
@@ -229,6 +277,11 @@ class PhoneMainActivity : AppCompatActivity() {
         llQaHistory = findViewById(R.id.ll_qa_history_list)
         tvEmptyHistory = findViewById(R.id.tv_empty_history)
         btnClearHistory = findViewById(R.id.btn_clear_history)
+
+        tvErrorLogsHeader = findViewById(R.id.tv_error_logs_header)
+        btnClearErrorLogs = findViewById(R.id.btn_clear_error_logs)
+        llErrorLogsList = findViewById(R.id.ll_error_logs_list)
+        tvEmptyErrorLogs = findViewById(R.id.tv_empty_error_logs)
 
         tvAppVersion = findViewById(R.id.tv_app_version)
         tvRepoInfo = findViewById(R.id.tv_repo_info)
@@ -292,6 +345,7 @@ class PhoneMainActivity : AppCompatActivity() {
         cardApiKey.setBackgroundResource(config.cardDrawable)
         cardBluetoothRack.setBackgroundResource(config.bezelDrawable)
         cardHistoryRack.setBackgroundResource(config.bezelDrawable)
+        cardErrorLogsRack.setBackgroundResource(config.bezelDrawable)
         cardUpdatePanel.setBackgroundResource(config.panelDrawable)
         cardAdbPanel.setBackgroundResource(config.panelDrawable)
 
@@ -303,8 +357,10 @@ class PhoneMainActivity : AppCompatActivity() {
         btnAdbInstall.setBackgroundResource(config.btnEmeraldDrawable)
         btnToggleApiVisibility.setBackgroundResource(config.btnPrimaryDrawable)
         btnSaveApiKey.setBackgroundResource(config.btnEmeraldDrawable)
+        btnTestApiKey.setBackgroundResource(config.btnPrimaryDrawable)
         btnReloadBluetooth.setBackgroundResource(config.btnPrimaryDrawable)
         btnClearHistory.setBackgroundResource(config.btnCrimsonDrawable)
+        btnClearErrorLogs.setBackgroundResource(config.btnCrimsonDrawable)
         btnTestTts.setBackgroundResource(config.btnEmeraldDrawable)
         btnCheckUpdate.setBackgroundResource(config.btnGoldDrawable)
 
@@ -318,6 +374,7 @@ class PhoneMainActivity : AppCompatActivity() {
         tvApiKeyDesc.setTextColor(config.textSecondaryColor)
         tvBluetoothHeader.setTextColor(config.headerBluetoothColor)
         tvHistoryHeader.setTextColor(config.headerHistoryColor)
+        tvErrorLogsHeader.setTextColor(config.headerHistoryColor)
         tvAdbHeader.setTextColor(config.titleTextColor)
         tvAdbInstructions.setTextColor(config.textSecondaryColor)
         etWatchAdbIp.setTextColor(if (isLight) Color.parseColor("#0F172A") else Color.parseColor("#FFFFFF"))
@@ -353,6 +410,7 @@ class PhoneMainActivity : AppCompatActivity() {
         // Refresh dynamic device & history views to adopt new theme drawables
         loadPairedBluetoothDevices(userInitiated = false)
         loadQaHistory()
+        loadErrorLogs()
 
         if (syncToWatch) {
             syncThemeToWatch(style.id, mode.id)
@@ -526,6 +584,125 @@ class PhoneMainActivity : AppCompatActivity() {
                 Toast.makeText(this, "Đã lưu trên điện thoại.", Toast.LENGTH_SHORT).show()
             }
         }
+
+        btnTestApiKey.setOnClickListener {
+            val key = etGeminiApiKey.text.toString().trim()
+            if (key.isEmpty()) {
+                Toast.makeText(this, "Vui lòng nhập API Key để kiểm tra!", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+
+            btnTestApiKey.isEnabled = false
+            tvApiKeyStatus.text = "🧪 Đang kiểm tra API Key với Google Gemini..."
+            tvApiKeyStatus.setTextColor(0xFFF59E0B.toInt())
+
+            val modelId = ThemeManager.getSelectedModel(this)
+            val maskedKey = if (key.length > 8) "${key.take(4)}...${key.takeLast(4)}" else "••••"
+
+            thread(name = "TestGeminiApiKeyThread") {
+                try {
+                    val urlStr = "https://generativelanguage.googleapis.com/v1beta/models/$modelId:generateContent?key=$key"
+                    val connection = java.net.URL(urlStr).openConnection() as java.net.HttpURLConnection
+                    connection.requestMethod = "POST"
+                    connection.setRequestProperty("Content-Type", "application/json; charset=utf-8")
+                    connection.doOutput = true
+                    connection.connectTimeout = 12000
+                    connection.readTimeout = 15000
+
+                    val requestBody = JSONObject().apply {
+                        put("contents", org.json.JSONArray().apply {
+                            put(JSONObject().apply {
+                                put("parts", org.json.JSONArray().apply {
+                                    put(JSONObject().apply {
+                                        put("text", "Xin chào, đây là kiểm tra kết nối API.")
+                                    })
+                                })
+                            })
+                        })
+                    }.toString()
+
+                    connection.outputStream.use { os ->
+                        os.write(requestBody.toByteArray(Charsets.UTF_8))
+                    }
+
+                    val code = connection.responseCode
+                    if (code in 200..299) {
+                        runOnUiThread {
+                            btnTestApiKey.isEnabled = true
+                            tvApiKeyStatus.text = "✓ API Key hoạt động hoàn hảo (HTTP $code)!"
+                            tvApiKeyStatus.setTextColor(0xFF34D399.toInt())
+                            Toast.makeText(this@PhoneMainActivity, "✓ API Key hợp lệ và hoạt động tốt!", Toast.LENGTH_SHORT).show()
+                        }
+                    } else {
+                        val errorStream = connection.errorStream?.bufferedReader()?.use { it.readText() } ?: ""
+                        var errorMsg = "HTTP $code"
+                        var errorStatus = ""
+                        try {
+                            val errJson = JSONObject(errorStream)
+                            val innerErr = errJson.optJSONObject("error")
+                            if (innerErr != null) {
+                                errorMsg = innerErr.optString("message", errorMsg)
+                                errorStatus = innerErr.optString("status", "")
+                            }
+                        } catch (_: Exception) {}
+
+                        val suggestion = when (code) {
+                            403 -> "API Key không hợp lệ hoặc tài khoản Google Cloud/AI Studio chưa kích hoạt Gemini API. Hãy kiểm tra lại key trên Google AI Studio."
+                            400 -> "Yêu cầu không hợp lệ hoặc mô hình '$modelId' không được hỗ trợ bởi API Key này."
+                            429 -> "Đã vượt quá hạn ngạch (Quota exceeded) của API Key. Vui lòng chờ hoặc dùng key khác."
+                            else -> "Mã lỗi HTTP $code. Vui lòng kiểm tra lại API Key hoặc mạng internet."
+                        }
+
+                        val errorItem = ApiErrorItem(
+                            id = java.util.UUID.randomUUID().toString(),
+                            timestamp = System.currentTimeMillis(),
+                            statusCode = code,
+                            errorType = "TEST_HTTP_ERROR",
+                            model = modelId,
+                            apiKeyMasked = maskedKey,
+                            errorMessage = errorMsg,
+                            errorStatus = errorStatus,
+                            rawResponse = errorStream,
+                            suggestion = suggestion,
+                            source = "PHONE_TEST"
+                        )
+                        apiErrorLogManager.addError(errorItem)
+
+                        runOnUiThread {
+                            btnTestApiKey.isEnabled = true
+                            tvApiKeyStatus.text = "❌ Lỗi: HTTP $code - $errorMsg"
+                            tvApiKeyStatus.setTextColor(0xFFEF4444.toInt())
+                            loadErrorLogs()
+                            Toast.makeText(this@PhoneMainActivity, "Lỗi kiểm tra API Key ($code): $errorMsg", Toast.LENGTH_LONG).show()
+                        }
+                    }
+                    connection.disconnect()
+                } catch (e: Exception) {
+                    val errorItem = ApiErrorItem(
+                        id = java.util.UUID.randomUUID().toString(),
+                        timestamp = System.currentTimeMillis(),
+                        statusCode = 0,
+                        errorType = "NETWORK_EXCEPTION",
+                        model = modelId,
+                        apiKeyMasked = maskedKey,
+                        errorMessage = e.message ?: "Không thể kết nối tới Google Gemini",
+                        errorStatus = "IO_ERROR",
+                        rawResponse = e.stackTraceToString(),
+                        suggestion = "Kiểm tra kết nối Wi-Fi / 4G trên điện thoại. Nếu dùng VPN hoặc mạng công ty, hãy thử tắt để kiểm tra.",
+                        source = "PHONE_TEST"
+                    )
+                    apiErrorLogManager.addError(errorItem)
+
+                    runOnUiThread {
+                        btnTestApiKey.isEnabled = true
+                        tvApiKeyStatus.text = "❌ Lỗi kết nối: ${e.message}"
+                        tvApiKeyStatus.setTextColor(0xFFEF4444.toInt())
+                        loadErrorLogs()
+                        Toast.makeText(this@PhoneMainActivity, "Lỗi kết nối: ${e.message}", Toast.LENGTH_LONG).show()
+                    }
+                }
+            }
+        }
     }
 
     private fun setupQaHistorySection() {
@@ -575,6 +752,136 @@ class PhoneMainActivity : AppCompatActivity() {
             }
 
             llQaHistory.addView(itemView)
+        }
+    }
+
+    private fun setupErrorLogsSection() {
+        btnClearErrorLogs.setOnClickListener {
+            apiErrorLogManager.clearLogs()
+            loadErrorLogs()
+            Toast.makeText(this, "Đã xóa toàn bộ nhật ký lỗi API.", Toast.LENGTH_SHORT).show()
+        }
+        loadErrorLogs()
+    }
+
+    private fun loadErrorLogs() {
+        val errorLogs = apiErrorLogManager.getErrorLogs()
+        llErrorLogsList.removeAllViews()
+
+        if (errorLogs.isEmpty()) {
+            tvEmptyErrorLogs.visibility = View.VISIBLE
+            return
+        }
+
+        tvEmptyErrorLogs.visibility = View.GONE
+        val config = ThemeManager.getConfig(currentThemeStyle, currentColorMode)
+
+        for (item in errorLogs) {
+            val itemView = LayoutInflater.from(this).inflate(
+                R.layout.item_api_error_log,
+                llErrorLogsList,
+                false
+            )
+            itemView.setBackgroundResource(config.cardDrawable)
+
+            val tvStatusBadge = itemView.findViewById<TextView>(R.id.tv_error_status_badge)
+            val tvSourceBadge = itemView.findViewById<TextView>(R.id.tv_error_source_badge)
+            val tvTime = itemView.findViewById<TextView>(R.id.tv_error_time)
+            val tvModelKey = itemView.findViewById<TextView>(R.id.tv_error_model_key)
+            val tvMessage = itemView.findViewById<TextView>(R.id.tv_error_message)
+            val layoutSuggestion = itemView.findViewById<LinearLayout>(R.id.layout_error_suggestion)
+            val tvSuggestion = itemView.findViewById<TextView>(R.id.tv_error_suggestion)
+            val btnToggleRaw = itemView.findViewById<TextView>(R.id.btn_toggle_raw_json)
+            val btnCopy = itemView.findViewById<Button>(R.id.btn_copy_error_json)
+            val scrollRaw = itemView.findViewById<HorizontalScrollView>(R.id.scroll_raw_json)
+            val tvRaw = itemView.findViewById<TextView>(R.id.tv_raw_json)
+
+            btnCopy.setBackgroundResource(config.btnPrimaryDrawable)
+
+            // Status Badge
+            tvStatusBadge.text = item.getStatusBadgeText()
+            when (item.statusCode) {
+                403 -> {
+                    tvStatusBadge.setTextColor(Color.parseColor("#EF4444"))
+                    tvStatusBadge.setBackgroundColor(Color.parseColor("#33EF4444"))
+                }
+                429 -> {
+                    tvStatusBadge.setTextColor(Color.parseColor("#F59E0B"))
+                    tvStatusBadge.setBackgroundColor(Color.parseColor("#33F59E0B"))
+                }
+                400 -> {
+                    tvStatusBadge.setTextColor(Color.parseColor("#F97316"))
+                    tvStatusBadge.setBackgroundColor(Color.parseColor("#33F97316"))
+                }
+                else -> {
+                    tvStatusBadge.setTextColor(Color.parseColor("#EF4444"))
+                    tvStatusBadge.setBackgroundColor(Color.parseColor("#33EF4444"))
+                }
+            }
+
+            // Source Badge
+            if (item.source == "WATCH") {
+                tvSourceBadge.text = "⌚ ĐỒNG HỒ"
+                tvSourceBadge.setTextColor(Color.parseColor("#38BDF8"))
+                tvSourceBadge.setBackgroundColor(Color.parseColor("#2038BDF8"))
+            } else {
+                tvSourceBadge.text = "📱 TEST TRÊN MÁY"
+                tvSourceBadge.setTextColor(Color.parseColor("#A78BFA"))
+                tvSourceBadge.setBackgroundColor(Color.parseColor("#20A78BFA"))
+            }
+
+            tvTime.text = item.getFormattedTime()
+            tvModelKey.text = "Model: ${if (item.model.isNotEmpty()) item.model else "Mặc định"} | Key: ${if (item.apiKeyMasked.isNotEmpty()) item.apiKeyMasked else "Trống"}"
+            tvMessage.text = "Nguyên nhân: ${item.errorMessage}"
+
+            if (item.suggestion.isNotEmpty()) {
+                layoutSuggestion.visibility = View.VISIBLE
+                tvSuggestion.text = "👉 Hướng dẫn khắc phục:\n${item.suggestion}"
+            } else {
+                layoutSuggestion.visibility = View.GONE
+            }
+
+            if (item.rawResponse.isNotEmpty()) {
+                tvRaw.text = item.rawResponse
+                btnToggleRaw.visibility = View.VISIBLE
+                btnToggleRaw.setOnClickListener {
+                    if (scrollRaw.visibility == View.VISIBLE) {
+                        scrollRaw.visibility = View.GONE
+                        btnToggleRaw.text = "▶ Xem chi tiết phản hồi JSON từ Google"
+                    } else {
+                        scrollRaw.visibility = View.VISIBLE
+                        btnToggleRaw.text = "▼ Ẩn chi tiết phản hồi JSON"
+                    }
+                }
+            } else {
+                btnToggleRaw.visibility = View.GONE
+                scrollRaw.visibility = View.GONE
+            }
+
+            btnCopy.setOnClickListener {
+                val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
+                val textToCopy = buildString {
+                    appendLine("=== CHI TIẾT LỖI GEMINI ===")
+                    appendLine("Thời gian: ${item.getFormattedTime()}")
+                    appendLine("Nguồn: ${item.source}")
+                    appendLine("Mã lỗi: ${item.statusCode} (${item.errorStatus})")
+                    appendLine("Mô hình: ${item.model}")
+                    appendLine("API Key: ${item.apiKeyMasked}")
+                    appendLine("Thông báo: ${item.errorMessage}")
+                    if (item.suggestion.isNotEmpty()) {
+                        appendLine("Khắc phục: ${item.suggestion}")
+                    }
+                    if (item.rawResponse.isNotEmpty()) {
+                        appendLine("JSON phản hồi:")
+                        appendLine(item.rawResponse)
+                    }
+                }
+                val clip = android.content.ClipData.newPlainText("Gemini Api Error", textToCopy)
+                clipboard.setPrimaryClip(clip)
+                Toast.makeText(this, "📋 Đã sao chép chi tiết lỗi vào bộ nhớ tạm!", Toast.LENGTH_SHORT).show()
+            }
+
+            llErrorLogsList.addView(itemView)
         }
     }
 
@@ -713,18 +1020,34 @@ class PhoneMainActivity : AppCompatActivity() {
 
             prefs.edit().putString("saved_watch_adb_ip", ip).apply()
 
+            btnAdbInstall.isEnabled = false
+            pbAdbProgress.visibility = View.VISIBLE
+            tvAdbStatus.text = "🔍 Đang kiểm tra phiên bản APK mới nhất trên GitHub..."
+
             val watchApkFile = File(cacheDir, "Gemini_Watch_App_Update.apk")
 
-            // Nếu file APK chưa có trong cache, tải trực tiếp từ GitHub
-            if (!watchApkFile.exists() || watchApkFile.length() == 0L) {
-                btnAdbInstall.isEnabled = false
-                pbAdbProgress.visibility = View.VISIBLE
-                tvAdbStatus.text = "Đang kiểm tra và tải file APK đồng hồ mới nhất từ GitHub..."
+            GitHubUpdateManager.checkUpdate(this) { result ->
+                result.onSuccess { info ->
+                    var needDownload = !watchApkFile.exists() || watchApkFile.length() == 0L
+                    if (!needDownload) {
+                        try {
+                            val archiveInfo = packageManager.getPackageArchiveInfo(watchApkFile.absolutePath, 0)
+                            val cachedVer = archiveInfo?.versionName ?: ""
+                            // Nếu file trong cache cũ hơn tag mới nhất trên GitHub, xóa đi tải mới
+                            if (cachedVer.isNotEmpty() && !info.tagName.contains(cachedVer)) {
+                                Log.i(TAG, "File APK trong cache ($cachedVer) cũ hơn bản mới (${info.tagName}), xóa để tải lại...")
+                                watchApkFile.delete()
+                                needDownload = true
+                            }
+                        } catch (_: Exception) {
+                            watchApkFile.delete()
+                            needDownload = true
+                        }
+                    }
 
-                GitHubUpdateManager.checkUpdate(this) { result ->
-                    result.onSuccess { info ->
+                    if (needDownload) {
                         if (!info.watchDownloadUrl.isNullOrEmpty()) {
-                            tvAdbStatus.text = "Đang tải APK đồng hồ từ GitHub..."
+                            tvAdbStatus.text = "Đang tải APK bản ${info.tagName} từ GitHub..."
                             thread(name = "DownloadWatchApkThread") {
                                 try {
                                     var currentUrl = info.watchDownloadUrl
@@ -756,7 +1079,7 @@ class PhoneMainActivity : AppCompatActivity() {
                                     connection.disconnect()
 
                                     runOnUiThread {
-                                        tvAdbStatus.text = "✓ Tải APK xong (${watchApkFile.length() / 1024} KB). Đang kết nối ADB tới $ip..."
+                                        tvAdbStatus.text = "✓ Tải APK ${info.tagName} xong (${watchApkFile.length() / 1024} KB). Đang kết nối ADB tới $ip..."
                                         executeAdbInstall(ip, port, watchApkFile)
                                     }
                                 } catch (e: Exception) {
@@ -772,14 +1095,21 @@ class PhoneMainActivity : AppCompatActivity() {
                             pbAdbProgress.visibility = View.GONE
                             tvAdbStatus.text = "Không tìm thấy link tải APK đồng hồ trên GitHub Release!"
                         }
-                    }.onFailure { err ->
+                    } else {
+                        tvAdbStatus.text = "✓ APK bản ${info.tagName} đã sẵn sàng. Đang kết nối ADB tới $ip..."
+                        executeAdbInstall(ip, port, watchApkFile)
+                    }
+                }.onFailure { err ->
+                    // Nếu mất mạng nhưng máy đã có APK sẵn
+                    if (watchApkFile.exists() && watchApkFile.length() > 0L) {
+                        tvAdbStatus.text = "⚠️ Không kiểm tra được GitHub, đang cài file APK có sẵn sang $ip..."
+                        executeAdbInstall(ip, port, watchApkFile)
+                    } else {
                         btnAdbInstall.isEnabled = true
                         pbAdbProgress.visibility = View.GONE
                         tvAdbStatus.text = "Lỗi kiểm tra cập nhật: ${err.message}"
                     }
                 }
-            } else {
-                executeAdbInstall(ip, port, watchApkFile)
             }
         }
     }
@@ -807,15 +1137,41 @@ class PhoneMainActivity : AppCompatActivity() {
         })
     }
 
+    private fun autoSyncApiKeyToWatch() {
+        val prefs = getSharedPreferences("gemini_prefs", Context.MODE_PRIVATE)
+        val savedKey = prefs.getString("custom_api_key", "") ?: ""
+        if (savedKey.isNotEmpty()) {
+            Wearable.getNodeClient(this).connectedNodes.addOnSuccessListener { nodes ->
+                for (node in nodes) {
+                    Wearable.getMessageClient(this).sendMessage(
+                        node.id,
+                        "/gemini_api_key_sync",
+                        savedKey.toByteArray(Charsets.UTF_8)
+                    )
+                }
+                Log.d(TAG, "autoSyncApiKeyToWatch: synced key to ${nodes.size} node(s)")
+            }.addOnFailureListener { e ->
+                Log.w(TAG, "autoSyncApiKeyToWatch failed: ${e.message}")
+            }
+        }
+    }
+
     override fun onDestroy() {
         super.onDestroy()
-        unregisterReceiver(receiver)
+        try {
+            unregisterReceiver(receiver)
+        } catch (_: Exception) {}
+        try {
+            Wearable.getMessageClient(this).removeListener(wearMessageListener)
+        } catch (_: Exception) {}
     }
 
     override fun onResume() {
         super.onResume()
         checkPermissionsAndLoadDevices(userInitiated = false)
         loadQaHistory()
+        loadErrorLogs()
+        autoSyncApiKeyToWatch()
         try {
             Wearable.getMessageClient(this).addListener(wearMessageListener)
         } catch (_: Exception) {}
