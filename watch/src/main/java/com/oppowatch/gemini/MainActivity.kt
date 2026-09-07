@@ -14,6 +14,7 @@ import android.os.Looper
 import android.os.PowerManager
 import android.os.VibrationEffect
 import android.os.Vibrator
+import android.speech.tts.TextToSpeech
 import android.util.Log
 import android.view.MotionEvent
 import android.widget.FrameLayout
@@ -24,6 +25,7 @@ import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import java.util.Locale
 
 class MainActivity : AppCompatActivity() {
 
@@ -42,6 +44,9 @@ class MainActivity : AppCompatActivity() {
 
     private val mainHandler = Handler(Looper.getMainLooper())
     private var touchDownTime = 0L
+
+    // TTS trên đồng hồ (đọc xác nhận báo thức / hẹn giờ)
+    private var watchTts: TextToSpeech? = null
 
     // Chỉ tự động kích hoạt thu âm khi người dùng chủ động mở app (từ launcher, shortcut, tile...)
     private var isAppActivelyLaunched = false
@@ -163,6 +168,16 @@ class MainActivity : AppCompatActivity() {
         }
 
         registerReceiver(screenOffReceiver, IntentFilter(Intent.ACTION_SCREEN_OFF))
+
+        // Khởi tạo TTS trên đồng hồ để đọc xác nhận báo thức/hẹn giờ
+        watchTts = TextToSpeech(this) { status ->
+            if (status == TextToSpeech.SUCCESS) {
+                watchTts?.language = Locale("vi", "VN")
+            } else {
+                Log.w("MainActivity", "TTS khởi tạo thất bại, sẽ dùng tiếng Anh mặc định")
+                watchTts?.language = Locale.ENGLISH
+            }
+        }
 
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO)
             != PackageManager.PERMISSION_GRANTED) {
@@ -298,6 +313,11 @@ class MainActivity : AppCompatActivity() {
         } catch (_: Exception) {}
         try {
             unregisterReceiver(screenOffReceiver)
+        } catch (_: Exception) {}
+        try {
+            watchTts?.stop()
+            watchTts?.shutdown()
+            watchTts = null
         } catch (_: Exception) {}
     }
 
@@ -540,6 +560,22 @@ class MainActivity : AppCompatActivity() {
                     return@runOnUiThread
                 }
 
+                // Sentinel: Gemini không nhận ra giọng nói (bật mic nhưng không nói gì)
+                // -> Đặt lại trạng thái im lặng, không TTS, không hiển thị
+                if (success && question.isEmpty() && answer.isEmpty()) {
+                    Log.d("MainActivity", "Không có giọng nói -> reset im lặng")
+                    tvStatus.text = "NHẤN ĐỂ NÓI"
+                    tvStatus.setTextColor(getStatusIdleColor())
+                    pttContainer.setBackgroundResource(getPttIdleDrawable())
+                    if (isScreenOffPendingExit) {
+                        releaseWakeLock()
+                        finishAndRemoveTask()
+                    } else {
+                        releaseWakeLock()
+                    }
+                    return@runOnUiThread
+                }
+
                 tvStatus.text = if (success) "✓ ĐÃ TRẢ LỜI" else "LỖI"
                 tvStatus.setTextColor(if (success) getStatusSuccessColor() else Color.parseColor("#EF4444"))
                 tvResult.text = answer
@@ -567,6 +603,28 @@ class MainActivity : AppCompatActivity() {
                                 tvResult.text = "$answer\n\n$actionLabel"
                             }
                             tvStatus.text = "✓ ĐÃ THỰC HIỆN"
+
+                            // Đọc TTS xác nhận trực tiếp trên loa đồng hồ
+                            val ttsText = when (voiceAction.type) {
+                                "SET_ALARM" -> {
+                                    val h = voiceAction.hour
+                                    val m = voiceAction.minute
+                                    val period = if (h < 12) "sáng" else if (h < 18) "chiều" else "tối"
+                                    val displayH = if (h == 0) 12 else if (h > 12) h - 12 else h
+                                    if (m == 0) "Đã đặt báo thức lúc $displayH giờ $period"
+                                    else "Đã đặt báo thức lúc $displayH giờ $m phút $period"
+                                }
+                                "SET_TIMER" -> {
+                                    val totalM = voiceAction.seconds / 60
+                                    val totalS = voiceAction.seconds % 60
+                                    if (totalS > 0) "Đã hẹn giờ $totalM phút $totalS giây"
+                                    else "Đã hẹn giờ $totalM phút"
+                                }
+                                else -> ""
+                            }
+                            if (ttsText.isNotEmpty()) {
+                                watchTts?.speak(ttsText, TextToSpeech.QUEUE_FLUSH, null, "alarm_confirm")
+                            }
                         }
                     }
 

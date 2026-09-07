@@ -7,6 +7,23 @@ phiên bản tuân theo [Semantic Versioning](https://semver.org/lang/vi/).
 
 ---
 
+## [v1.2.9] - 2026-09-07
+
+### 🔇 Không Phản Hồi Khi Bật Mic Nhưng Không Nói (Silent Empty Speech Guard)
+- **Sửa lỗi đồng hồ vẫn gọi Gemini / phát TTS khi người dùng bật mic nhưng không nói:**
+  - `GeminiClient.kt`: Sau khi parse JSON phản hồi, nếu Gemini không nhận diện được giọng nói (question rỗng và answer rỗng/quá ngắn) → gọi `onResult(true, "", "", null)` ngay, bỏ qua hoàn toàn.
+  - `MainActivity.kt`: Khi nhận sentinel `question.isEmpty() && answer.isEmpty()` → âm thầm reset UI về "NHẤN ĐỂ NÓI", **tuyệt đối không rung haptic, không phát TTS, không hiển thị nội dung nào**.
+
+### 🔔 TTS Xác Nhận Trên Loa Đồng Hồ Khi Đặt Báo Thức / Hẹn Giờ (Watch TTS Confirmation)
+- **Thêm thông báo giọng nói trực tiếp trên loa đồng hồ sau khi đặt báo thức hoặc hẹn giờ thành công:**
+  - Khởi tạo `TextToSpeech` (ưu tiên `vi_VN`, fallback `en`) trong `onCreate()` và giải phóng trong `onDestroy()`.
+  - Sau khi `VoiceActionHelper.execute()` thành công, tạo câu TTS tự nhiên bằng tiếng Việt:
+    - Báo thức: *"Đã đặt báo thức lúc 7 giờ 30 phút sáng"*
+    - Hẹn giờ: *"Đã hẹn giờ 5 phút"*, *"Đã hẹn giờ 1 phút 30 giây"*
+  - Gọi `watchTts.speak(...)` đọc xác nhận ngay lập tức trên loa đồng hồ (song song với việc gửi sang điện thoại qua Wearable).
+
+---
+
 ## [v1.2.8] - 2026-09-07
 
 ### 🔄 Sửa Triệt Để Lỗi Cử Chỉ Vuốt Back (System Back Gesture Exit App Bug)

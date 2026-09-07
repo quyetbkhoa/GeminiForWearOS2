@@ -160,6 +160,18 @@ object GeminiClient {
                             voiceAction = VoiceActionHelper.parseFromJson(parsed)
                         } catch (_: Exception) {}
 
+                        // Nếu câu hỏi rỗng / Gemini không nhận ra giọng nói: trả về sentinel im lặng
+                        val questionTrimmed = question.trim()
+                        if (questionTrimmed.isBlank() || questionTrimmed == "Câu hỏi từ đồng hồ") {
+                            // Kiểm tra answer có chứa nội dung thực không
+                            val answerTrimmed = answer.trim()
+                            if (answerTrimmed.isBlank() || answerTrimmed.length < 5) {
+                                Log.d(TAG, "Không nhận được giọng nói rõ ràng -> bỏ qua, không phát TTS")
+                                onResult(true, "", "", null)
+                                return@thread
+                            }
+                        }
+
                         // Fallback regex: nếu Gemini không trả action JSON, quét câu hỏi bằng regex
                         if (voiceAction == null) {
                             voiceAction = VoiceActionHelper.parseFallback(question)
