@@ -158,86 +158,52 @@ object GitHubUpdateManager {
         }
     }
 
-    fun startFullUpdate(activity: Activity, updateInfo: UpdateInfo, listener: UpdateProgressListener) {
-        thread(name = "FullUpdateThread") {
+    fun downloadPhoneApk(
+        context: Context,
+        downloadUrl: String,
+        destinationFile: File,
+        listener: UpdateProgressListener,
+        onComplete: ((File) -> Unit)? = null
+    ) {
+        thread(name = "DownloadPhoneApkThread") {
             try {
-                val cacheDir = activity.cacheDir
-
-                // 1. Tải bản cho điện thoại nếu có URL
-                val phoneApkFile = File(cacheDir, "Gemini_Phone_Companion_Update.apk")
-                if (!updateInfo.phoneDownloadUrl.isNullOrEmpty()) {
-                    mainHandler.post {
-                        listener.onStatus("Đang tải bản cập nhật Điện thoại từ GitHub...")
-                    }
-                    downloadWithRedirect(updateInfo.phoneDownloadUrl, phoneApkFile) { percent ->
-                        mainHandler.post { listener.onProgress("Tải Phone APK", percent) }
-                    }
+                mainHandler.post { listener.onStatus("Đang tải bản cập nhật Mobile từ GitHub...") }
+                downloadWithRedirect(downloadUrl, destinationFile) { percent ->
+                    mainHandler.post { listener.onProgress("Tải Phone APK", percent) }
                 }
-
-                // 2. Tải bản cho đồng hồ nếu có URL
-                val watchApkFile = File(cacheDir, "Gemini_Watch_App_Update.apk")
-                if (!updateInfo.watchDownloadUrl.isNullOrEmpty()) {
-                    mainHandler.post {
-                        listener.onStatus("Đang tải bản cập nhật Đồng hồ từ GitHub...")
-                    }
-                    downloadWithRedirect(updateInfo.watchDownloadUrl, watchApkFile) { percent ->
-                        mainHandler.post { listener.onProgress("Tải Watch APK", percent) }
-                    }
-
-                    // 3. Đẩy sang đồng hồ (Tự động ưu tiên Wi-Fi siêu tốc, fallback Bluetooth)
-                    var pushFinished = false
-                    var pushError: String? = null
-
-                    WatchApkPusher.pushApkToWatch(activity, watchApkFile, object : WatchApkPusher.PushCallback {
-                        override fun onStatus(message: String) {
-                            mainHandler.post { listener.onStatus(message) }
-                        }
-
-                        override fun onProgress(stage: String, percentage: Int) {
-                            mainHandler.post { listener.onProgress(stage, percentage) }
-                        }
-
-                        override fun onSuccess() {
-                            pushFinished = true
-                        }
-
-                        override fun onError(error: String) {
-                            pushError = error
-                            pushFinished = true
-                        }
-                    })
-
-                    while (!pushFinished) {
-                        Thread.sleep(200)
-                    }
-
-                    if (pushError != null) {
-                        mainHandler.post {
-                            listener.onStatus("Cảnh báo đẩy đồng hồ: $pushError")
-                        }
-                    } else {
-                        mainHandler.post {
-                            listener.onStatus("Đã gửi xong APK sang đồng hồ! Màn hình đồng hồ sẽ hiện thông báo cài đặt.")
-                        }
-                    }
+                mainHandler.post {
+                    listener.onStatus("✓ Đã tải xong Mobile APK (${destinationFile.length() / 1024} KB)!")
+                    listener.onComplete()
+                    onComplete?.invoke(destinationFile)
                 }
-
-                // 4. Mở trình cài đặt cho điện thoại
-                if (phoneApkFile.exists() && phoneApkFile.length() > 0) {
-                    mainHandler.post {
-                        listener.onStatus("Đang mở trình cài đặt trên điện thoại...")
-                        installPhoneApk(activity, phoneApkFile)
-                        listener.onComplete()
-                    }
-                } else {
-                    mainHandler.post {
-                        listener.onComplete()
-                    }
-                }
-
             } catch (e: Exception) {
-                Log.e(TAG, "Lỗi trong tiến trình cập nhật", e)
-                mainHandler.post { listener.onError("Lỗi cập nhật: ${e.localizedMessage}") }
+                Log.e(TAG, "Lỗi tải Mobile APK", e)
+                mainHandler.post { listener.onError("Lỗi tải Phone APK: ${e.localizedMessage}") }
+            }
+        }
+    }
+
+    fun downloadWatchApk(
+        context: Context,
+        downloadUrl: String,
+        destinationFile: File,
+        listener: UpdateProgressListener,
+        onComplete: ((File) -> Unit)? = null
+    ) {
+        thread(name = "DownloadWatchApkThread") {
+            try {
+                mainHandler.post { listener.onStatus("Đang tải bản cập nhật Wear OS từ GitHub...") }
+                downloadWithRedirect(downloadUrl, destinationFile) { percent ->
+                    mainHandler.post { listener.onProgress("Tải Watch APK", percent) }
+                }
+                mainHandler.post {
+                    listener.onStatus("✓ Đã tải xong Wear APK (${destinationFile.length() / 1024} KB)!")
+                    listener.onComplete()
+                    onComplete?.invoke(destinationFile)
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Lỗi tải Watch APK", e)
+                mainHandler.post { listener.onError("Lỗi tải Watch APK: ${e.localizedMessage}") }
             }
         }
     }
@@ -294,7 +260,7 @@ object GitHubUpdateManager {
         }
     }
 
-    private fun installPhoneApk(context: Context, apkFile: File) {
+    fun installPhoneApk(context: Context, apkFile: File) {
         try {
             val uri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", apkFile)
             val intent = Intent(Intent.ACTION_VIEW).apply {

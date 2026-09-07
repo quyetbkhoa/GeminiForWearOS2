@@ -9,18 +9,32 @@ phiên bản tuân theo [Semantic Versioning](https://semver.org/lang/vi/).
 
 ## [v1.2.9] - 2026-09-07
 
-### 🔇 Không Phản Hồi Khi Bật Mic Nhưng Không Nói (Silent Empty Speech Guard)
+### 📱 Hiển Thị Chi Tiết Phiên Bản Mobile & Android OS (Device & App Version Display)
+- **Hiển thị đầy đủ thông tin hệ thống trong Trung tâm Cập nhật:**
+  - `tvAppVersion`: Hiển thị phiên bản ứng dụng Mobile hiện tại (`📱 Phiên bản Mobile: v1.2.9`).
+  - `tvAndroidVersion`: Hiển thị phiên bản hệ điều hành Android thực tế của thiết bị (`🤖 Hệ điều hành Android: Android ${Build.VERSION.RELEASE} (API ${Build.VERSION.SDK_INT})`).
+  - Tự động làm mới thông tin phiên bản ngay khi người dùng quay lại ứng dụng (`onResume()`) hoặc truy cập menu Cập nhật.
+
+### ⚡ Quy Trình Cập Nhật 2 Bước Tuần Tự (Sequential 2-Step Update Workflow)
+- **Chia quy trình cập nhật thành 2 bước trực quan, tách biệt và an toàn:**
+  - **BƯỚC 1: CẬP NHẬT MOBILE (Điện thoại)**:
+    - Nút `btn_update_step1`: Tải file `Gemini_Phone_Companion_Update.apk` từ GitHub Release và tự động mở trình cài đặt PackageInstaller của Android.
+    - Sau khi hoàn tất cài đặt bản Mobile, người dùng mở app sẽ được thông báo sẵn sàng cho Bước 2.
+  - **BƯỚC 2: CẬP NHẬT WEAR OS QUA WIRELESS ADB (Đồng hồ)**:
+    - Nút `btn_adb_install`: Tải bản `Gemini_Watch_App_Update.apk` từ GitHub Release và cài đặt trực tiếp qua mạng Wi-Fi bằng Wireless ADB client tích hợp (`dadb`).
+    - Thực thi lệnh `pm install -r -d -t -g` ghi đè sạch sẽ ứng dụng trên đồng hồ mà không làm mất cấu hình.
+- **Loại bỏ hoàn toàn cập nhật qua Bluetooth**:
+  - Gỡ bỏ toàn bộ luồng truyền APK qua Bluetooth Channel (`WatchApkPusher`) trong tiến trình update, khắc phục triệt để tình trạng truyền chậm và kẹt bản cũ trên đồng hồ.
+
+### 🔇 Im Lặng Hoàn Toàn Khi Bật Mic Nhưng Không Nói (Silent Empty Speech Guard)
 - **Sửa lỗi đồng hồ vẫn gọi Gemini / phát TTS khi người dùng bật mic nhưng không nói:**
   - `GeminiClient.kt`: Sau khi parse JSON phản hồi, nếu Gemini không nhận diện được giọng nói (question rỗng và answer rỗng/quá ngắn) → gọi `onResult(true, "", "", null)` ngay, bỏ qua hoàn toàn.
   - `MainActivity.kt`: Khi nhận sentinel `question.isEmpty() && answer.isEmpty()` → âm thầm reset UI về "NHẤN ĐỂ NÓI", **tuyệt đối không rung haptic, không phát TTS, không hiển thị nội dung nào**.
 
-### 🔔 TTS Xác Nhận Trên Loa Đồng Hồ Khi Đặt Báo Thức / Hẹn Giờ (Watch TTS Confirmation)
-- **Thêm thông báo giọng nói trực tiếp trên loa đồng hồ sau khi đặt báo thức hoặc hẹn giờ thành công:**
-  - Khởi tạo `TextToSpeech` (ưu tiên `vi_VN`, fallback `en`) trong `onCreate()` và giải phóng trong `onDestroy()`.
-  - Sau khi `VoiceActionHelper.execute()` thành công, tạo câu TTS tự nhiên bằng tiếng Việt:
-    - Báo thức: *"Đã đặt báo thức lúc 7 giờ 30 phút sáng"*
-    - Hẹn giờ: *"Đã hẹn giờ 5 phút"*, *"Đã hẹn giờ 1 phút 30 giây"*
-  - Gọi `watchTts.speak(...)` đọc xác nhận ngay lập tức trên loa đồng hồ (song song với việc gửi sang điện thoại qua Wearable).
+### 📢 Đọc TTS Báo Thức / Hẹn Giờ Qua Loa & Tai Nghe Điện Thoại (Phone TTS Announcement)
+- Sau khi thực thi đặt báo thức hoặc hẹn giờ thành công trên đồng hồ, tự động gửi câu xác nhận tự nhiên bằng tiếng Việt sang điện thoại để phát âm qua loa ngoài hoặc tai nghe Bluetooth:
+  - Báo thức: *"Đã đặt báo thức lúc 7 giờ sáng"*, *"Đã đặt báo thức lúc 2 giờ 30 phút chiều"*.
+  - Hẹn giờ: *"Đã hẹn giờ 5 phút"*, *"Đã hẹn giờ 1 phút 30 giây"*.
 
 ---
 

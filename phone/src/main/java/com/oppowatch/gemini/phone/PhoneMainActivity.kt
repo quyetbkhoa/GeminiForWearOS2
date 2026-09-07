@@ -170,10 +170,18 @@ class PhoneMainActivity : AppCompatActivity() {
     // Sub-Page 3: Wireless ADB & GitHub Update Views
     private lateinit var cardUpdatePanel: LinearLayout
     private lateinit var tvAppVersion: TextView
+    private lateinit var tvAndroidVersion: TextView
     private lateinit var tvRepoInfo: TextView
     private lateinit var tvUpdateStatus: TextView
     private lateinit var pbUpdateProgress: ProgressBar
     private lateinit var btnCheckUpdate: Button
+
+    private lateinit var cardStep1Panel: LinearLayout
+    private lateinit var tvStep1Header: TextView
+    private lateinit var tvStep1Badge: TextView
+    private lateinit var tvStep1Desc: TextView
+    private lateinit var pbStep1Progress: ProgressBar
+    private lateinit var btnUpdateStep1: Button
 
     private lateinit var cardAdbPanel: LinearLayout
     private lateinit var tvAdbHeader: TextView
@@ -185,6 +193,8 @@ class PhoneMainActivity : AppCompatActivity() {
     private lateinit var btnAdbInstall: Button
     private lateinit var pbAdbProgress: ProgressBar
     private lateinit var tvAdbStatus: TextView
+
+    private var latestUpdateInfo: GitHubUpdateManager.UpdateInfo? = null
 
     // Sub-Page 4: Theme Selector Views
     private lateinit var cardThemeSelector: LinearLayout
@@ -386,10 +396,18 @@ class PhoneMainActivity : AppCompatActivity() {
         // Subpage 3 Views
         cardUpdatePanel = findViewById(R.id.card_update_panel)
         tvAppVersion = findViewById(R.id.tv_app_version)
+        tvAndroidVersion = findViewById(R.id.tv_android_version)
         tvRepoInfo = findViewById(R.id.tv_repo_info)
         tvUpdateStatus = findViewById(R.id.tv_update_status)
         pbUpdateProgress = findViewById(R.id.pb_update_progress)
         btnCheckUpdate = findViewById(R.id.btn_check_update)
+
+        cardStep1Panel = findViewById(R.id.card_step1_panel)
+        tvStep1Header = findViewById(R.id.tv_step1_header)
+        tvStep1Badge = findViewById(R.id.tv_step1_badge)
+        tvStep1Desc = findViewById(R.id.tv_step1_desc)
+        pbStep1Progress = findViewById(R.id.pb_step1_progress)
+        btnUpdateStep1 = findViewById(R.id.btn_update_step1)
 
         cardAdbPanel = findViewById(R.id.card_adb_panel)
         tvAdbHeader = findViewById(R.id.tv_adb_header)
@@ -562,11 +580,16 @@ class PhoneMainActivity : AppCompatActivity() {
 
         // 3. ADB & Update
         val currentVersion = try {
-            packageManager.getPackageInfo(packageName, 0).versionName ?: "1.2.8"
-        } catch (_: Exception) { "1.2.8" }
+            packageManager.getPackageInfo(packageName, 0).versionName ?: "1.2.9"
+        } catch (_: Exception) { "1.2.9" }
         tvHubAdbBadge.text = "v$currentVersion"
-        tvHubAdbSummary.text = "Wireless ADB Sideload • Phiên bản v$currentVersion"
-        tvAppVersion.text = "Phiên bản: v$currentVersion"
+        tvHubAdbSummary.text = "Wireless ADB Sideload • Mobile v$currentVersion"
+        if (::tvAppVersion.isInitialized) {
+            tvAppVersion.text = "📱 Phiên bản Mobile: v$currentVersion"
+        }
+        if (::tvAndroidVersion.isInitialized) {
+            tvAndroidVersion.text = "🤖 Hệ điều hành Android: Android ${Build.VERSION.RELEASE} (API ${Build.VERSION.SDK_INT})"
+        }
 
         // 4. Theme
         val style = ThemeManager.getStyle(this)
@@ -705,6 +728,7 @@ class PhoneMainActivity : AppCompatActivity() {
         cardHistoryRack.setBackgroundResource(config.bezelDrawable)
         cardErrorLogsRack.setBackgroundResource(config.bezelDrawable)
         cardUpdatePanel.setBackgroundResource(config.panelDrawable)
+        cardStep1Panel.setBackgroundResource(config.panelDrawable)
         cardAdbPanel.setBackgroundResource(config.panelDrawable)
 
         // Inputs & Buttons
@@ -735,6 +759,8 @@ class PhoneMainActivity : AppCompatActivity() {
         btnClearErrorLogs.setBackgroundResource(config.btnCrimsonDrawable)
         btnTestTts.setBackgroundResource(config.btnEmeraldDrawable)
         btnCheckUpdate.setBackgroundResource(config.btnGoldDrawable)
+        btnUpdateStep1.setBackgroundResource(config.btnGoldDrawable)
+        btnUpdateStep1.setTextColor(Color.parseColor("#0F172A"))
 
         // Typography Colors
         tvMainTitle.setTextColor(if (isLight) Color.parseColor("#B45309") else config.titleTextColor)
@@ -753,8 +779,13 @@ class PhoneMainActivity : AppCompatActivity() {
 
         tvUpdateHeader.setTextColor(if (isLight) Color.parseColor("#B45309") else Color.parseColor("#F59E0B"))
         tvAppVersion.setTextColor(if (isLight) Color.parseColor("#047857") else Color.parseColor("#34D399"))
+        tvAndroidVersion.setTextColor(if (isLight) Color.parseColor("#0284C7") else Color.parseColor("#38BDF8"))
         tvRepoInfo.setTextColor(if (isLight) Color.parseColor("#64748B") else Color.parseColor("#94A3B8"))
         tvUpdateStatus.setTextColor(if (isLight) Color.parseColor("#475569") else config.textSecondaryColor)
+
+        tvStep1Header.setTextColor(if (isLight) Color.parseColor("#B45309") else Color.parseColor("#F59E0B"))
+        tvStep1Badge.setTextColor(if (isLight) Color.parseColor("#B45309") else Color.parseColor("#F59E0B"))
+        tvStep1Desc.setTextColor(if (isLight) Color.parseColor("#475569") else config.textSecondaryColor)
 
         tvAdbHeader.setTextColor(if (isLight) Color.parseColor("#0284C7") else Color.parseColor("#38BDF8"))
         tvAdbInstructions.setTextColor(if (isLight) Color.parseColor("#475569") else config.textSecondaryColor)
@@ -1336,10 +1367,12 @@ class PhoneMainActivity : AppCompatActivity() {
     }
 
     private fun setupUpdateSection() {
-        val currentVersion = try {
+        val currentMobileVersion = try {
             packageManager.getPackageInfo(packageName, 0).versionName ?: "1.0.0"
         } catch (_: Exception) { "1.0.0" }
-        tvAppVersion.text = "Phiên bản: v$currentVersion"
+
+        tvAppVersion.text = "📱 Phiên bản Mobile: v$currentMobileVersion"
+        tvAndroidVersion.text = "🤖 Hệ điều hành Android: Android ${Build.VERSION.RELEASE} (API ${Build.VERSION.SDK_INT})"
 
         btnCheckUpdate.setOnClickListener {
             btnCheckUpdate.isEnabled = false
@@ -1349,34 +1382,56 @@ class PhoneMainActivity : AppCompatActivity() {
 
             GitHubUpdateManager.checkUpdate(this) { result ->
                 pbUpdateProgress.isIndeterminate = false
+                pbUpdateProgress.visibility = View.GONE
                 btnCheckUpdate.isEnabled = true
 
                 result.onSuccess { info ->
-                    if (info.hasUpdate) {
-                        tvUpdateStatus.text = "Phát hiện bản mới: ${info.tagName}!\nBấm để bắt đầu cập nhật cả Phone & Watch."
-                        btnCheckUpdate.text = "CẬP NHẬT NGAY LÊN ${info.tagName}"
-                        btnCheckUpdate.setOnClickListener {
-                            performUpdate(info)
-                        }
+                    latestUpdateInfo = info
+                    val isMobileNewer = GitHubUpdateManager.isVersionNewer(info.tagName, currentMobileVersion)
+
+                    if (info.hasUpdate && isMobileNewer) {
+                        tvUpdateStatus.text = "Phát hiện bản mới: ${info.tagName} (Hiện tại: v$currentMobileVersion)!\n👉 Hãy thực hiện Bước 1 (Cập nhật Mobile), sau đó thực hiện Bước 2 (Cập nhật Wear qua ADB)."
+                        tvStep1Desc.text = "Có bản mới: ${info.tagName}. Bấm nút bên dưới để tải và cài đặt bản Mobile trước."
+                        btnUpdateStep1.text = "📲 BƯỚC 1: CẬP NHẬT MOBILE LÊN ${info.tagName}"
+                        tvAdbInstructions.text = "⚠️ Hãy hoàn thành Bước 1 (Cập nhật Mobile) trước. Sau đó bật 'Gỡ lỗi qua Wi-Fi' trên đồng hồ và bấm cài đặt Bước 2 bên dưới (không qua Bluetooth):"
                     } else {
-                        tvUpdateStatus.text = "Bạn đang dùng bản mới nhất (${info.tagName}).\n(Bấm lại nếu muốn tải đè bản mới nhất từ GitHub)."
-                        btnCheckUpdate.text = "CẬP NHẬT ĐÈ BẢN HIỆN TẠI"
-                        btnCheckUpdate.setOnClickListener {
-                            performUpdate(info)
-                        }
+                        tvUpdateStatus.text = "Mobile đang ở bản mới nhất (${info.tagName}).\n👉 Bạn có thể tiến hành Bước 2 để cập nhật đồng hồ qua Wireless ADB."
+                        tvStep1Desc.text = "✓ Ứng dụng Mobile đã ở phiên bản mới nhất (${info.tagName})."
+                        btnUpdateStep1.text = "✓ CÀI LẠI MOBILE (${info.tagName})"
+                        tvAdbInstructions.text = "Bật 'Gỡ lỗi qua Wi-Fi' trên OPPO Watch và bấm nút Bước 2 bên dưới để cập nhật đồng hồ qua Wireless ADB (không qua Bluetooth):"
                     }
                 }.onFailure { err ->
-                    tvUpdateStatus.text = "Lỗi kiểm tra: ${err.message}"
-                    pbUpdateProgress.visibility = View.GONE
+                    tvUpdateStatus.text = "Lỗi kiểm tra bản mới: ${err.message}"
+                }
+            }
+        }
+
+        btnUpdateStep1.setOnClickListener {
+            val info = latestUpdateInfo
+            if (info != null) {
+                performStep1MobileUpdate(info)
+            } else {
+                tvStep1Desc.text = "Đang kiểm tra thông tin bản phát hành..."
+                pbStep1Progress.visibility = View.VISIBLE
+                pbStep1Progress.isIndeterminate = true
+                GitHubUpdateManager.checkUpdate(this) { result ->
+                    pbStep1Progress.isIndeterminate = false
+                    pbStep1Progress.visibility = View.GONE
+                    result.onSuccess { checkedInfo ->
+                        latestUpdateInfo = checkedInfo
+                        performStep1MobileUpdate(checkedInfo)
+                    }.onFailure { err ->
+                        tvStep1Desc.text = "Lỗi kiểm tra bản phát hành: ${err.message}"
+                    }
                 }
             }
         }
     }
 
-    private fun performUpdate(info: GitHubUpdateManager.UpdateInfo) {
+    private fun performStep1MobileUpdate(info: GitHubUpdateManager.UpdateInfo) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             if (!packageManager.canRequestPackageInstalls()) {
-                Toast.makeText(this, "Vui lòng bật quyền 'Cài đặt ứng dụng không rõ nguồn' để cập nhật", Toast.LENGTH_LONG).show()
+                Toast.makeText(this, "Vui lòng bật quyền 'Cài đặt ứng dụng không rõ nguồn' để cập nhật Mobile", Toast.LENGTH_LONG).show()
                 val intent = Intent(android.provider.Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES).apply {
                     data = android.net.Uri.parse("package:$packageName")
                 }
@@ -1385,40 +1440,40 @@ class PhoneMainActivity : AppCompatActivity() {
             }
         }
 
-        btnCheckUpdate.isEnabled = false
-        pbUpdateProgress.visibility = View.VISIBLE
-        pbUpdateProgress.progress = 0
+        if (info.phoneDownloadUrl.isNullOrEmpty()) {
+            Toast.makeText(this, "Không tìm thấy link tải Phone APK trên GitHub Release!", Toast.LENGTH_LONG).show()
+            tvStep1Desc.text = "Lỗi: Bản phát hành ${info.tagName} không chứa Phone APK."
+            return
+        }
 
-        GitHubUpdateManager.startFullUpdate(this, info, object : GitHubUpdateManager.UpdateProgressListener {
+        btnUpdateStep1.isEnabled = false
+        pbStep1Progress.visibility = View.VISIBLE
+        pbStep1Progress.progress = 0
+        tvStep1Desc.text = "Đang tải bản cập nhật Mobile ${info.tagName} từ GitHub..."
+
+        val phoneApkFile = File(cacheDir, "Gemini_Phone_Companion_Update.apk")
+        GitHubUpdateManager.downloadPhoneApk(this, info.phoneDownloadUrl, phoneApkFile, object : GitHubUpdateManager.UpdateProgressListener {
             override fun onStatus(message: String) {
-                tvUpdateStatus.text = message
+                tvStep1Desc.text = message
             }
 
             override fun onProgress(stage: String, percent: Int) {
-                pbUpdateProgress.progress = percent
-                tvUpdateStatus.text = "$stage: $percent%"
+                pbStep1Progress.progress = percent
+                tvStep1Desc.text = "$stage: $percent%"
             }
 
             override fun onComplete() {
-                val ip = etWatchAdbIp.text.toString().trim()
-                val port = etWatchAdbPort.text.toString().trim().toIntOrNull() ?: 5555
-                val watchApk = File(cacheDir, "Gemini_Watch_App_Update.apk")
-
-                if (ip.isNotEmpty() && watchApk.exists() && watchApk.length() > 0L) {
-                    tvUpdateStatus.text = "✓ Phone xong! Đang tự động cài sang Watch qua Wireless ADB ($ip)..."
-                    executeAdbInstall(ip, port, watchApk)
-                } else {
-                    tvUpdateStatus.text = "✓ Đã hoàn tất tải! Bấm nút '⚡ KẾT NỐI ADB & CÀI ĐẶT' bên dưới để cài thẳng lên đồng hồ."
-                }
-                pbUpdateProgress.visibility = View.GONE
-                btnCheckUpdate.isEnabled = true
-                btnCheckUpdate.text = "KIỂM TRA CẬP NHẬT"
+                pbStep1Progress.visibility = View.GONE
+                btnUpdateStep1.isEnabled = true
+                tvStep1Desc.text = "✓ Đã tải xong Mobile APK! Đang mở trình cài đặt Android..."
+                GitHubUpdateManager.installPhoneApk(this@PhoneMainActivity, phoneApkFile)
+                Toast.makeText(this@PhoneMainActivity, "Hãy bấm 'Cập nhật' trên màn hình để hoàn tất Bước 1!", Toast.LENGTH_LONG).show()
             }
 
             override fun onError(error: String) {
-                tvUpdateStatus.text = "Lỗi: $error"
-                pbUpdateProgress.visibility = View.GONE
-                btnCheckUpdate.isEnabled = true
+                pbStep1Progress.visibility = View.GONE
+                btnUpdateStep1.isEnabled = true
+                tvStep1Desc.text = "Lỗi tải Mobile: $error"
             }
         })
     }
@@ -1471,93 +1526,86 @@ class PhoneMainActivity : AppCompatActivity() {
 
             btnAdbInstall.isEnabled = false
             pbAdbProgress.visibility = View.VISIBLE
-            tvAdbStatus.text = "🔍 Đang kiểm tra phiên bản APK mới nhất trên GitHub..."
+            tvAdbStatus.text = "🔍 Đang chuẩn bị bản APK Wear OS cho đồng hồ..."
 
             val watchApkFile = File(cacheDir, "Gemini_Watch_App_Update.apk")
 
-            GitHubUpdateManager.checkUpdate(this) { result ->
-                result.onSuccess { info ->
-                    var needDownload = !watchApkFile.exists() || watchApkFile.length() == 0L
-                    if (!needDownload) {
-                        try {
-                            val archiveInfo = packageManager.getPackageArchiveInfo(watchApkFile.absolutePath, 0)
-                            val cachedVer = archiveInfo?.versionName ?: ""
-                            if (cachedVer.isNotEmpty() && !info.tagName.contains(cachedVer)) {
-                                Log.i(TAG, "File APK trong cache ($cachedVer) cũ hơn bản mới (${info.tagName}), xóa để tải lại...")
-                                watchApkFile.delete()
-                                needDownload = true
-                            }
-                        } catch (_: Exception) {
-                            watchApkFile.delete()
-                            needDownload = true
-                        }
-                    }
-
-                    if (needDownload) {
-                        if (!info.watchDownloadUrl.isNullOrEmpty()) {
-                            tvAdbStatus.text = "Đang tải APK bản ${info.tagName} từ GitHub..."
-                            thread(name = "DownloadWatchApkThread") {
-                                try {
-                                    var currentUrl = info.watchDownloadUrl
-                                    var connection: java.net.HttpURLConnection
-                                    var redirects = 0
-                                    while (true) {
-                                        connection = java.net.URL(currentUrl).openConnection() as java.net.HttpURLConnection
-                                        connection.instanceFollowRedirects = false
-                                        connection.connectTimeout = 15000
-                                        connection.readTimeout = 30000
-                                        connection.connect()
-
-                                        val code = connection.responseCode
-                                        if (code in 301..308) {
-                                            currentUrl = connection.getHeaderField("Location")
-                                            connection.disconnect()
-                                            redirects++
-                                            if (redirects > 5) throw java.io.IOException("Quá nhiều lần chuyển hướng mạng")
-                                            continue
-                                        }
-                                        break
-                                    }
-
-                                    connection.inputStream.use { input ->
-                                        watchApkFile.outputStream().use { output ->
-                                            input.copyTo(output)
-                                        }
-                                    }
-                                    connection.disconnect()
-
-                                    runOnUiThread {
-                                        tvAdbStatus.text = "✓ Tải APK ${info.tagName} xong (${watchApkFile.length() / 1024} KB). Đang kết nối ADB tới $ip..."
-                                        executeAdbInstall(ip, port, watchApkFile)
-                                    }
-                                } catch (e: Exception) {
-                                    runOnUiThread {
-                                        btnAdbInstall.isEnabled = true
-                                        pbAdbProgress.visibility = View.GONE
-                                        tvAdbStatus.text = "Lỗi tải APK: ${e.message}"
-                                    }
-                                }
-                            }
+            val info = latestUpdateInfo
+            if (info != null) {
+                proceedAdbWatchInstall(ip, port, watchApkFile, info)
+            } else {
+                GitHubUpdateManager.checkUpdate(this) { result ->
+                    result.onSuccess { checkedInfo ->
+                        latestUpdateInfo = checkedInfo
+                        proceedAdbWatchInstall(ip, port, watchApkFile, checkedInfo)
+                    }.onFailure { err ->
+                        if (watchApkFile.exists() && watchApkFile.length() > 0L) {
+                            tvAdbStatus.text = "⚠️ Không kiểm tra được GitHub, đang cài file APK có sẵn sang $ip..."
+                            executeAdbInstall(ip, port, watchApkFile)
                         } else {
                             btnAdbInstall.isEnabled = true
                             pbAdbProgress.visibility = View.GONE
-                            tvAdbStatus.text = "Không tìm thấy link tải APK đồng hồ trên GitHub Release!"
+                            tvAdbStatus.text = "Lỗi kiểm tra cập nhật: ${err.message}"
                         }
-                    } else {
-                        tvAdbStatus.text = "✓ APK bản ${info.tagName} đã sẵn sàng. Đang kết nối ADB tới $ip..."
-                        executeAdbInstall(ip, port, watchApkFile)
-                    }
-                }.onFailure { err ->
-                    if (watchApkFile.exists() && watchApkFile.length() > 0L) {
-                        tvAdbStatus.text = "⚠️ Không kiểm tra được GitHub, đang cài file APK có sẵn sang $ip..."
-                        executeAdbInstall(ip, port, watchApkFile)
-                    } else {
-                        btnAdbInstall.isEnabled = true
-                        pbAdbProgress.visibility = View.GONE
-                        tvAdbStatus.text = "Lỗi kiểm tra cập nhật: ${err.message}"
                     }
                 }
             }
+        }
+    }
+
+    private fun proceedAdbWatchInstall(
+        ip: String,
+        port: Int,
+        watchApkFile: File,
+        info: GitHubUpdateManager.UpdateInfo
+    ) {
+        var needDownload = !watchApkFile.exists() || watchApkFile.length() == 0L
+        if (!needDownload) {
+            try {
+                val archiveInfo = packageManager.getPackageArchiveInfo(watchApkFile.absolutePath, 0)
+                val cachedVer = archiveInfo?.versionName ?: ""
+                if (cachedVer.isNotEmpty() && !info.tagName.contains(cachedVer)) {
+                    Log.i(TAG, "File APK trong cache ($cachedVer) cũ hơn bản mới (${info.tagName}), xóa để tải lại...")
+                    watchApkFile.delete()
+                    needDownload = true
+                }
+            } catch (_: Exception) {
+                watchApkFile.delete()
+                needDownload = true
+            }
+        }
+
+        if (needDownload) {
+            if (!info.watchDownloadUrl.isNullOrEmpty()) {
+                tvAdbStatus.text = "Đang tải APK Wear OS bản ${info.tagName} từ GitHub..."
+                GitHubUpdateManager.downloadWatchApk(this, info.watchDownloadUrl, watchApkFile, object : GitHubUpdateManager.UpdateProgressListener {
+                    override fun onStatus(message: String) {
+                        tvAdbStatus.text = message
+                    }
+
+                    override fun onProgress(stage: String, percent: Int) {
+                        tvAdbStatus.text = "$stage: $percent%"
+                    }
+
+                    override fun onComplete() {
+                        tvAdbStatus.text = "✓ Tải APK ${info.tagName} xong (${watchApkFile.length() / 1024} KB). Đang kết nối Wireless ADB tới $ip..."
+                        executeAdbInstall(ip, port, watchApkFile)
+                    }
+
+                    override fun onError(error: String) {
+                        btnAdbInstall.isEnabled = true
+                        pbAdbProgress.visibility = View.GONE
+                        tvAdbStatus.text = "Lỗi tải APK đồng hồ: $error"
+                    }
+                }, onComplete = {})
+            } else {
+                btnAdbInstall.isEnabled = true
+                pbAdbProgress.visibility = View.GONE
+                tvAdbStatus.text = "Không tìm thấy link tải APK đồng hồ trên GitHub Release!"
+            }
+        } else {
+            tvAdbStatus.text = "✓ APK bản ${info.tagName} đã sẵn sàng. Đang kết nối Wireless ADB tới $ip..."
+            executeAdbInstall(ip, port, watchApkFile)
         }
     }
 
@@ -1616,6 +1664,15 @@ class PhoneMainActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
+        val currentMobileVersion = try {
+            packageManager.getPackageInfo(packageName, 0).versionName ?: "1.0.0"
+        } catch (_: Exception) { "1.0.0" }
+        if (::tvAppVersion.isInitialized) {
+            tvAppVersion.text = "📱 Phiên bản Mobile: v$currentMobileVersion"
+        }
+        if (::tvAndroidVersion.isInitialized) {
+            tvAndroidVersion.text = "🤖 Hệ điều hành Android: Android ${Build.VERSION.RELEASE} (API ${Build.VERSION.SDK_INT})"
+        }
         checkPermissionsAndLoadDevices(userInitiated = false)
         loadQaHistory()
         loadErrorLogs()

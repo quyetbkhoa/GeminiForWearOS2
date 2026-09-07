@@ -980,21 +980,34 @@
                         android:id="@+id/tv_update_header"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="🌐 CẬP NHẬT ỨNG DỤNG TỪ GITHUB:"
+                        android:text="🌐 TRUNG TÂM CẬP NHẬT HỆ THỐNG:"
                         android:textSize="11.5sp"
                         android:textStyle="bold"
                         android:textColor="#F59E0B"
                         android:letterSpacing="0.04"
-                        android:layout_marginBottom="4dp" />
+                        android:layout_marginBottom="6dp" />
 
+                    <!-- Mobile App Version -->
                     <TextView
                         android:id="@+id/tv_app_version"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Phiên bản: v1.2.8"
+                        android:text="📱 Phiên bản Mobile: v1.2.9"
                         android:textSize="10.5sp"
                         android:textColor="#34D399"
                         android:textStyle="bold" />
+
+                    <!-- Android OS Version -->
+                    <TextView
+                        android:id="@+id/tv_android_version"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="🤖 Hệ điều hành Android: Đang tải..."
+                        android:textSize="10.5sp"
+                        android:textColor="#38BDF8"
+                        android:textStyle="bold"
+                        android:layout_marginTop="2dp"
+                        android:layout_marginBottom="4dp" />
 
                     <TextView
                         android:id="@+id/tv_repo_info"
@@ -1009,7 +1022,7 @@
                         android:id="@+id/tv_update_status"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Bấm nút bên dưới để kiểm tra bản phát hành mới nhất:"
+                        android:text="Bấm nút bên dưới để kiểm tra bản phát hành mới nhất từ GitHub:"
                         android:textSize="10sp"
                         android:textColor="#94A3B8"
                         android:layout_marginBottom="8dp" />
@@ -1027,7 +1040,7 @@
                         android:id="@+id/btn_check_update"
                         android:layout_width="match_parent"
                         android:layout_height="40dp"
-                        android:text="KIỂM TRA CẬP NHẬT"
+                        android:text="🔍 KIỂM TRA BẢN PHÁT HÀNH MỚI"
                         android:textSize="10.5sp"
                         android:textStyle="bold"
                         android:textColor="#0F172A"
@@ -1035,7 +1048,78 @@
                         android:backgroundTint="@null" />
                 </LinearLayout>
 
-                <!-- Wireless ADB Installer Section -->
+                <!-- BƯỚC 1: Cập nhật Mobile Section -->
+                <LinearLayout
+                    android:id="@+id/card_step1_panel"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:background="@drawable/bg_rack_panel"
+                    android:padding="14dp"
+                    android:layout_marginBottom="14dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:layout_marginBottom="6dp">
+
+                        <TextView
+                            android:id="@+id/tv_step1_header"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="📲 BƯỚC 1: CẬP NHẬT ỨNG DỤNG MOBILE"
+                            android:textSize="11.5sp"
+                            android:textStyle="bold"
+                            android:textColor="#F59E0B"
+                            android:letterSpacing="0.04" />
+
+                        <TextView
+                            android:id="@+id/tv_step1_badge"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="BƯỚC 1"
+                            android:textSize="9sp"
+                            android:textStyle="bold"
+                            android:textColor="#F59E0B"
+                            android:background="@drawable/bg_pill_badge"
+                            android:paddingHorizontal="6dp"
+                            android:paddingVertical="2dp" />
+                    </LinearLayout>
+
+                    <TextView
+                        android:id="@+id/tv_step1_desc"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Cập nhật ứng dụng điện thoại trước. Sau khi cài đặt thành công bản Mobile, mới tiến hành Bước 2 để cập nhật đồng hồ."
+                        android:textSize="10sp"
+                        android:textColor="#94A3B8"
+                        android:layout_marginBottom="8dp" />
+
+                    <ProgressBar
+                        android:id="@+id/pb_step1_progress"
+                        style="?android:attr/progressBarStyleHorizontal"
+                        android:layout_width="match_parent"
+                        android:layout_height="6dp"
+                        android:visibility="gone"
+                        android:max="100"
+                        android:layout_marginBottom="8dp" />
+
+                    <Button
+                        android:id="@+id/btn_update_step1"
+                        android:layout_width="match_parent"
+                        android:layout_height="40dp"
+                        android:text="📲 BƯỚC 1: TẢI &amp; CÀI ĐẶT BẢN MOBILE"
+                        android:textSize="10.5sp"
+                        android:textStyle="bold"
+                        android:textColor="#FFFFFF"
+                        android:background="@drawable/bg_btn_gold"
+                        android:backgroundTint="@null" />
+                </LinearLayout>
+
+                <!-- BƯỚC 2: Wireless ADB Wear OS Section -->
                 <LinearLayout
                     android:id="@+id/card_adb_panel"
                     android:layout_width="match_parent"
@@ -1057,7 +1141,7 @@
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
-                            android:text="⚡ CÀI ĐẶT QUA WIRELESS ADB:"
+                            android:text="⚡ BƯỚC 2: CẬP NHẬT WEAR OS QUA ADB"
                             android:textSize="11.5sp"
                             android:textStyle="bold"
                             android:textColor="#38BDF8"
@@ -1067,7 +1151,7 @@
                             android:id="@+id/tv_adb_badge"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="SIÊU TỐC"
+                            android:text="BƯỚC 2"
                             android:textSize="9sp"
                             android:textStyle="bold"
                             android:textColor="#34D399"
@@ -1080,7 +1164,7 @@
                         android:id="@+id/tv_adb_instructions"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="Cài đặt trực tiếp từ điện thoại sang đồng hồ không cần máy tính. Hãy bật 'Gỡ lỗi qua Wi-Fi' trên OPPO Watch và kết nối cùng mạng Wi-Fi hoặc Hotspot:"
+                        android:text="Chỉ cập nhật Wear qua Wireless Debug (không dùng Bluetooth). Sau khi cập nhật Mobile thành công, bật 'Gỡ lỗi qua Wi-Fi' trên đồng hồ và bấm cài đặt bên dưới:"
                         android:textSize="10sp"
                         android:textColor="#94A3B8"
                         android:layout_marginBottom="8dp" />
@@ -1143,7 +1227,7 @@
                         android:id="@+id/btn_adb_install"
                         android:layout_width="match_parent"
                         android:layout_height="42dp"
-                        android:text="⚡ KẾT NỐI ADB &amp; CÀI ĐẶT LÊN ĐỒNG HỒ"
+                        android:text="⚡ BƯỚC 2: CÀI ĐẶT LÊN ĐỒNG HỒ QUA ADB"
                         android:textSize="10.5sp"
                         android:textStyle="bold"
                         android:textColor="#FFFFFF"
@@ -1164,7 +1248,7 @@
                         android:id="@+id/tv_adb_status"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="Sẵn sàng kết nối ADB."
+                        android:text="Sẵn sàng kết nối ADB (chỉ cập nhật qua Wireless Debug, không dùng Bluetooth)."
                         android:textColor="#94A3B8"
                         android:textSize="10sp"
                         android:lineSpacingExtra="2dp" />
