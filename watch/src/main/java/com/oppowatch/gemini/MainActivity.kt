@@ -14,7 +14,6 @@ import android.os.Looper
 import android.os.PowerManager
 import android.os.VibrationEffect
 import android.os.Vibrator
-import android.speech.tts.TextToSpeech
 import android.util.Log
 import android.view.MotionEvent
 import android.widget.FrameLayout
@@ -25,7 +24,6 @@ import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import java.util.Locale
 
 class MainActivity : AppCompatActivity() {
 
@@ -44,9 +42,6 @@ class MainActivity : AppCompatActivity() {
 
     private val mainHandler = Handler(Looper.getMainLooper())
     private var touchDownTime = 0L
-
-    // TTS trên đồng hồ (đọc xác nhận báo thức / hẹn giờ)
-    private var watchTts: TextToSpeech? = null
 
     // Chỉ tự động kích hoạt thu âm khi người dùng chủ động mở app (từ launcher, shortcut, tile...)
     private var isAppActivelyLaunched = false
@@ -168,16 +163,6 @@ class MainActivity : AppCompatActivity() {
         }
 
         registerReceiver(screenOffReceiver, IntentFilter(Intent.ACTION_SCREEN_OFF))
-
-        // Khởi tạo TTS trên đồng hồ để đọc xác nhận báo thức/hẹn giờ
-        watchTts = TextToSpeech(this) { status ->
-            if (status == TextToSpeech.SUCCESS) {
-                watchTts?.language = Locale("vi", "VN")
-            } else {
-                Log.w("MainActivity", "TTS khởi tạo thất bại, sẽ dùng tiếng Anh mặc định")
-                watchTts?.language = Locale.ENGLISH
-            }
-        }
 
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO)
             != PackageManager.PERMISSION_GRANTED) {
@@ -313,11 +298,6 @@ class MainActivity : AppCompatActivity() {
         } catch (_: Exception) {}
         try {
             unregisterReceiver(screenOffReceiver)
-        } catch (_: Exception) {}
-        try {
-            watchTts?.stop()
-            watchTts?.shutdown()
-            watchTts = null
         } catch (_: Exception) {}
     }
 
@@ -604,8 +584,8 @@ class MainActivity : AppCompatActivity() {
                             }
                             tvStatus.text = "✓ ĐÃ THỰC HIỆN"
 
-                            // Đọc TTS xác nhận trực tiếp trên loa đồng hồ
-                            val ttsText = when (voiceAction.type) {
+                            // Xây dựng câu xác nhận TTS cho báo thức / hẹn giờ
+                            val ttsConfirm = when (voiceAction.type) {
                                 "SET_ALARM" -> {
                                     val h = voiceAction.hour
                                     val m = voiceAction.minute
@@ -620,21 +600,28 @@ class MainActivity : AppCompatActivity() {
                                     if (totalS > 0) "Đã hẹn giờ $totalM phút $totalS giây"
                                     else "Đã hẹn giờ $totalM phút"
                                 }
-                                else -> ""
+                                else -> answer
                             }
-                            if (ttsText.isNotEmpty()) {
-                                watchTts?.speak(ttsText, TextToSpeech.QUEUE_FLUSH, null, "alarm_confirm")
-                            }
+
+                            // Gửi câu xác nhận sang điện thoại để đọc TTS
+                            val confirmPayload = org.json.JSONObject().apply {
+                                put("question", question)
+                                put("answer", ttsConfirm)
+                                put("timestamp", System.currentTimeMillis())
+                            }.toString()
+                            PhoneCommunicator.sendTextToPhone(this, confirmPayload)
                         }
                     }
 
-                    // Gửi payload sang điện thoại để đọc TTS vào tai nghe / nón bảo hiểm
-                    val payload = org.json.JSONObject().apply {
-                        put("question", question)
-                        put("answer", answer)
-                        put("timestamp", System.currentTimeMillis())
-                    }.toString()
-                    PhoneCommunicator.sendTextToPhone(this, payload)
+                    // Nếu không phải voiceAction → gửi answer bình thường sang điện thoại
+                    if (voiceAction == null) {
+                        val payload = org.json.JSONObject().apply {
+                            put("question", question)
+                            put("answer", answer)
+                            put("timestamp", System.currentTimeMillis())
+                        }.toString()
+                        PhoneCommunicator.sendTextToPhone(this, payload)
+                    }
                 } else {
                     // Rung 1 nhịp dài báo lỗi kết nối
                     vibrateRoadHaptic(success = false)
