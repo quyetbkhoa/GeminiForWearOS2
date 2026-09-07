@@ -40,6 +40,7 @@
 
     <!-- Question Box -->
     <LinearLayout
+        android:id="@+id/layout_qa_question"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
@@ -48,6 +49,7 @@
         android:layout_marginTop="6dp">
 
         <TextView
+            android:id="@+id/tv_label_question"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="🗣️ BẠN HỎI:"
@@ -67,6 +69,7 @@
 
     <!-- Answer Box -->
     <LinearLayout
+        android:id="@+id/layout_qa_answer"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
@@ -75,6 +78,7 @@
         android:layout_marginTop="6dp">
 
         <TextView
+            android:id="@+id/tv_label_answer"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="🤖 GEMINI ĐÁP:"

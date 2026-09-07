@@ -168,6 +168,7 @@
 
                 <!-- SECTION 1: TRÍ TUỆ NHÂN TẠO & MÔ HÌNH -->
                 <TextView
+                    android:id="@+id/tv_cat_header_ai"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="🤖 TRÍ TUỆ NHÂN TẠO &amp; MÔ HÌNH"
@@ -207,6 +208,7 @@
                         android:orientation="vertical">
 
                         <TextView
+                            android:id="@+id/tv_menu_title_gemini"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="Mô hình Gemini &amp; API Key"
@@ -237,6 +239,7 @@
                         android:layout_marginEnd="8dp" />
 
                     <TextView
+                        android:id="@+id/tv_chevron_gemini"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="›"
@@ -247,6 +250,7 @@
 
                 <!-- SECTION 2: KẾT NỐI & PHẦN CỨNG -->
                 <TextView
+                    android:id="@+id/tv_cat_header_devices"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="📡 KẾT NỐI &amp; THIẾT BỊ NGOẠI VI"
@@ -286,6 +290,7 @@
                         android:orientation="vertical">
 
                         <TextView
+                            android:id="@+id/tv_menu_title_bluetooth"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="Tai nghe Bluetooth &amp; Phát âm TTS"
@@ -316,6 +321,7 @@
                         android:layout_marginEnd="8dp" />
 
                     <TextView
+                        android:id="@+id/tv_chevron_bluetooth"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="›"
@@ -353,6 +359,7 @@
                         android:orientation="vertical">
 
                         <TextView
+                            android:id="@+id/tv_menu_title_adb"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="Cài đặt không dây (ADB) &amp; Cập nhật"
@@ -373,7 +380,7 @@
                         android:id="@+id/tv_hub_adb_badge"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="v1.2.6"
+                        android:text="v1.2.8"
                         android:textSize="10sp"
                         android:textStyle="bold"
                         android:textColor="#38BDF8"
@@ -383,6 +390,7 @@
                         android:layout_marginEnd="8dp" />
 
                     <TextView
+                        android:id="@+id/tv_chevron_adb"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="›"
@@ -393,6 +401,7 @@
 
                 <!-- SECTION 3: CÁ NHÂN HÓA -->
                 <TextView
+                    android:id="@+id/tv_cat_header_theme"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="🎨 CÁ NHÂN HÓA &amp; CHỦ ĐỀ"
@@ -432,6 +441,7 @@
                         android:orientation="vertical">
 
                         <TextView
+                            android:id="@+id/tv_menu_title_theme"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="Giao diện &amp; Chủ đề đồng bộ"
@@ -462,6 +472,7 @@
                         android:layout_marginEnd="8dp" />
 
                     <TextView
+                        android:id="@+id/tv_chevron_theme"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="›"
@@ -472,6 +483,7 @@
 
                 <!-- SECTION 4: NHẬT KÝ & CHẨN ĐOÁN -->
                 <TextView
+                    android:id="@+id/tv_cat_header_logs"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="📋 NHẬT KÝ &amp; CHẨN ĐOÁN HỆ THỐNG"
@@ -511,6 +523,7 @@
                         android:orientation="vertical">
 
                         <TextView
+                            android:id="@+id/tv_menu_title_history"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="Lịch sử hỏi đáp giọng nói (Voice Q&amp;A)"
@@ -541,6 +554,7 @@
                         android:layout_marginEnd="8dp" />
 
                     <TextView
+                        android:id="@+id/tv_chevron_history"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="›"
@@ -578,6 +592,7 @@
                         android:orientation="vertical">
 
                         <TextView
+                            android:id="@+id/tv_menu_title_error"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="Nhật ký lỗi API (API Error Logs)"
@@ -608,6 +623,7 @@
                         android:layout_marginEnd="8dp" />
 
                     <TextView
+                        android:id="@+id/tv_chevron_error"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="›"
@@ -839,6 +855,7 @@
 
                     <!-- Auto-sync info note -->
                     <TextView
+                        android:id="@+id/tv_api_key_note"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:text="💡 Tự động đồng bộ: Điện thoại sẽ tự động bắn key sang đồng hồ mỗi khi mở app hoặc khi đồng hồ kết nối lại."
@@ -899,6 +916,7 @@
                     </LinearLayout>
 
                     <TextView
+                        android:id="@+id/tv_bluetooth_desc"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:text="Chỉ các thiết bị có trạng thái BẬT mới được phát âm phản hồi TTS khi bạn ra lệnh từ đồng hồ:"
@@ -959,6 +977,7 @@
                     android:layout_marginBottom="14dp">
 
                     <TextView
+                        android:id="@+id/tv_update_header"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="🌐 CẬP NHẬT ỨNG DỤNG TỪ GITHUB:"
@@ -972,7 +991,7 @@
                         android:id="@+id/tv_app_version"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Phiên bản: v1.2.6"
+                        android:text="Phiên bản: v1.2.8"
                         android:textSize="10.5sp"
                         android:textColor="#34D399"
                         android:textStyle="bold" />
@@ -1193,6 +1212,7 @@
 
                     <!-- Row 1: Style Selection -->
                     <TextView
+                        android:id="@+id/tv_style_label"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="1. Phong cách thiết kế (Design Style):"
@@ -1250,6 +1270,7 @@
 
                     <!-- Row 2: Color Mode Selection -->
                     <TextView
+                        android:id="@+id/tv_color_mode_label"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="2. Chế độ màu (Color Mode):"

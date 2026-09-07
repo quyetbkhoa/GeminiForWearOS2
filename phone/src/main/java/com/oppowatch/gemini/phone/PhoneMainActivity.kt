@@ -105,6 +105,37 @@ class PhoneMainActivity : AppCompatActivity() {
     private lateinit var tvHubErrorSummary: TextView
     private lateinit var tvHubErrorBadge: TextView
 
+    // Hub Category Headers
+    private lateinit var tvCatHeaderAi: TextView
+    private lateinit var tvCatHeaderDevices: TextView
+    private lateinit var tvCatHeaderTheme: TextView
+    private lateinit var tvCatHeaderLogs: TextView
+
+    // Hub Menu Titles
+    private lateinit var tvMenuTitleGemini: TextView
+    private lateinit var tvMenuTitleBluetooth: TextView
+    private lateinit var tvMenuTitleAdb: TextView
+    private lateinit var tvMenuTitleTheme: TextView
+    private lateinit var tvMenuTitleHistory: TextView
+    private lateinit var tvMenuTitleError: TextView
+
+    // Hub Chevrons
+    private lateinit var tvChevronGemini: TextView
+    private lateinit var tvChevronBluetooth: TextView
+    private lateinit var tvChevronAdb: TextView
+    private lateinit var tvChevronTheme: TextView
+    private lateinit var tvChevronHistory: TextView
+    private lateinit var tvChevronError: TextView
+
+    // Subpage Labels & Notes
+    private lateinit var tvApiKeyNote: TextView
+    private lateinit var tvBluetoothDesc: TextView
+    private lateinit var tvUpdateHeader: TextView
+    private lateinit var tvStyleLabel: TextView
+    private lateinit var tvColorModeLabel: TextView
+
+    private lateinit var backCallback: OnBackPressedCallback
+
     // Sub-Page 1: Gemini & API Key Views
     private lateinit var cardModelSelector: LinearLayout
     private lateinit var tvModelHeader: TextView
@@ -394,6 +425,35 @@ class PhoneMainActivity : AppCompatActivity() {
         btnClearErrorLogs = findViewById(R.id.btn_clear_error_logs)
         llErrorLogsList = findViewById(R.id.ll_error_logs_list)
         tvEmptyErrorLogs = findViewById(R.id.tv_empty_error_logs)
+
+        // Hub Category Headers
+        tvCatHeaderAi = findViewById(R.id.tv_cat_header_ai)
+        tvCatHeaderDevices = findViewById(R.id.tv_cat_header_devices)
+        tvCatHeaderTheme = findViewById(R.id.tv_cat_header_theme)
+        tvCatHeaderLogs = findViewById(R.id.tv_cat_header_logs)
+
+        // Hub Menu Titles
+        tvMenuTitleGemini = findViewById(R.id.tv_menu_title_gemini)
+        tvMenuTitleBluetooth = findViewById(R.id.tv_menu_title_bluetooth)
+        tvMenuTitleAdb = findViewById(R.id.tv_menu_title_adb)
+        tvMenuTitleTheme = findViewById(R.id.tv_menu_title_theme)
+        tvMenuTitleHistory = findViewById(R.id.tv_menu_title_history)
+        tvMenuTitleError = findViewById(R.id.tv_menu_title_error)
+
+        // Hub Chevrons
+        tvChevronGemini = findViewById(R.id.tv_chevron_gemini)
+        tvChevronBluetooth = findViewById(R.id.tv_chevron_bluetooth)
+        tvChevronAdb = findViewById(R.id.tv_chevron_adb)
+        tvChevronTheme = findViewById(R.id.tv_chevron_theme)
+        tvChevronHistory = findViewById(R.id.tv_chevron_history)
+        tvChevronError = findViewById(R.id.tv_chevron_error)
+
+        // Subpage Notes & Descriptions
+        tvApiKeyNote = findViewById(R.id.tv_api_key_note)
+        tvBluetoothDesc = findViewById(R.id.tv_bluetooth_desc)
+        tvUpdateHeader = findViewById(R.id.tv_update_header)
+        tvStyleLabel = findViewById(R.id.tv_style_label)
+        tvColorModeLabel = findViewById(R.id.tv_color_mode_label)
     }
 
     private fun setupNavigationFlow() {
@@ -408,20 +468,28 @@ class PhoneMainActivity : AppCompatActivity() {
         rowMenuQaHistory.setOnClickListener { navigateTo(NavPage.QA_HISTORY) }
         rowMenuErrorLogs.setOnClickListener { navigateTo(NavPage.ERROR_LOGS) }
 
-        onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
+        backCallback = object : OnBackPressedCallback(currentPage != NavPage.HUB) {
             override fun handleOnBackPressed() {
-                if (currentPage != NavPage.HUB) {
-                    navigateTo(NavPage.HUB)
-                } else {
-                    isEnabled = false
-                    onBackPressedDispatcher.onBackPressed()
-                }
+                navigateTo(NavPage.HUB)
             }
-        })
+        }
+        onBackPressedDispatcher.addCallback(this, backCallback)
+    }
+
+    @Deprecated("Deprecated in Java")
+    override fun onBackPressed() {
+        if (currentPage != NavPage.HUB) {
+            navigateTo(NavPage.HUB)
+        } else {
+            super.onBackPressed()
+        }
     }
 
     private fun navigateTo(page: NavPage) {
         currentPage = page
+        if (::backCallback.isInitialized) {
+            backCallback.isEnabled = (page != NavPage.HUB)
+        }
 
         layoutHub.visibility = if (page == NavPage.HUB) View.VISIBLE else View.GONE
         pageGeminiApi.visibility = if (page == NavPage.GEMINI_API) View.VISIBLE else View.GONE
@@ -494,10 +562,11 @@ class PhoneMainActivity : AppCompatActivity() {
 
         // 3. ADB & Update
         val currentVersion = try {
-            packageManager.getPackageInfo(packageName, 0).versionName ?: "1.2.6"
-        } catch (_: Exception) { "1.2.6" }
+            packageManager.getPackageInfo(packageName, 0).versionName ?: "1.2.8"
+        } catch (_: Exception) { "1.2.8" }
         tvHubAdbBadge.text = "v$currentVersion"
         tvHubAdbSummary.text = "Wireless ADB Sideload • Phiên bản v$currentVersion"
+        tvAppVersion.text = "Phiên bản: v$currentVersion"
 
         // 4. Theme
         val style = ThemeManager.getStyle(this)
@@ -582,9 +651,10 @@ class PhoneMainActivity : AppCompatActivity() {
         rootLayout.setBackgroundColor(config.rootBgColor)
         scrollRoot.setBackgroundColor(config.rootBgColor)
         layoutTopBar.setBackgroundColor(if (isLight) Color.parseColor("#FFFFFF") else Color.parseColor("#0F131D"))
-        tvNavTitle.setTextColor(config.titleTextColor)
-        tvNavSubtitle.setTextColor(config.textSecondaryColor)
+        tvNavTitle.setTextColor(if (isLight) Color.parseColor("#0F172A") else config.titleTextColor)
+        tvNavSubtitle.setTextColor(if (isLight) Color.parseColor("#475569") else config.textSecondaryColor)
         btnNavBack.setBackgroundResource(config.btnPrimaryDrawable)
+        btnNavBack.setTextColor(if (isLight) Color.parseColor("#0F172A") else Color.parseColor("#F59E0B"))
 
         // Hub Elements
         cardTitlePlate.setBackgroundResource(config.cardDrawable)
@@ -594,6 +664,38 @@ class PhoneMainActivity : AppCompatActivity() {
         rowMenuTheme.setBackgroundResource(config.cardDrawable)
         rowMenuQaHistory.setBackgroundResource(config.cardDrawable)
         rowMenuErrorLogs.setBackgroundResource(config.cardDrawable)
+
+        // Hub Category Headers
+        tvCatHeaderAi.setTextColor(if (isLight) Color.parseColor("#1D4ED8") else Color.parseColor("#60A5FA"))
+        tvCatHeaderDevices.setTextColor(if (isLight) Color.parseColor("#047857") else Color.parseColor("#34D399"))
+        tvCatHeaderTheme.setTextColor(if (isLight) Color.parseColor("#B45309") else Color.parseColor("#F59E0B"))
+        tvCatHeaderLogs.setTextColor(if (isLight) Color.parseColor("#6D28D9") else Color.parseColor("#A78BFA"))
+
+        // Hub Menu Titles, Subtitles & Chevrons
+        val menuTitleColor = if (isLight) Color.parseColor("#0F172A") else Color.parseColor("#F8FAFC")
+        val menuSubColor = if (isLight) Color.parseColor("#475569") else Color.parseColor("#94A3B8")
+        val chevronColor = if (isLight) Color.parseColor("#94A3B8") else Color.parseColor("#64748B")
+
+        tvMenuTitleGemini.setTextColor(menuTitleColor)
+        tvMenuTitleBluetooth.setTextColor(menuTitleColor)
+        tvMenuTitleAdb.setTextColor(menuTitleColor)
+        tvMenuTitleTheme.setTextColor(menuTitleColor)
+        tvMenuTitleHistory.setTextColor(menuTitleColor)
+        tvMenuTitleError.setTextColor(menuTitleColor)
+
+        tvHubModelSummary.setTextColor(menuSubColor)
+        tvHubBluetoothSummary.setTextColor(menuSubColor)
+        tvHubAdbSummary.setTextColor(menuSubColor)
+        tvHubThemeSummary.setTextColor(menuSubColor)
+        tvHubHistorySummary.setTextColor(menuSubColor)
+        tvHubErrorSummary.setTextColor(menuSubColor)
+
+        tvChevronGemini.setTextColor(chevronColor)
+        tvChevronBluetooth.setTextColor(chevronColor)
+        tvChevronAdb.setTextColor(chevronColor)
+        tvChevronTheme.setTextColor(chevronColor)
+        tvChevronHistory.setTextColor(chevronColor)
+        tvChevronError.setTextColor(chevronColor)
 
         // Subpage Cards & Containers
         cardThemeSelector.setBackgroundResource(config.cardDrawable)
@@ -609,32 +711,65 @@ class PhoneMainActivity : AppCompatActivity() {
         etGeminiApiKey.setBackgroundResource(config.inputDrawable)
         etWatchAdbIp.setBackgroundResource(config.inputDrawable)
         etWatchAdbPort.setBackgroundResource(config.inputDrawable)
+
+        val inputTextColor = if (isLight) Color.parseColor("#0F172A") else Color.parseColor("#F8FAFC")
+        val inputHintColor = if (isLight) Color.parseColor("#94A3B8") else Color.parseColor("#475569")
+
+        etGeminiApiKey.setTextColor(inputTextColor)
+        etGeminiApiKey.setHintTextColor(inputHintColor)
+        etWatchAdbIp.setTextColor(inputTextColor)
+        etWatchAdbIp.setHintTextColor(inputHintColor)
+        etWatchAdbPort.setTextColor(if (isLight) Color.parseColor("#0284C7") else Color.parseColor("#38BDF8"))
+        etWatchAdbPort.setHintTextColor(inputHintColor)
+
         btnAutoDetectIp.setBackgroundResource(config.btnPrimaryDrawable)
+        btnAutoDetectIp.setTextColor(if (isLight) Color.parseColor("#0F172A") else Color.parseColor("#FFFFFF"))
         btnAdbInstall.setBackgroundResource(config.btnEmeraldDrawable)
         btnToggleApiVisibility.setBackgroundResource(config.btnPrimaryDrawable)
         btnSaveApiKey.setBackgroundResource(config.btnEmeraldDrawable)
         btnTestApiKey.setBackgroundResource(config.btnPrimaryDrawable)
+        btnTestApiKey.setTextColor(if (isLight) Color.parseColor("#0F172A") else Color.parseColor("#FFFFFF"))
         btnReloadBluetooth.setBackgroundResource(config.btnPrimaryDrawable)
+        btnReloadBluetooth.setTextColor(if (isLight) Color.parseColor("#0F172A") else Color.parseColor("#FFFFFF"))
         btnClearHistory.setBackgroundResource(config.btnCrimsonDrawable)
         btnClearErrorLogs.setBackgroundResource(config.btnCrimsonDrawable)
         btnTestTts.setBackgroundResource(config.btnEmeraldDrawable)
         btnCheckUpdate.setBackgroundResource(config.btnGoldDrawable)
 
         // Typography Colors
-        tvThemeLabel.setTextColor(config.titleTextColor)
-        tvThemeSublabel.setTextColor(config.textSecondaryColor)
-        tvModelHeader.setTextColor(config.titleTextColor)
-        tvModelDesc.setTextColor(config.textSecondaryColor)
-        tvMainTitle.setTextColor(config.titleTextColor)
-        tvApiKeyHeader.setTextColor(config.headerApiKeyColor)
-        tvApiKeyDesc.setTextColor(config.textSecondaryColor)
-        tvBluetoothHeader.setTextColor(config.headerBluetoothColor)
-        tvHistoryHeader.setTextColor(config.headerHistoryColor)
-        tvErrorLogsHeader.setTextColor(config.headerHistoryColor)
-        tvAdbHeader.setTextColor(config.titleTextColor)
-        tvAdbInstructions.setTextColor(config.textSecondaryColor)
-        etWatchAdbIp.setTextColor(if (isLight) Color.parseColor("#0F172A") else Color.parseColor("#FFFFFF"))
-        etWatchAdbPort.setTextColor(if (isLight) Color.parseColor("#0F172A") else Color.parseColor("#38BDF8"))
+        tvMainTitle.setTextColor(if (isLight) Color.parseColor("#B45309") else config.titleTextColor)
+        tvMainSubtitle.setTextColor(if (isLight) Color.parseColor("#475569") else config.textSecondaryColor)
+
+        tvModelHeader.setTextColor(if (isLight) Color.parseColor("#0284C7") else Color.parseColor("#38BDF8"))
+        tvModelDesc.setTextColor(if (isLight) Color.parseColor("#475569") else config.textSecondaryColor)
+
+        tvApiKeyHeader.setTextColor(if (isLight) Color.parseColor("#B45309") else config.headerApiKeyColor)
+        tvApiKeyDesc.setTextColor(if (isLight) Color.parseColor("#475569") else config.textSecondaryColor)
+        tvApiKeyNote.setTextColor(if (isLight) Color.parseColor("#475569") else Color.parseColor("#64748B"))
+
+        tvBluetoothHeader.setTextColor(if (isLight) Color.parseColor("#047857") else config.headerBluetoothColor)
+        tvBluetoothDesc.setTextColor(if (isLight) Color.parseColor("#475569") else config.textSecondaryColor)
+        tvEmptyDevices.setTextColor(if (isLight) Color.parseColor("#64748B") else Color.parseColor("#94A3B8"))
+
+        tvUpdateHeader.setTextColor(if (isLight) Color.parseColor("#B45309") else Color.parseColor("#F59E0B"))
+        tvAppVersion.setTextColor(if (isLight) Color.parseColor("#047857") else Color.parseColor("#34D399"))
+        tvRepoInfo.setTextColor(if (isLight) Color.parseColor("#64748B") else Color.parseColor("#94A3B8"))
+        tvUpdateStatus.setTextColor(if (isLight) Color.parseColor("#475569") else config.textSecondaryColor)
+
+        tvAdbHeader.setTextColor(if (isLight) Color.parseColor("#0284C7") else Color.parseColor("#38BDF8"))
+        tvAdbInstructions.setTextColor(if (isLight) Color.parseColor("#475569") else config.textSecondaryColor)
+        tvAdbStatus.setTextColor(if (isLight) Color.parseColor("#475569") else Color.parseColor("#94A3B8"))
+
+        tvThemeLabel.setTextColor(if (isLight) Color.parseColor("#B45309") else config.titleTextColor)
+        tvThemeSublabel.setTextColor(if (isLight) Color.parseColor("#475569") else config.textSecondaryColor)
+        tvStyleLabel.setTextColor(if (isLight) Color.parseColor("#334155") else Color.parseColor("#CBD5E1"))
+        tvColorModeLabel.setTextColor(if (isLight) Color.parseColor("#334155") else Color.parseColor("#CBD5E1"))
+
+        tvHistoryHeader.setTextColor(if (isLight) Color.parseColor("#6D28D9") else config.headerHistoryColor)
+        tvEmptyHistory.setTextColor(if (isLight) Color.parseColor("#64748B") else Color.parseColor("#94A3B8"))
+
+        tvErrorLogsHeader.setTextColor(if (isLight) Color.parseColor("#DC2626") else Color.parseColor("#EF4444"))
+        tvEmptyErrorLogs.setTextColor(if (isLight) Color.parseColor("#047857") else Color.parseColor("#64748B"))
 
         val radioTextColor = if (isLight) Color.parseColor("#0F172A") else Color.parseColor("#E2E8F0")
         rbModel38Flash.setTextColor(if (isLight) Color.parseColor("#B45309") else Color.parseColor("#F59E0B"))
@@ -662,6 +797,13 @@ class PhoneMainActivity : AppCompatActivity() {
         btnWatchThemeLight.setBackgroundResource(
             if (isLight) config.btnGoldDrawable else config.btnPrimaryDrawable
         )
+
+        btnThemeSkeuo.setTextColor(if (style == ThemeManager.ThemeStyle.SKEUOMORPHISM) Color.parseColor("#0F172A") else (if (isLight) Color.parseColor("#0F172A") else Color.parseColor("#FFFFFF")))
+        btnThemeGlass.setTextColor(if (style == ThemeManager.ThemeStyle.LIQUID_GLASS) Color.parseColor("#0F172A") else (if (isLight) Color.parseColor("#0F172A") else Color.parseColor("#FFFFFF")))
+        btnThemeMaterial.setTextColor(if (style == ThemeManager.ThemeStyle.MATERIAL) Color.parseColor("#0F172A") else (if (isLight) Color.parseColor("#0F172A") else Color.parseColor("#FFFFFF")))
+
+        btnWatchThemeDark.setTextColor(if (!isLight) Color.parseColor("#0F172A") else (if (isLight) Color.parseColor("#0F172A") else Color.parseColor("#FFFFFF")))
+        btnWatchThemeLight.setTextColor(if (isLight) Color.parseColor("#0F172A") else (if (isLight) Color.parseColor("#0F172A") else Color.parseColor("#FFFFFF")))
 
         // Refresh child views
         loadPairedBluetoothDevices(userInitiated = false)
@@ -997,6 +1139,7 @@ class PhoneMainActivity : AppCompatActivity() {
         }
 
         tvEmptyHistory.visibility = View.GONE
+        val isLight = (currentColorMode == ThemeManager.ColorMode.LIGHT)
         val config = ThemeManager.getConfig(currentThemeStyle, currentColorMode)
 
         for (item in history) {
@@ -1011,9 +1154,31 @@ class PhoneMainActivity : AppCompatActivity() {
             val tvTime = itemView.findViewById<TextView>(R.id.tv_qa_time)
             val tvQuestion = itemView.findViewById<TextView>(R.id.tv_qa_question)
             val tvAnswer = itemView.findViewById<TextView>(R.id.tv_qa_answer)
+            val tvLabelQuestion = itemView.findViewById<TextView>(R.id.tv_label_question)
+            val tvLabelAnswer = itemView.findViewById<TextView>(R.id.tv_label_answer)
+            val layoutQuestion = itemView.findViewById<LinearLayout>(R.id.layout_qa_question)
+            val layoutAnswer = itemView.findViewById<LinearLayout>(R.id.layout_qa_answer)
             val btnReplay = itemView.findViewById<Button>(R.id.btn_replay_tts)
 
             btnReplay.setBackgroundResource(config.btnEmeraldDrawable)
+
+            if (isLight) {
+                layoutQuestion?.setBackgroundResource(R.drawable.bg_qa_question_light)
+                layoutAnswer?.setBackgroundResource(R.drawable.bg_qa_answer_light)
+                tvTime.setTextColor(Color.parseColor("#475569"))
+                tvLabelQuestion?.setTextColor(Color.parseColor("#0284C7"))
+                tvQuestion.setTextColor(Color.parseColor("#0F172A"))
+                tvLabelAnswer?.setTextColor(Color.parseColor("#059669"))
+                tvAnswer.setTextColor(Color.parseColor("#064E3B"))
+            } else {
+                layoutQuestion?.setBackgroundResource(R.drawable.bg_qa_question)
+                layoutAnswer?.setBackgroundResource(R.drawable.bg_qa_answer)
+                tvTime.setTextColor(Color.parseColor("#94A3B8"))
+                tvLabelQuestion?.setTextColor(Color.parseColor("#38BDF8"))
+                tvQuestion.setTextColor(Color.parseColor("#F1F5F9"))
+                tvLabelAnswer?.setTextColor(Color.parseColor("#34D399"))
+                tvAnswer.setTextColor(Color.parseColor("#ECFDF5"))
+            }
 
             tvTime.text = "🕒 ${item.getFormattedTime()}"
             tvQuestion.text = item.question
@@ -1048,6 +1213,7 @@ class PhoneMainActivity : AppCompatActivity() {
         }
 
         tvEmptyErrorLogs.visibility = View.GONE
+        val isLight = (currentColorMode == ThemeManager.ColorMode.LIGHT)
         val config = ThemeManager.getConfig(currentThemeStyle, currentColorMode)
 
         for (item in errorLogs) {
@@ -1071,6 +1237,16 @@ class PhoneMainActivity : AppCompatActivity() {
             val tvRaw = itemView.findViewById<TextView>(R.id.tv_raw_json)
 
             btnCopy.setBackgroundResource(config.btnPrimaryDrawable)
+            btnCopy.setTextColor(if (isLight) Color.parseColor("#0F172A") else Color.parseColor("#FFFFFF"))
+
+            tvTime.setTextColor(if (isLight) Color.parseColor("#475569") else Color.parseColor("#94A3B8"))
+            tvModelKey.setTextColor(if (isLight) Color.parseColor("#334155") else Color.parseColor("#CBD5E1"))
+            tvMessage.setTextColor(if (isLight) Color.parseColor("#DC2626") else Color.parseColor("#FCA5A5"))
+            layoutSuggestion.setBackgroundColor(if (isLight) Color.parseColor("#15059669") else Color.parseColor("#1510B981"))
+            tvSuggestion.setTextColor(if (isLight) Color.parseColor("#065F46") else Color.parseColor("#6EE7B7"))
+            btnToggleRaw.setTextColor(if (isLight) Color.parseColor("#7C3AED") else Color.parseColor("#A78BFA"))
+            tvRaw.setTextColor(if (isLight) Color.parseColor("#1E293B") else Color.parseColor("#E2E8F0"))
+            tvRaw.setBackgroundColor(if (isLight) Color.parseColor("#10000000") else Color.parseColor("#20000000"))
 
             // Status Badge
             tvStatusBadge.text = item.getStatusBadgeText()
@@ -1572,6 +1748,7 @@ class PhoneMainActivity : AppCompatActivity() {
         }
 
         tvEmptyDevices.visibility = View.GONE
+        val isLight = (currentColorMode == ThemeManager.ColorMode.LIGHT)
         val config = ThemeManager.getConfig(currentThemeStyle, currentColorMode)
 
         for (device in paired) {
@@ -1592,7 +1769,9 @@ class PhoneMainActivity : AppCompatActivity() {
             val tvIcon = itemView.findViewById<TextView>(R.id.tv_device_icon)
 
             tvName.text = name
+            tvName.setTextColor(if (isLight) Color.parseColor("#0F172A") else Color.parseColor("#FFFFFF"))
             tvMac.text = mac
+            tvMac.setTextColor(if (isLight) Color.parseColor("#B45309") else Color.parseColor("#F59E0B"))
 
             fun updateSwitchUi(isSelected: Boolean) {
                 if (isSelected) {

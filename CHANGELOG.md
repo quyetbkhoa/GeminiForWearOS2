@@ -7,6 +7,33 @@ phiên bản tuân theo [Semantic Versioning](https://semver.org/lang/vi/).
 
 ---
 
+## [v1.2.8] - 2026-09-07
+
+### 🔄 Sửa Triệt Để Lỗi Cử Chỉ Vuốt Back (System Back Gesture Exit App Bug)
+- **Sửa lỗi vuốt Back bị văng thoát ứng dụng khỏi sub-menus:**
+  - Khắc phục lỗi trong `setupNavigationFlow()` khi callback `OnBackPressedCallback` bị vô hiệu hóa vĩnh viễn (`isEnabled = false`) lúc bấm Back ở trang chính.
+  - Chuyển sang cơ chế quản lý trạng thái động `backCallback.isEnabled = (currentPage != NavPage.HUB)` được cập nhật tự động trong `navigateTo(page)`.
+  - Bổ sung fallback `onBackPressed()` đảm bảo mọi cử chỉ vuốt cạnh trái/phải trên Android 10-14 hoặc phím Back vật lý trong bất kỳ menu con nào đều trở về màn hình Settings Hub thay vì thoát app.
+  - Chỉ khi người dùng đang ở màn hình Settings Hub chính, thao tác Back mới cho phép thu nhỏ/thoát ứng dụng theo đúng chuẩn Android.
+
+### 🎨 Khắc Phục Lỗi Tương Phản Màu Chữ Khi Chuyển Chế Độ Sáng / Tối (Light & Dark Contrast Fix)
+- **Tối ưu hóa độ tương phản màu chữ toàn diện trên giao diện Mobile Companion:**
+  - Khắc phục triệt để hiện tượng chữ trắng chìm trên nền thẻ sáng hoặc chữ xám mờ khó đọc khi chuyển qua Chế độ Sáng (Light Mode) ở cả 3 phong cách (Skeuomorphism, Liquid Glass, Material 3).
+  - **Màn hình Cài đặt chính (Hub):**
+    - Tiêu đề mục menu (`tv_menu_title_*`): Tự động đổi sang màu xám đen đậm `#0F172A` sắc nét ở Light Mode và trắng sáng `#F8FAFC` ở Dark Mode.
+    - Tiêu đề danh mục (`tv_cat_header_*`): Điều chỉnh tông màu đậm đà, tương phản cao trong Light Mode (AI: `#1D4ED8`, Thiết bị: `#047857`, Chủ đề: `#B45309`, Nhật ký: `#6D28D9`).
+    - Dòng mô tả tóm tắt (`tv_hub_*_summary`) và chevron (`›`): Đổi sang màu slate đậm `#475569` và `#94A3B8` dễ đọc.
+  - **Ô nhập liệu & Điều khiển (Inputs & Radios):**
+    - `et_gemini_api_key`, `et_watch_adb_ip`, `et_watch_adb_port`: Text color `#0F172A` và hint color `#94A3B8` ở Light Mode; `#F8FAFC` / `#38BDF8` ở Dark Mode.
+    - Radio button chọn model AI: Màu chữ đen xám `#0F172A` và điểm nhấn hổ phách `#B45309` cho 3.8 Flash ở Light Mode.
+    - Nút chọn theme & chế độ màu: Tự động đảo màu chữ tương ứng với nền nút đang chọn.
+  - **Danh sách Bluetooth, Lịch sử Voice Q&A và Nhật ký Lỗi API:**
+    - `item_bluetooth_device.xml`: Tên thiết bị chuyển sang `#0F172A` và MAC sang `#B45309` ở Light Mode.
+    - `item_qa_history.xml`: Tạo riêng 2 drawable nền mềm mại `bg_qa_question_light` (`#F0F9FF`) và `bg_qa_answer_light` (`#ECFDF5`), đổi màu chữ câu hỏi sang `#0F172A` và câu trả lời sang `#064E3B` cực kỳ trang nhã và dễ đọc.
+    - `item_api_error_log.xml`: Mã lỗi `#DC2626`, nhãn model/key `#334155`, giải pháp `#065F46`, JSON thô `#1E293B` rõ nét trên nền sáng.
+
+---
+
 ## [v1.2.7] - 2026-09-07
 
 ### 📱 Tái Cấu Trúc Toàn Bộ UI/UX Flow: Hệ Thống Cài Đặt Với Menu Lồng Nhau (Hierarchical Settings)
