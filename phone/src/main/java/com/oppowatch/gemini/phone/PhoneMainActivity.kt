@@ -8,6 +8,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.content.pm.PackageManager
+import android.graphics.Color
 import android.os.Build
 import android.os.Bundle
 import android.text.InputType
@@ -17,6 +18,8 @@ import android.widget.Button
 import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.ProgressBar
+import android.widget.RadioButton
+import android.widget.RadioGroup
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
@@ -41,15 +44,25 @@ class PhoneMainActivity : AppCompatActivity() {
 
     // Theme Selector Buttons & Labels
     private lateinit var tvThemeLabel: TextView
+    private lateinit var tvThemeSublabel: TextView
     private lateinit var btnThemeSkeuo: Button
     private lateinit var btnThemeGlass: Button
     private lateinit var btnThemeMaterial: Button
-
-    // Watch Color Theme Controls
-    private lateinit var cardWatchTheme: LinearLayout
-    private lateinit var tvWatchColorLabel: TextView
     private lateinit var btnWatchThemeDark: Button
     private lateinit var btnWatchThemeLight: Button
+
+    // Model Selector Card
+    private lateinit var cardModelSelector: LinearLayout
+    private lateinit var tvModelHeader: TextView
+    private lateinit var tvModelDesc: TextView
+    private lateinit var rgGeminiModels: RadioGroup
+    private lateinit var rbModel38Flash: RadioButton
+    private lateinit var rbModel37Flash: RadioButton
+    private lateinit var rbModel35Flash: RadioButton
+    private lateinit var rbModel35FlashLite: RadioButton
+    private lateinit var rbModel25Flash: RadioButton
+    private lateinit var rbModel31Pro: RadioButton
+    private lateinit var tvModelStatus: TextView
 
     // Title Elements
     private lateinit var tvMainTitle: TextView
@@ -124,6 +137,7 @@ class PhoneMainActivity : AppCompatActivity() {
 
         initViews()
         setupThemeEngine()
+        setupModelSection()
         setupApiKeySection()
         setupQaHistorySection()
         setupUpdateSection()
@@ -151,6 +165,7 @@ class PhoneMainActivity : AppCompatActivity() {
     private fun initViews() {
         scrollRoot = findViewById(R.id.scroll_root)
         cardThemeSelector = findViewById(R.id.card_theme_selector)
+        cardModelSelector = findViewById(R.id.card_model_selector)
         cardTitlePlate = findViewById(R.id.card_title_plate)
         cardApiKey = findViewById(R.id.card_api_key)
         cardBluetoothRack = findViewById(R.id.card_bluetooth_rack)
@@ -158,14 +173,23 @@ class PhoneMainActivity : AppCompatActivity() {
         cardUpdatePanel = findViewById(R.id.card_update_panel)
 
         tvThemeLabel = findViewById(R.id.tv_theme_label)
+        tvThemeSublabel = findViewById(R.id.tv_theme_sublabel)
         btnThemeSkeuo = findViewById(R.id.btn_theme_skeuo)
         btnThemeGlass = findViewById(R.id.btn_theme_glass)
         btnThemeMaterial = findViewById(R.id.btn_theme_material)
-
-        cardWatchTheme = findViewById(R.id.card_watch_theme)
-        tvWatchColorLabel = findViewById(R.id.tv_watch_color_label)
         btnWatchThemeDark = findViewById(R.id.btn_watch_theme_dark)
         btnWatchThemeLight = findViewById(R.id.btn_watch_theme_light)
+
+        tvModelHeader = findViewById(R.id.tv_model_header)
+        tvModelDesc = findViewById(R.id.tv_model_desc)
+        rgGeminiModels = findViewById(R.id.rg_gemini_models)
+        rbModel38Flash = findViewById(R.id.rb_model_38_flash)
+        rbModel37Flash = findViewById(R.id.rb_model_37_flash)
+        rbModel35Flash = findViewById(R.id.rb_model_35_flash)
+        rbModel35FlashLite = findViewById(R.id.rb_model_35_flash_lite)
+        rbModel25Flash = findViewById(R.id.rb_model_25_flash)
+        rbModel31Pro = findViewById(R.id.rb_model_31_pro)
+        tvModelStatus = findViewById(R.id.tv_model_status)
 
         tvMainTitle = findViewById(R.id.tv_main_title)
         tvMainSubtitle = findViewById(R.id.tv_main_subtitle)
@@ -197,72 +221,30 @@ class PhoneMainActivity : AppCompatActivity() {
 
     private fun setupThemeEngine() {
         currentThemeMode = ThemeManager.getTheme(this)
-        applyTheme(currentThemeMode)
-        setupWatchThemeSection()
+        applyTheme(currentThemeMode, syncToWatch = false)
 
         btnThemeSkeuo.setOnClickListener {
-            applyTheme(ThemeManager.ThemeMode.SKEUOMORPHISM)
+            applyTheme(ThemeManager.ThemeMode.SKEUOMORPHISM, syncToWatch = true)
         }
         btnThemeGlass.setOnClickListener {
-            applyTheme(ThemeManager.ThemeMode.LIQUID_GLASS)
+            applyTheme(ThemeManager.ThemeMode.LIQUID_GLASS, syncToWatch = true)
         }
         btnThemeMaterial.setOnClickListener {
-            applyTheme(ThemeManager.ThemeMode.MATERIAL)
+            applyTheme(ThemeManager.ThemeMode.MATERIAL, syncToWatch = true)
         }
-    }
-
-    private fun setupWatchThemeSection() {
-        val currentWatchTheme = ThemeManager.getWatchColorTheme(this)
-        updateWatchThemeButtonsUi(currentWatchTheme)
-
         btnWatchThemeDark.setOnClickListener {
-            setAndSyncWatchColorTheme("dark")
+            applyTheme(ThemeManager.ThemeMode.SKEUOMORPHISM, syncToWatch = true)
         }
         btnWatchThemeLight.setOnClickListener {
-            setAndSyncWatchColorTheme("light")
+            applyTheme(ThemeManager.ThemeMode.CERAMIC_LIGHT, syncToWatch = true)
         }
     }
 
-    private fun updateWatchThemeButtonsUi(watchTheme: String) {
-        val config = ThemeManager.getConfig(currentThemeMode)
-        if (watchTheme == "light") {
-            btnWatchThemeLight.setBackgroundResource(config.btnGoldDrawable)
-            btnWatchThemeDark.setBackgroundResource(config.btnPrimaryDrawable)
-        } else {
-            btnWatchThemeDark.setBackgroundResource(config.btnGoldDrawable)
-            btnWatchThemeLight.setBackgroundResource(config.btnPrimaryDrawable)
-        }
-    }
-
-    private fun setAndSyncWatchColorTheme(watchTheme: String) {
-        ThemeManager.setWatchColorTheme(this, watchTheme)
-        updateWatchThemeButtonsUi(watchTheme)
-
-        Wearable.getNodeClient(this).connectedNodes.addOnSuccessListener { nodes ->
-            if (nodes.isEmpty()) {
-                Toast.makeText(this, "Đã lưu cài đặt. Đang chờ kết nối đồng hồ...", Toast.LENGTH_SHORT).show()
-            } else {
-                for (node in nodes) {
-                    Wearable.getMessageClient(this).sendMessage(
-                        node.id,
-                        "/watch_color_theme",
-                        watchTheme.toByteArray(Charsets.UTF_8)
-                    )
-                }
-                Toast.makeText(
-                    this,
-                    "✓ Đã đổi màu đồng hồ sang ${if (watchTheme == "light") "TRẮNG (Ceramic Light)" else "ĐEN (OLED Dark)"}!",
-                    Toast.LENGTH_SHORT
-                ).show()
-            }
-        }.addOnFailureListener {
-            Toast.makeText(this, "Đã lưu cài đặt trên máy.", Toast.LENGTH_SHORT).show()
-        }
-    }
-
-    private fun applyTheme(mode: ThemeManager.ThemeMode) {
+    private fun applyTheme(mode: ThemeManager.ThemeMode, syncToWatch: Boolean) {
         currentThemeMode = mode
         ThemeManager.setTheme(this, mode)
+        val isLight = (mode == ThemeManager.ThemeMode.CERAMIC_LIGHT)
+        ThemeManager.setWatchColorTheme(this, if (isLight) "light" else "dark")
         val config = ThemeManager.getConfig(mode)
 
         // Root Background
@@ -270,7 +252,7 @@ class PhoneMainActivity : AppCompatActivity() {
 
         // Cards & Containers
         cardThemeSelector.setBackgroundResource(config.cardDrawable)
-        cardWatchTheme.setBackgroundResource(config.cardDrawable)
+        cardModelSelector.setBackgroundResource(config.cardDrawable)
         cardTitlePlate.setBackgroundResource(config.cardDrawable)
         cardApiKey.setBackgroundResource(config.cardDrawable)
         cardBluetoothRack.setBackgroundResource(config.bezelDrawable)
@@ -288,11 +270,22 @@ class PhoneMainActivity : AppCompatActivity() {
 
         // Typography Colors
         tvThemeLabel.setTextColor(config.titleTextColor)
-        tvWatchColorLabel.setTextColor(config.headerBluetoothColor)
+        tvThemeSublabel.setTextColor(config.textSecondaryColor)
+        tvModelHeader.setTextColor(config.titleTextColor)
+        tvModelDesc.setTextColor(config.textSecondaryColor)
         tvMainTitle.setTextColor(config.titleTextColor)
         tvApiKeyHeader.setTextColor(config.headerApiKeyColor)
+        tvApiKeyDesc.setTextColor(config.textSecondaryColor)
         tvBluetoothHeader.setTextColor(config.headerBluetoothColor)
         tvHistoryHeader.setTextColor(config.headerHistoryColor)
+
+        val radioTextColor = if (isLight) Color.parseColor("#0F172A") else Color.parseColor("#E2E8F0")
+        rbModel38Flash.setTextColor(if (isLight) Color.parseColor("#B45309") else Color.parseColor("#F59E0B"))
+        rbModel37Flash.setTextColor(radioTextColor)
+        rbModel35Flash.setTextColor(radioTextColor)
+        rbModel35FlashLite.setTextColor(radioTextColor)
+        rbModel25Flash.setTextColor(radioTextColor)
+        rbModel31Pro.setTextColor(radioTextColor)
 
         // Active State of Theme Buttons
         btnThemeSkeuo.setBackgroundResource(
@@ -304,12 +297,105 @@ class PhoneMainActivity : AppCompatActivity() {
         btnThemeMaterial.setBackgroundResource(
             if (mode == ThemeManager.ThemeMode.MATERIAL) config.btnGoldDrawable else config.btnPrimaryDrawable
         )
-
-        updateWatchThemeButtonsUi(ThemeManager.getWatchColorTheme(this))
+        btnWatchThemeDark.setBackgroundResource(
+            if (!isLight) config.btnGoldDrawable else config.btnPrimaryDrawable
+        )
+        btnWatchThemeLight.setBackgroundResource(
+            if (isLight) config.btnGoldDrawable else config.btnPrimaryDrawable
+        )
 
         // Refresh dynamic device & history views to adopt new theme drawables
         loadPairedBluetoothDevices(userInitiated = false)
         loadQaHistory()
+
+        if (syncToWatch) {
+            syncThemeToWatch(mode.id, if (isLight) "light" else "dark")
+            Toast.makeText(
+                this,
+                "✓ Đã áp dụng giao diện ${mode.title} (Đồng bộ Phone & Watch)!",
+                Toast.LENGTH_SHORT
+            ).show()
+        }
+    }
+
+    private fun syncThemeToWatch(themeId: String, watchColor: String) {
+        Wearable.getNodeClient(this).connectedNodes.addOnSuccessListener { nodes ->
+            for (node in nodes) {
+                // Gửi theme mode chi tiết (skeuo, glass, material, light)
+                Wearable.getMessageClient(this).sendMessage(
+                    node.id,
+                    "/app_theme_sync",
+                    themeId.toByteArray(Charsets.UTF_8)
+                )
+                // Gửi watch color (light/dark) để tương thích ngược
+                Wearable.getMessageClient(this).sendMessage(
+                    node.id,
+                    "/watch_color_theme",
+                    watchColor.toByteArray(Charsets.UTF_8)
+                )
+            }
+        }
+    }
+
+    private fun setupModelSection() {
+        val currentModel = ThemeManager.getSelectedModel(this)
+        when (currentModel) {
+            "gemini-3.8-flash" -> rbModel38Flash.isChecked = true
+            "gemini-3.7-flash" -> rbModel37Flash.isChecked = true
+            "gemini-3.5-flash" -> rbModel35Flash.isChecked = true
+            "gemini-3.5-flash-lite" -> rbModel35FlashLite.isChecked = true
+            "gemini-2.5-flash" -> rbModel25Flash.isChecked = true
+            "gemini-3.1-pro-preview" -> rbModel31Pro.isChecked = true
+            else -> rbModel38Flash.isChecked = true
+        }
+        updateModelStatusText(currentModel)
+
+        rgGeminiModels.setOnCheckedChangeListener { _, checkedId ->
+            val (selectedId, name) = when (checkedId) {
+                R.id.rb_model_38_flash -> Pair("gemini-3.8-flash", "Gemini 3.8 Flash")
+                R.id.rb_model_37_flash -> Pair("gemini-3.7-flash", "Gemini 3.7 Flash")
+                R.id.rb_model_35_flash -> Pair("gemini-3.5-flash", "Gemini 3.5 Flash")
+                R.id.rb_model_35_flash_lite -> Pair("gemini-3.5-flash-lite", "Gemini 3.5 Flash-Lite")
+                R.id.rb_model_25_flash -> Pair("gemini-2.5-flash", "Gemini 2.5 Flash")
+                R.id.rb_model_31_pro -> Pair("gemini-3.1-pro-preview", "Gemini 3.1 Pro Preview")
+                else -> Pair("gemini-3.8-flash", "Gemini 3.8 Flash")
+            }
+            ThemeManager.setSelectedModel(this, selectedId)
+            updateModelStatusText(selectedId)
+            syncModelToWatch(selectedId, name)
+        }
+    }
+
+    private fun updateModelStatusText(modelId: String) {
+        val displayName = when (modelId) {
+            "gemini-3.8-flash" -> "Gemini 3.8 Flash (Mới nhất)"
+            "gemini-3.7-flash" -> "Gemini 3.7 Flash"
+            "gemini-3.5-flash" -> "Gemini 3.5 Flash"
+            "gemini-3.5-flash-lite" -> "Gemini 3.5 Flash-Lite"
+            "gemini-2.5-flash" -> "Gemini 2.5 Flash"
+            "gemini-3.1-pro-preview" -> "Gemini 3.1 Pro Preview"
+            else -> modelId
+        }
+        tvModelStatus.text = "✓ Đang sử dụng: $displayName"
+    }
+
+    private fun syncModelToWatch(modelId: String, modelName: String) {
+        Wearable.getNodeClient(this).connectedNodes.addOnSuccessListener { nodes ->
+            for (node in nodes) {
+                Wearable.getMessageClient(this).sendMessage(
+                    node.id,
+                    "/gemini_model_sync",
+                    modelId.toByteArray(Charsets.UTF_8)
+                )
+            }
+            Toast.makeText(
+                this,
+                "✓ Đã chọn $modelName (Đồng bộ sang đồng hồ)",
+                Toast.LENGTH_SHORT
+            ).show()
+        }.addOnFailureListener {
+            Toast.makeText(this, "✓ Đã chọn $modelName", Toast.LENGTH_SHORT).show()
+        }
     }
 
     private fun setupApiKeySection() {

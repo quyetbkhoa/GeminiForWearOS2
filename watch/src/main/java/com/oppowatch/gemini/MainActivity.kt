@@ -39,14 +39,20 @@ class MainActivity : AppCompatActivity() {
     // Đánh dấu người dùng đã thoát app (swipe back) hoặc tắt màn hình để hủy bỏ toàn bộ tác vụ
     private var isDismissedOrCancelled = false
 
-    // Màu sắc giao diện đồng hồ (Đen / Trắng)
-    private var isLightTheme = false
+    // Chế độ giao diện đồng hồ: skeuo, glass, material, light
+    private var currentThemeMode = "skeuo"
 
     private val themeReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
-            val theme = intent?.getStringExtra("theme") ?: "dark"
-            isLightTheme = (theme == "light")
-            applyWatchTheme()
+            val theme = intent?.getStringExtra("theme") ?: "skeuo"
+            currentThemeMode = theme
+            getSharedPreferences("gemini_prefs", Context.MODE_PRIVATE)
+                .edit()
+                .putString("app_theme_mode", theme)
+                .apply()
+            runOnUiThread {
+                applyWatchTheme()
+            }
         }
     }
 
@@ -79,10 +85,10 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        // Đọc màu sắc giao diện đã lưu (mặc định là tối/đen)
-        val savedTheme = getSharedPreferences("gemini_prefs", Context.MODE_PRIVATE)
-            .getString("watch_color_theme", "dark")
-        isLightTheme = (savedTheme == "light")
+        // Đọc giao diện đã lưu (mặc định skeuo)
+        val prefs = getSharedPreferences("gemini_prefs", Context.MODE_PRIVATE)
+        currentThemeMode = prefs.getString("app_theme_mode", null)
+            ?: (if (prefs.getString("watch_color_theme", "dark") == "light") "light" else "skeuo")
         applyWatchTheme()
 
         setupPttListener()
@@ -104,28 +110,80 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private fun getPttIdleDrawable(): Int {
+        return when (currentThemeMode) {
+            "light", "ceramic_light" -> R.drawable.bg_watch_ptt_light
+            "glass", "liquid_glass" -> R.drawable.bg_watch_ptt_glass
+            "material" -> R.drawable.bg_watch_ptt_m3
+            else -> R.drawable.bg_watch_ptt_dark
+        }
+    }
+
+    private fun getStatusIdleColor(): Int {
+        return when (currentThemeMode) {
+            "light", "ceramic_light" -> Color.parseColor("#475569")
+            "glass", "liquid_glass" -> Color.parseColor("#7DD3FC")
+            "material" -> Color.parseColor("#A7F3D0")
+            else -> Color.parseColor("#94A3B8")
+        }
+    }
+
+    private fun getStatusAccentColor(): Int {
+        return when (currentThemeMode) {
+            "light", "ceramic_light" -> Color.parseColor("#B45309")
+            "glass", "liquid_glass" -> Color.parseColor("#38BDF8")
+            "material" -> Color.parseColor("#80CBC4")
+            else -> Color.parseColor("#E5C158")
+        }
+    }
+
     private fun applyWatchTheme() {
-        if (isLightTheme) {
-            // Chế độ Trắng Ceramic sang trọng cho đồng hồ
-            layoutRoot.setBackgroundColor(Color.parseColor("#F1F5F9"))
-            tvHeaderTitle.setTextColor(Color.parseColor("#B45309")) // Champagne Gold
-            tvStatus.setTextColor(Color.parseColor("#475569"))
-            containerResultCard.setBackgroundResource(R.drawable.bg_watch_plate_light)
-            tvResult.setTextColor(Color.parseColor("#0F172A")) // Slate Black cực kỳ sắc nét
-            val isRec = if (::recorderHelper.isInitialized) recorderHelper.isRecording else false
-            if (!isRec) {
-                pttContainer.setBackgroundResource(R.drawable.bg_watch_ptt_light)
+        val isRec = if (::recorderHelper.isInitialized) recorderHelper.isRecording else false
+
+        when (currentThemeMode) {
+            "light", "ceramic_light" -> {
+                // Chế độ Trắng Ceramic sang trọng cho đồng hồ
+                layoutRoot.setBackgroundColor(Color.parseColor("#F1F5F9"))
+                tvHeaderTitle.setTextColor(Color.parseColor("#B45309")) // Champagne Gold
+                tvStatus.setTextColor(Color.parseColor("#475569"))
+                containerResultCard.setBackgroundResource(R.drawable.bg_watch_plate_light)
+                tvResult.setTextColor(Color.parseColor("#0F172A")) // Slate Black cực kỳ sắc nét
+                if (!isRec) {
+                    pttContainer.setBackgroundResource(R.drawable.bg_watch_ptt_light)
+                }
             }
-        } else {
-            // Chế độ Đen Obsidian AMOLED tiết kiệm pin chuẩn OPPO Watch
-            layoutRoot.setBackgroundColor(Color.parseColor("#000000"))
-            tvHeaderTitle.setTextColor(Color.parseColor("#E5C158")) // Pure Gold
-            tvStatus.setTextColor(Color.parseColor("#94A3B8"))
-            containerResultCard.setBackgroundResource(R.drawable.bg_watch_plate_dark)
-            tvResult.setTextColor(Color.parseColor("#F1F5F9"))
-            val isRec = if (::recorderHelper.isInitialized) recorderHelper.isRecording else false
-            if (!isRec) {
-                pttContainer.setBackgroundResource(R.drawable.bg_watch_ptt_dark)
+            "glass", "liquid_glass" -> {
+                // Chế độ Kính lỏng dạ quang (Liquid Glass)
+                layoutRoot.setBackgroundColor(Color.parseColor("#0A1128")) // Deep cosmic sapphire
+                tvHeaderTitle.setTextColor(Color.parseColor("#38BDF8")) // Glowing Cyan
+                tvStatus.setTextColor(Color.parseColor("#7DD3FC"))
+                containerResultCard.setBackgroundResource(R.drawable.bg_watch_plate_glass)
+                tvResult.setTextColor(Color.parseColor("#F8FAFC")) // Crystal Diamond White
+                if (!isRec) {
+                    pttContainer.setBackgroundResource(R.drawable.bg_watch_ptt_glass)
+                }
+            }
+            "material" -> {
+                // Chế độ Google Material 3 Slate Dark
+                layoutRoot.setBackgroundColor(Color.parseColor("#121418"))
+                tvHeaderTitle.setTextColor(Color.parseColor("#80CBC4")) // Mint Teal
+                tvStatus.setTextColor(Color.parseColor("#A7F3D0"))
+                containerResultCard.setBackgroundResource(R.drawable.bg_watch_plate_m3)
+                tvResult.setTextColor(Color.parseColor("#E2E8F0"))
+                if (!isRec) {
+                    pttContainer.setBackgroundResource(R.drawable.bg_watch_ptt_m3)
+                }
+            }
+            else -> {
+                // Chế độ Đen Obsidian AMOLED Skeuomorphism tiết kiệm pin chuẩn OPPO Watch
+                layoutRoot.setBackgroundColor(Color.parseColor("#000000"))
+                tvHeaderTitle.setTextColor(Color.parseColor("#E5C158")) // Pure Gold
+                tvStatus.setTextColor(Color.parseColor("#94A3B8"))
+                containerResultCard.setBackgroundResource(R.drawable.bg_watch_plate_dark)
+                tvResult.setTextColor(Color.parseColor("#F1F5F9"))
+                if (!isRec) {
+                    pttContainer.setBackgroundResource(R.drawable.bg_watch_ptt_dark)
+                }
             }
         }
     }
@@ -154,9 +212,9 @@ class MainActivity : AppCompatActivity() {
         isDismissedOrCancelled = false
 
         // Kiểm tra lại theme khi vào lại app
-        val savedTheme = getSharedPreferences("gemini_prefs", Context.MODE_PRIVATE)
-            .getString("watch_color_theme", "dark")
-        isLightTheme = (savedTheme == "light")
+        val prefs = getSharedPreferences("gemini_prefs", Context.MODE_PRIVATE)
+        currentThemeMode = prefs.getString("app_theme_mode", null)
+            ?: (if (prefs.getString("watch_color_theme", "dark") == "light") "light" else "skeuo")
         applyWatchTheme()
 
         // CHỈ tự động thu âm khi người dùng vừa chủ động bấm mở app
@@ -169,9 +227,9 @@ class MainActivity : AppCompatActivity() {
         } else {
             // Khi người dùng tắt màn hình đi vào lại: TUYỆT ĐỐI KHÔNG TỰ ĐỘNG GHI ÂM
             if (!recorderHelper.isRecording) {
-                pttContainer.setBackgroundResource(if (isLightTheme) R.drawable.bg_watch_ptt_light else R.drawable.bg_watch_ptt_dark)
+                pttContainer.setBackgroundResource(getPttIdleDrawable())
                 tvStatus.text = "NHẤN ĐỂ NÓI"
-                tvStatus.setTextColor(if (isLightTheme) Color.parseColor("#475569") else Color.parseColor("#94A3B8"))
+                tvStatus.setTextColor(getStatusIdleColor())
             }
         }
     }
@@ -187,9 +245,9 @@ class MainActivity : AppCompatActivity() {
         }
         GeminiClient.cancelCurrentRequest()
 
-        pttContainer.setBackgroundResource(if (isLightTheme) R.drawable.bg_watch_ptt_light else R.drawable.bg_watch_ptt_dark)
+        pttContainer.setBackgroundResource(getPttIdleDrawable())
         tvStatus.text = "NHẤN ĐỂ NÓI"
-        tvStatus.setTextColor(if (isLightTheme) Color.parseColor("#475569") else Color.parseColor("#94A3B8"))
+        tvStatus.setTextColor(getStatusIdleColor())
     }
 
     override fun onStop() {
@@ -277,7 +335,7 @@ class MainActivity : AppCompatActivity() {
         if (!started) {
             tvStatus.text = "LỖI MICROPHONE"
             tvResult.text = "Không thể khởi động micro."
-            pttContainer.setBackgroundResource(if (isLightTheme) R.drawable.bg_watch_ptt_light else R.drawable.bg_watch_ptt_dark)
+            pttContainer.setBackgroundResource(getPttIdleDrawable())
         }
     }
 
@@ -285,15 +343,15 @@ class MainActivity : AppCompatActivity() {
         if (!recorderHelper.isRecording || isDismissedOrCancelled || isFinishing) return
 
         vibrateTick(120, 150)
-        pttContainer.setBackgroundResource(if (isLightTheme) R.drawable.bg_watch_ptt_light else R.drawable.bg_watch_ptt_dark)
+        pttContainer.setBackgroundResource(getPttIdleDrawable())
         tvStatus.text = "⚡ ĐANG GỌI GEMINI..."
-        tvStatus.setTextColor(if (isLightTheme) Color.parseColor("#B45309") else Color.parseColor("#E5C158"))
+        tvStatus.setTextColor(getStatusAccentColor())
         tvResult.text = "Gemini đang xử lý câu trả lời..."
 
         val audioBase64 = recorderHelper.stopRecording()
         if (audioBase64.isNullOrEmpty()) {
             tvStatus.text = "NHẤN ĐỂ NÓI"
-            tvStatus.setTextColor(if (isLightTheme) Color.parseColor("#475569") else Color.parseColor("#94A3B8"))
+            tvStatus.setTextColor(getStatusIdleColor())
             tvResult.text = "Chưa thu được âm thanh. Hãy nhấn giữ hoặc chạm để nói lại."
             return
         }
@@ -306,7 +364,7 @@ class MainActivity : AppCompatActivity() {
                 }
 
                 tvStatus.text = if (success) "✓ ĐÃ TRẢ LỜI" else "LỖI"
-                tvStatus.setTextColor(if (success) (if (isLightTheme) Color.parseColor("#059669") else Color.parseColor("#34D399")) else Color.parseColor("#EF4444"))
+                tvStatus.setTextColor(if (success) (if (currentThemeMode == "light" || currentThemeMode == "ceramic_light") Color.parseColor("#059669") else Color.parseColor("#34D399")) else Color.parseColor("#EF4444"))
                 tvResult.text = answer
                 scrollResult.smoothScrollTo(0, 0)
 

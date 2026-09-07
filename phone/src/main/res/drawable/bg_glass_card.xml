@@ -1,36 +1,46 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- True Liquid Frosted Glass (Soft diffused frosted blur with organic glass sheen) -->
+<!-- Authentic Liquid Frosted Glass with Luminous Cyan Rim and Deep Frosted Body -->
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
-    <!-- Diffuse Frost Ambient Shadow -->
+    <!-- Ambient Diffuse Shadow -->
     <item>
         <shape android:shape="rectangle">
-            <corners android:radius="16dp" />
-            <solid android:color="#30000000" />
+            <corners android:radius="18dp" />
+            <solid android:color="#40000000" />
         </shape>
     </item>
-    <!-- Translucent Frosted Glass Body with Top Specular Sheen -->
+    <!-- Frosted Glass Outer Bevel Rim -->
     <item
-        android:left="0.5dp"
-        android:top="0.5dp"
-        android:right="0.5dp"
-        android:bottom="0.5dp">
+        android:left="1dp"
+        android:top="1dp"
+        android:right="1dp"
+        android:bottom="1dp">
         <shape android:shape="rectangle">
-            <corners android:radius="16dp" />
+            <corners android:radius="18dp" />
+            <stroke
+                android:width="1.5dp"
+                android:color="#607DD3FC" />
+            <solid android:color="#00000000" />
+        </shape>
+    </item>
+    <!-- Translucent Frosted Glass Core -->
+    <item
+        android:left="2dp"
+        android:top="2dp"
+        android:right="2dp"
+        android:bottom="2dp">
+        <shape android:shape="rectangle">
+            <corners android:radius="17dp" />
             <gradient
                 android:type="linear"
                 android:angle="270"
-                android:startColor="#2A334D66"
-                android:centerColor="#1C182638"
-                android:endColor="#15121E2C" />
-            <!-- Soft Diffuse Frost Border (No harsh neon reflect) -->
-            <stroke
-                android:width="1dp"
-                android:color="#38E2E8F0" />
+                android:startColor="#40334E78"
+                android:centerColor="#2B203254"
+                android:endColor="#2015243C" />
             <padding
-                android:left="13dp"
-                android:top="13dp"
-                android:right="13dp"
-                android:bottom="13dp" />
+                android:left="14dp"
+                android:top="14dp"
+                android:right="14dp"
+                android:bottom="14dp" />
         </shape>
     </item>
 </layer-list>

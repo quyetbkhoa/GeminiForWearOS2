@@ -45,8 +45,9 @@ object GeminiClient {
                 val prefs = context.getSharedPreferences("gemini_prefs", Context.MODE_PRIVATE)
                 val customKey = prefs.getString("custom_api_key", null)?.trim()
                 val activeApiKey = if (!customKey.isNullOrEmpty()) customKey else GeminiConfig.GEMINI_API_KEY
-
-                val endpoint = "https://generativelanguage.googleapis.com/v1beta/models/$MODEL:generateContent?key=$activeApiKey"
+                // Đọc mô hình do người dùng chọn (mặc định Gemini 3.8 Flash mới nhất)
+                val model = prefs.getString("selected_model", "gemini-3.8-flash") ?: "gemini-3.8-flash"
+                val endpoint = "https://generativelanguage.googleapis.com/v1beta/models/$model:generateContent?key=$activeApiKey"
                 val url = URL(endpoint)
 
                 connection = (url.openConnection() as HttpURLConnection).apply {

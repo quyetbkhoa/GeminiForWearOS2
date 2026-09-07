@@ -118,12 +118,36 @@ class WatchUpdateReceiverService : WearableListenerService() {
                 prefs.edit().remove("custom_api_key").apply()
                 Log.d(TAG, "Đã xóa custom Gemini API Key, khôi phục mặc định!")
             }
-            notifyVibrate(longArrayOf(0, 100, 80, 120))
+        } else if (messageEvent.path == "/gemini_model_sync") {
+            val model = String(messageEvent.data, Charsets.UTF_8).trim()
+            if (model.isNotEmpty()) {
+                getSharedPreferences("gemini_prefs", Context.MODE_PRIVATE)
+                    .edit()
+                    .putString("selected_model", model)
+                    .apply()
+                Log.d(TAG, "Đã lưu Gemini Model đồng bộ từ điện thoại: $model")
+                notifyVibrate(longArrayOf(0, 80, 60, 80))
+            }
+        } else if (messageEvent.path == "/app_theme_sync") {
+            val theme = String(messageEvent.data, Charsets.UTF_8).trim()
+            val prefs = getSharedPreferences("gemini_prefs", Context.MODE_PRIVATE)
+            prefs.edit()
+                .putString("app_theme_mode", theme)
+                .putString("watch_color_theme", if (theme == "light") "light" else "dark")
+                .apply()
+            Log.d(TAG, "Đã nhận lệnh đồng bộ giao diện toàn diện: $theme")
+            val intent = Intent("com.oppowatch.gemini.WATCH_THEME_CHANGED").apply {
+                putExtra("theme", theme)
+                setPackage(packageName)
+            }
+            sendBroadcast(intent)
+            notifyVibrate(longArrayOf(0, 80))
         } else if (messageEvent.path == "/watch_color_theme") {
             val theme = String(messageEvent.data, Charsets.UTF_8).trim()
             getSharedPreferences("gemini_prefs", Context.MODE_PRIVATE)
                 .edit()
                 .putString("watch_color_theme", theme)
+                .putString("app_theme_mode", if (theme == "light") "light" else "skeuo")
                 .apply()
             Log.d(TAG, "Đã nhận lệnh đổi màu đồng hồ: $theme")
             val intent = Intent("com.oppowatch.gemini.WATCH_THEME_CHANGED").apply {

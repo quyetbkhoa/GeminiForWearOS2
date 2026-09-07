@@ -15,31 +15,42 @@
         android:padding="14dp"
         android:paddingBottom="50dp">
 
-        <!-- Theme Selector Segmented Bar -->
+        <!-- Unified Theme & Color Controller (Sync to both Phone & Watch) -->
         <LinearLayout
             android:id="@+id/card_theme_selector"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
             android:background="@drawable/bg_rack_card"
-            android:padding="10dp"
+            android:padding="12dp"
             android:layout_marginBottom="12dp">
 
             <TextView
                 android:id="@+id/tv_theme_label"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="🎨 CHỌN GIAO DIỆN (THEME ENGINE):"
+                android:text="🎨 ĐỒNG BỘ GIAO DIỆN (PHONE &amp; WATCH):"
                 android:textSize="11sp"
                 android:textStyle="bold"
                 android:textColor="#F59E0B"
                 android:letterSpacing="0.04"
+                android:layout_marginBottom="4dp" />
+
+            <TextView
+                android:id="@+id/tv_theme_sublabel"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Chọn trên điện thoại sẽ tự động đổi giao diện cả điện thoại và đồng hồ:"
+                android:textSize="10sp"
+                android:textColor="#94A3B8"
                 android:layout_marginBottom="8dp" />
 
+            <!-- Row 1: Style Selection -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="38dp"
-                android:orientation="horizontal">
+                android:orientation="horizontal"
+                android:layout_marginBottom="8dp">
 
                 <Button
                     android:id="@+id/btn_theme_skeuo"
@@ -52,7 +63,7 @@
                     android:textColor="#FFFFFF"
                     android:background="@drawable/bg_btn_gold"
                     android:backgroundTint="@null"
-                    android:layout_marginRight="4dp" />
+                    android:layout_marginRight="3dp" />
 
                 <Button
                     android:id="@+id/btn_theme_glass"
@@ -79,34 +90,13 @@
                     android:textColor="#FFFFFF"
                     android:background="@drawable/bg_btn_metallic"
                     android:backgroundTint="@null"
-                    android:layout_marginLeft="4dp" />
+                    android:layout_marginLeft="3dp" />
             </LinearLayout>
-        </LinearLayout>
 
-        <!-- Watch Color Theme Switcher (Sync to Watch) -->
-        <LinearLayout
-            android:id="@+id/card_watch_theme"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:background="@drawable/bg_rack_card"
-            android:padding="10dp"
-            android:layout_marginBottom="12dp">
-
-            <TextView
-                android:id="@+id/tv_watch_color_label"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="⌚ MÀU SẮC ĐỒNG HỒ (WATCH COLOR):"
-                android:textSize="11sp"
-                android:textStyle="bold"
-                android:textColor="#34D399"
-                android:letterSpacing="0.04"
-                android:layout_marginBottom="8dp" />
-
+            <!-- Row 2: Color Shade Quick Toggles -->
             <LinearLayout
                 android:layout_width="match_parent"
-                android:layout_height="38dp"
+                android:layout_height="36dp"
                 android:orientation="horizontal">
 
                 <Button
@@ -135,6 +125,115 @@
                     android:backgroundTint="@null"
                     android:layout_marginLeft="4dp" />
             </LinearLayout>
+        </LinearLayout>
+
+        <!-- Model Selector Card -->
+        <LinearLayout
+            android:id="@+id/card_model_selector"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="@drawable/bg_rack_card"
+            android:padding="12dp"
+            android:layout_marginBottom="12dp">
+
+            <TextView
+                android:id="@+id/tv_model_header"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="⚡ CHỌN MÔ HÌNH GEMINI (AI MODEL):"
+                android:textSize="11sp"
+                android:textStyle="bold"
+                android:textColor="#F59E0B"
+                android:letterSpacing="0.04"
+                android:layout_marginBottom="4dp" />
+
+            <TextView
+                android:id="@+id/tv_model_desc"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Lựa chọn mô hình AI (tự động đồng bộ không dây sang đồng hồ):"
+                android:textSize="10sp"
+                android:textColor="#94A3B8"
+                android:layout_marginBottom="10dp" />
+
+            <RadioGroup
+                android:id="@+id/rg_gemini_models"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+
+                <RadioButton
+                    android:id="@+id/rb_model_38_flash"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="⭐ Gemini 3.8 Flash (Khuyên dùng - Mới nhất 2026)"
+                    android:textSize="11sp"
+                    android:textStyle="bold"
+                    android:textColor="#F59E0B"
+                    android:buttonTint="#F59E0B"
+                    android:paddingVertical="4dp" />
+
+                <RadioButton
+                    android:id="@+id/rb_model_37_flash"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="⚡ Gemini 3.7 Flash (Mạnh mẽ &amp; Suy luận tốt)"
+                    android:textSize="11sp"
+                    android:textColor="#E2E8F0"
+                    android:buttonTint="#F59E0B"
+                    android:paddingVertical="4dp" />
+
+                <RadioButton
+                    android:id="@+id/rb_model_35_flash"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="🚀 Gemini 3.5 Flash (Tốc độ cao)"
+                    android:textSize="11sp"
+                    android:textColor="#E2E8F0"
+                    android:buttonTint="#F59E0B"
+                    android:paddingVertical="4dp" />
+
+                <RadioButton
+                    android:id="@+id/rb_model_35_flash_lite"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="💡 Gemini 3.5 Flash-Lite (Siêu tiết kiệm token)"
+                    android:textSize="11sp"
+                    android:textColor="#E2E8F0"
+                    android:buttonTint="#F59E0B"
+                    android:paddingVertical="4dp" />
+
+                <RadioButton
+                    android:id="@+id/rb_model_25_flash"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="⚡ Gemini 2.5 Flash (Bản chuẩn ổn định)"
+                    android:textSize="11sp"
+                    android:textColor="#E2E8F0"
+                    android:buttonTint="#F59E0B"
+                    android:paddingVertical="4dp" />
+
+                <RadioButton
+                    android:id="@+id/rb_model_31_pro"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="🧠 Gemini 3.1 Pro Preview (Phân tích chuyên sâu)"
+                    android:textSize="11sp"
+                    android:textColor="#E2E8F0"
+                    android:buttonTint="#F59E0B"
+                    android:paddingVertical="4dp" />
+            </RadioGroup>
+
+            <TextView
+                android:id="@+id/tv_model_status"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="✓ Đang dùng: Gemini 3.8 Flash"
+                android:textSize="10sp"
+                android:textStyle="bold"
+                android:textColor="#34D399"
+                android:layout_marginTop="8dp" />
         </LinearLayout>
 
         <!-- Top Console Title Plate -->
