@@ -14,10 +14,11 @@ Một giải pháp mã nguồn mở hoàn chỉnh nhằm thay thế **Google Ass
 2. **Wear OS Tile:** Đặt làm Tile số 1 (chỉ cần vuốt từ phải sang trái 1 nấc).
 3. **Phím cứng chức năng OPPO Watch:** Cho phép gán vào phím phụ vật lý ở cạnh dưới để bấm 1 phát vào ngay màn hình nói.
 
-### 2. Thiết kế Skeuomorphism tối ưu cho OPPO Watch 46mm
-- Kích thước chuẩn màn hình 402 x 476 px.
-- Vùng đệm lề an toàn chống méo ở viền cong 3D.
+### 2. Thiết kế Tối ưu cho OPPO Watch 46mm
+- Kích thước chuẩn màn hình 402 x 476 px với vùng đệm lề an toàn chống méo ở viền cong 3D.
 - Nút bấm micro cơ học 3D, hiệu ứng dập nổi/chìm và viền sáng đỏ/vàng khi thu âm.
+- **Hiển thị phiên bản ở góc màn hình:** Bổ sung số phiên bản (`v1.2.5`) ngay tại góc màn hình, giúp người dùng dễ dàng kiểm tra bản cập nhật đang chạy.
+- **Nút HỦY LỆNH (Cancel Button - "Ấn vào không gửi"):** Bổ sung nút tròn **[✕]** chuyên dụng ở góc dưới bên phải. Khi đang nói hoặc đang chờ trả lời, bấm nút **✕** sẽ dừng ngay lập tức, hủy bỏ file ghi âm và **tuyệt đối không gửi** câu hỏi đến AI. Hỗ trợ thêm cử chỉ trượt ngón tay ra xa nút mic (*Slide-To-Cancel*).
 
 ### 3. Prompt thông minh tối ưu màn hình nhỏ
 - Ràng buộc Gemini trả lời trực diện, siêu ngắn gọn (1–2 câu) cho các câu hỏi Có/Không hoặc câu hỏi tra cứu dữ liệu, giúp hiển thị trọn vẹn không cần cuộn trang và đọc TTS nhanh chóng.

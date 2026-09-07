@@ -7,6 +7,23 @@ phiên bản tuân theo [Semantic Versioning](https://semver.org/lang/vi/).
 
 ---
 
+## [v1.2.5] - 2026-09-07
+
+### ⌚ Cập Nhật Giao Diện Wear OS: Hiển Thị Version Ở Góc & Bổ Sung Nút Hủy Lệnh (Cancel)
+- **Hiển thị phiên bản ứng dụng động ở góc màn hình:**
+  - Bổ sung số phiên bản (`v1.2.5`) tại góc dưới bên trái và thanh tiêu đề phía trên màn hình đồng hồ.
+  - Số phiên bản được lấy trực tiếp từ hệ thống (`packageManager`), tự động cập nhật chính xác cho người dùng nhận biết ngay trên mặt đồng hồ.
+- **Nút HỦY LỆNH (Cancel Button - "Ấn vào không gửi"):**
+  - Bổ sung nút tròn **[✕]** chuyên dụng tại góc dưới bên phải màn hình đồng hồ.
+  - **Khi đang thu âm:** Bấm nút **✕** sẽ dừng ghi âm tức thì, xóa file âm thanh đệm và **tuyệt đối không gửi** bất kỳ dữ liệu nào đến Gemini.
+  - **Khi đang gọi Gemini:** Bấm nút **✕** sẽ ngắt kết nối HTTP ngay lập tức, giải phóng CPU WakeLock và đưa giao diện về trạng thái sẵn sàng.
+  - **Cử chỉ Trượt Để Hủy (Slide-To-Cancel):** Khi đang nhấn giữ phím Micro PTT, người dùng có thể trượt ngón tay ra xa nút mic để hủy gửi tự nhiên tương tự các ứng dụng tin nhắn thoại.
+  - Phản hồi trạng thái trực quan: Hiển thị thông báo `"ĐÃ HỦY (KHÔNG GỬI)"` màu đỏ cùng rung xúc giác (haptic) xác nhận.
+- **Đồng bộ Theme:**
+  - Nút Hủy và số phiên bản tự động biến đổi màu sắc và hiệu ứng viền kim loại/kính mờ theo cả 6 chủ đề (Skeuomorphism, Liquid Glass, Material x Dark / Light).
+
+---
+
 ## [v1.2.4] - 2026-09-07
 
 ### ⚡ Tích Hợp Wireless ADB Client Trực Tiếp Vào Điện Thoại (Direct Wear OS Sideload)

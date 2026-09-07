@@ -20,16 +20,33 @@
         android:gravity="center_vertical"
         android:layout_marginBottom="6dp">
 
-        <TextView
-            android:id="@+id/tv_header_title"
+        <LinearLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="GEMINI AI"
-            android:textColor="#E5C158"
-            android:textSize="11sp"
-            android:textStyle="bold"
-            android:letterSpacing="0.08" />
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <TextView
+                android:id="@+id/tv_header_title"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="GEMINI AI"
+                android:textColor="#E5C158"
+                android:textSize="11sp"
+                android:textStyle="bold"
+                android:letterSpacing="0.08" />
+
+            <TextView
+                android:id="@+id/tv_header_version"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="v1.2.5"
+                android:textColor="#64748B"
+                android:textSize="8.5sp"
+                android:textStyle="bold"
+                android:layout_marginStart="4dp" />
+        </LinearLayout>
 
         <TextView
             android:id="@+id/tv_status"
@@ -69,24 +86,65 @@
         </LinearLayout>
     </ScrollView>
 
-    <!-- Bottom Center Push-To-Talk Button: Strict 1:1 Circular Geometry (No distortion) -->
-    <FrameLayout
-        android:id="@+id/btn_ptt_container"
-        android:layout_width="56dp"
+    <!-- Bottom Control Bar: Version on left corner, PTT Mic in center, Cancel on right corner -->
+    <RelativeLayout
+        android:id="@+id/layout_bottom_bar"
+        android:layout_width="match_parent"
         android:layout_height="56dp"
-        android:layout_gravity="center_horizontal"
         android:layout_marginTop="6dp"
-        android:layout_marginBottom="2dp"
-        android:background="@drawable/bg_watch_ptt_dark"
-        android:clickable="true"
-        android:focusable="true">
+        android:layout_marginBottom="2dp">
 
-        <ImageView
-            android:id="@+id/iv_mic_icon"
-            android:layout_width="24dp"
-            android:layout_height="24dp"
-            android:layout_gravity="center"
-            android:src="@drawable/ic_mic" />
-    </FrameLayout>
+        <!-- Bottom-Left Corner: App Version Badge -->
+        <TextView
+            android:id="@+id/tv_app_version"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentStart="true"
+            android:layout_centerVertical="true"
+            android:text="v1.2.5"
+            android:textColor="#64748B"
+            android:textSize="9.5sp"
+            android:textStyle="bold"
+            android:letterSpacing="0.04"
+            android:padding="4dp" />
+
+        <!-- Center: Circular Push-To-Talk Button (56x56dp) -->
+        <FrameLayout
+            android:id="@+id/btn_ptt_container"
+            android:layout_width="56dp"
+            android:layout_height="56dp"
+            android:layout_centerInParent="true"
+            android:background="@drawable/bg_watch_ptt_dark"
+            android:clickable="true"
+            android:focusable="true">
+
+            <ImageView
+                android:id="@+id/iv_mic_icon"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:layout_gravity="center"
+                android:src="@drawable/ic_mic" />
+        </FrameLayout>
+
+        <!-- Bottom-Right Corner: Cancel Button (Press to NOT send) -->
+        <FrameLayout
+            android:id="@+id/btn_cancel"
+            android:layout_width="42dp"
+            android:layout_height="42dp"
+            android:layout_alignParentEnd="true"
+            android:layout_centerVertical="true"
+            android:background="@drawable/bg_watch_btn_cancel"
+            android:clickable="true"
+            android:focusable="true">
+
+            <ImageView
+                android:id="@+id/iv_cancel_icon"
+                android:layout_width="16dp"
+                android:layout_height="16dp"
+                android:layout_gravity="center"
+                android:src="@drawable/ic_cancel" />
+        </FrameLayout>
+
+    </RelativeLayout>
 
 </LinearLayout>

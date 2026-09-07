@@ -9,12 +9,15 @@ import android.content.pm.PackageManager
 import android.graphics.Color
 import android.os.Build
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.os.PowerManager
 import android.os.VibrationEffect
 import android.os.Vibrator
 import android.util.Log
 import android.view.MotionEvent
 import android.widget.FrameLayout
+import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TextView
@@ -27,17 +30,22 @@ class MainActivity : AppCompatActivity() {
     private lateinit var recorderHelper: AudioRecorderHelper
     private lateinit var layoutRoot: LinearLayout
     private lateinit var tvHeaderTitle: TextView
+    private lateinit var tvHeaderVersion: TextView
     private lateinit var tvStatus: TextView
     private lateinit var containerResultCard: LinearLayout
     private lateinit var tvResult: TextView
     private lateinit var scrollResult: ScrollView
     private lateinit var pttContainer: FrameLayout
+    private lateinit var tvAppVersion: TextView
+    private lateinit var btnCancel: FrameLayout
+    private lateinit var ivCancelIcon: ImageView
 
+    private val mainHandler = Handler(Looper.getMainLooper())
     private var touchDownTime = 0L
 
     // Chỉ tự động kích hoạt thu âm khi người dùng chủ động mở app (từ launcher, shortcut, tile...)
     private var isAppActivelyLaunched = false
-    // Người dùng chủ động huỷ (vuốt Back): huỷ toàn bộ tác vụ
+    // Người dùng chủ động huỷ: huỷ toàn bộ tác vụ, không gửi gì
     private var isUserExplicitlyCancelled = false
 
     // Trạng thái xử lý nền khi đi đường (Road Mode)
@@ -107,11 +115,26 @@ class MainActivity : AppCompatActivity() {
 
         layoutRoot = findViewById(R.id.layout_root)
         tvHeaderTitle = findViewById(R.id.tv_header_title)
+        tvHeaderVersion = findViewById(R.id.tv_header_version)
         tvStatus = findViewById(R.id.tv_status)
         containerResultCard = findViewById(R.id.container_result_card)
         tvResult = findViewById(R.id.tv_result)
         scrollResult = findViewById(R.id.scroll_result)
         pttContainer = findViewById(R.id.btn_ptt_container)
+        tvAppVersion = findViewById(R.id.tv_app_version)
+        btnCancel = findViewById(R.id.btn_cancel)
+        ivCancelIcon = findViewById(R.id.iv_cancel_icon)
+
+        // Hiển thị số phiên bản ứng dụng động ở góc màn hình
+        val versionName = try {
+            packageManager.getPackageInfo(packageName, 0).versionName ?: "1.2.5"
+        } catch (_: Exception) { "1.2.5" }
+        tvHeaderVersion.text = "v$versionName"
+        tvAppVersion.text = "v$versionName"
+
+        btnCancel.setOnClickListener {
+            cancelVoiceRecording()
+        }
 
         recorderHelper = AudioRecorderHelper(this)
         recorderHelper.onSilenceDetected = {
@@ -250,6 +273,22 @@ class MainActivity : AppCompatActivity() {
                 if (!isRec) pttContainer.setBackgroundResource(R.drawable.bg_watch_ptt_dark)
             }
         }
+
+        val isLight = when (currentThemeCombined) {
+            "skeuo_light", "glass_light", "material_light" -> true
+            else -> false
+        }
+        if (::tvHeaderVersion.isInitialized) {
+            tvHeaderVersion.setTextColor(if (isLight) Color.parseColor("#94A3B8") else Color.parseColor("#64748B"))
+        }
+        if (::tvAppVersion.isInitialized) {
+            tvAppVersion.setTextColor(if (isLight) Color.parseColor("#64748B") else Color.parseColor("#94A3B8"))
+        }
+        if (::btnCancel.isInitialized) {
+            btnCancel.setBackgroundResource(
+                if (isLight) R.drawable.bg_watch_btn_cancel_light else R.drawable.bg_watch_btn_cancel
+            )
+        }
     }
 
     override fun onDestroy() {
@@ -379,18 +418,74 @@ class MainActivity : AppCompatActivity() {
                 }
                 MotionEvent.ACTION_UP -> {
                     if (recorderHelper.isRecording) {
-                        finishVoiceRecording()
+                        if (isUserExplicitlyCancelled) {
+                            recorderHelper.cancelRecording()
+                        } else {
+                            finishVoiceRecording()
+                        }
                     }
                     true
                 }
                 MotionEvent.ACTION_CANCEL -> {
                     if (recorderHelper.isRecording) {
-                        finishVoiceRecording()
+                        cancelVoiceRecording()
+                    }
+                    true
+                }
+                MotionEvent.ACTION_MOVE -> {
+                    // Trượt ngón tay ra xa nút mic: tự động hủy ghi âm, tuyệt đối không gửi
+                    val distanceX = Math.abs(event.x - pttContainer.width / 2f)
+                    val distanceY = Math.abs(event.y - pttContainer.height / 2f)
+                    if (distanceX > pttContainer.width * 1.5f || distanceY > pttContainer.height * 1.5f) {
+                        if (recorderHelper.isRecording && !isUserExplicitlyCancelled) {
+                            cancelVoiceRecording()
+                        }
                     }
                     true
                 }
                 else -> false
             }
+        }
+    }
+
+    /**
+     * Hủy bỏ toàn bộ quá trình thu âm / gọi Gemini (nhấn nút Cancel hoặc trượt ngón tay ra xa) - TUYỆT ĐỐI KHÔNG GỬI
+     */
+    private fun cancelVoiceRecording() {
+        isUserExplicitlyCancelled = true
+        vibrateTick(80, 120)
+
+        val wasActive = (::recorderHelper.isInitialized && recorderHelper.isRecording) || isProcessingGemini
+
+        if (::recorderHelper.isInitialized && recorderHelper.isRecording) {
+            recorderHelper.cancelRecording()
+        }
+
+        if (isProcessingGemini) {
+            GeminiClient.cancelCurrentRequest()
+            isProcessingGemini = false
+            releaseWakeLock()
+        }
+
+        pttContainer.setBackgroundResource(getPttIdleDrawable())
+
+        if (wasActive) {
+            tvStatus.text = "ĐÃ HỦY (KHÔNG GỬI)"
+            tvStatus.setTextColor(Color.parseColor("#EF4444"))
+            tvResult.text = "Đã hủy bỏ câu lệnh.\nChạm biểu tượng micro bên dưới để nói lại."
+
+            mainHandler.postDelayed({
+                if (!recorderHelper.isRecording && !isProcessingGemini && !isFinishing) {
+                    tvStatus.text = "NHẤN ĐỂ NÓI"
+                    tvStatus.setTextColor(getStatusIdleColor())
+                    isUserExplicitlyCancelled = false
+                }
+            }, 2200)
+        } else {
+            tvStatus.text = "NHẤN ĐỂ NÓI"
+            tvStatus.setTextColor(getStatusIdleColor())
+            tvResult.text = "Chạm hoặc nhấn giữ biểu tượng micro bên dưới để hỏi..."
+            isUserExplicitlyCancelled = false
         }
     }
 

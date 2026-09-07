@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Outer Bezel Ring -->
+    <item>
+        <shape android:shape="oval">
+            <gradient
+                android:type="linear"
+                android:angle="270"
+                android:startColor="#334155"
+                android:centerColor="#1E293B"
+                android:endColor="#0F172A" />
+            <stroke android:width="1.2dp" android:color="#475569" />
+        </shape>
+    </item>
+    <!-- Inner Crimson Tinted Core -->
+    <item
+        android:left="2.5dp"
+        android:top="2.5dp"
+        android:right="2.5dp"
+        android:bottom="2.5dp">
+        <shape android:shape="oval">
+            <gradient
+                android:type="radial"
+                android:gradientRadius="22dp"
+                android:centerX="0.5"
+                android:centerY="0.5"
+                android:startColor="#3B0707"
+                android:centerColor="#200505"
+                android:endColor="#120303" />
+            <stroke android:width="1.2dp" android:color="#DC2626" />
+        </shape>
+    </item>
+</layer-list>
