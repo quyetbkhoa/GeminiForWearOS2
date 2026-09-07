@@ -27,11 +27,14 @@ Một giải pháp mã nguồn mở hoàn chỉnh nhằm thay thế **Google Ass
 - Người dùng chỉ tick chọn thiết bị cá nhân (ví dụ: tai nghe Bluetooth, intercom nón bảo hiểm).
 - Nếu ngắt kết nối hoặc kết nối loa ngoài / loa ô tô chưa được tick, app sẽ **tự động giữ im lặng** để bảo đảm tính riêng tư.
 
-### 5. Tự động Cập nhật Không Dây (OTA Update Phone & Watch)
-- **Kiểm tra trực tiếp từ GitHub Releases:** App điện thoại có nút kiểm tra bản mới từ repository `quyetbkhoa/GeminiForWearOS2`.
-- **Cập nhật đồng bộ Phone + Watch:** Khi có bản cập nhật mới, điện thoại tự động tải cả 2 file APK (`Gemini_Phone_Companion.apk` và `Gemini_Watch_App.apk`).
-  - Cài đặt bản cập nhật trên điện thoại qua `FileProvider`.
-  - Truyền trực tiếp file APK của đồng hồ qua Bluetooth bằng GMS Wearable `ChannelClient`. Đồng hồ nhận xong sẽ kích hoạt hộp thoại cài đặt ngay trên cổ tay mà không cần cắm cáp USB hay gõ lệnh ADB!
+### 5. Tự động Cập nhật Không Dây Siêu Tốc (OTA Wi-Fi & Bluetooth)
+- **Kiểm tra trực tiếp từ GitHub Releases:** App điện thoại có nút kiểm tra bản mới từ repository `quyetbkhoa/GeminiForWearOS2`, tự động chọn bản phát hành mới nhất (SemVer) mà không qua trung gian.
+- **Tự động ghép nối Wi-Fi & Truyền APK trong 2 giây (Wi-Fi Pair & Push):**
+  - Khi người dùng bật Điểm phát sóng (Hotspot) trên điện thoại cho đồng hồ bắt hoặc cả 2 cùng kết nối một Wi-Fi, app sẽ **tự động bắt tay ghép nối qua kết nối Bluetooth có sẵn** mà không cần nhập IP thủ công.
+  - APK đồng hồ (~11.5 MB) được truyền thẳng qua TCP Socket tốc độ cao (5 - 15 MB/s) chỉ mất **1 - 2 giây**!
+  - Giữ `WifiLock (HIGH_PERF)` và `WakeLock` trên OPPO Watch để đường truyền luôn thông suốt kể cả khi tắt màn hình.
+- **Dự phòng an toàn qua Bluetooth (ChannelClient):** Nếu đồng hồ không bật Wi-Fi, app tự động chuyển sang Bluetooth an toàn mà không gây lỗi.
+- **Cài đặt không cần máy tính:** Đồng hồ và điện thoại tự động mở hộp thoại cài đặt APK ngay khi nhận xong mà không cần cáp USB hay lệnh ADB!
 - **Chữ ký số đồng nhất (Keystore):** Dự án sử dụng keystore cố định cho cả build local và GitHub Actions CI/CD, đảm bảo mọi lần cập nhật APK không bao giờ bị lỗi xung đột chữ ký (`INSTALL_FAILED_UPDATE_INCOMPATIBLE`).
 
 ### 6. 🗣️ Đặt Báo thức & Hẹn giờ Tự động bằng Giọng nói

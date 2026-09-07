@@ -2,7 +2,9 @@ package com.oppowatch.gemini
 
 import android.content.Context
 import android.content.Intent
+import android.net.wifi.WifiManager
 import android.os.Build
+import android.os.PowerManager
 import android.os.VibrationEffect
 import android.os.Vibrator
 import android.util.Log
@@ -15,9 +17,17 @@ import com.google.android.gms.wearable.DataEvent
 import com.google.android.gms.wearable.DataEventBuffer
 import com.google.android.gms.wearable.DataMapItem
 import org.json.JSONObject
+import java.io.BufferedReader
 import java.io.File
 import java.io.FileOutputStream
 import java.io.InputStream
+import java.io.InputStreamReader
+import java.io.OutputStreamWriter
+import java.io.PrintWriter
+import java.net.InetSocketAddress
+import java.net.Socket
+import java.util.LinkedHashSet
+import java.util.Locale
 import kotlin.concurrent.thread
 
 class WatchUpdateReceiverService : WearableListenerService() {
@@ -119,7 +129,15 @@ class WatchUpdateReceiverService : WearableListenerService() {
         super.onMessageReceived(messageEvent)
         Log.d(TAG, "onMessageReceived: path=${messageEvent.path}")
 
-        if (messageEvent.path == "/ota_watch_apk") {
+        if (messageEvent.path == "/watch_wifi_transfer_request") {
+            handleWifiTransferRequest(messageEvent)
+        } else if (messageEvent.path == "/watch_update_trigger_install") {
+            val updateFile = File(cacheDir, "gemini_watch_update.apk")
+            if (updateFile.exists() && updateFile.length() > 0) {
+                Log.i(TAG, "Nhận tín hiệu trigger cài đặt APK từ điện thoại (${updateFile.length()} bytes)")
+                triggerApkInstall(updateFile)
+            }
+        } else if (messageEvent.path == "/ota_watch_apk") {
             thread(name = "WatchApkStreamThread") {
                 try {
                     val updateFile = File(cacheDir, "gemini_watch_update.apk")
@@ -211,6 +229,149 @@ class WatchUpdateReceiverService : WearableListenerService() {
         }
         sendBroadcast(intent)
         notifyVibrate(longArrayOf(0, 80))
+    }
+
+    private fun handleWifiTransferRequest(messageEvent: MessageEvent) {
+        val rawJson = String(messageEvent.data, Charsets.UTF_8)
+        Log.i(TAG, "Nhận yêu cầu ghép nối Wi-Fi từ điện thoại: $rawJson")
+
+        val json = try {
+            JSONObject(rawJson)
+        } catch (e: Exception) {
+            Log.e(TAG, "Lỗi parse JSON Wi-Fi request: ${e.message}")
+            return
+        }
+
+        val ipsArray = json.optJSONArray("ips")
+        val port = json.optInt("port", 0)
+        val fileSize = json.optLong("size", 0L)
+        val token = json.optString("token", "")
+
+        if (port <= 0 || token.isEmpty()) {
+            Log.e(TAG, "Thông tin Wi-Fi không hợp lệ: port=$port, token=$token")
+            return
+        }
+
+        thread(name = "WatchWifiReceiverThread") {
+            val powerManager = getSystemService(Context.POWER_SERVICE) as? PowerManager
+            val wakeLock = powerManager?.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "Gemini:WifiUpdateWakeLock")
+            wakeLock?.acquire(90000L) // Tối đa 90s
+
+            val wifiManager = applicationContext.getSystemService(Context.WIFI_SERVICE) as? WifiManager
+            val wifiLock = wifiManager?.createWifiLock(WifiManager.WIFI_MODE_FULL_HIGH_PERF, "Gemini:WifiUpdateLock")
+            try {
+                wifiLock?.acquire()
+            } catch (_: Exception) {}
+
+            try {
+                // Thu thập danh sách candidate IP
+                val candidateIps = LinkedHashSet<String>()
+
+                // 1. DHCP Gateway IP (khi đồng hồ kết nối vào Hotspot của điện thoại)
+                val dhcp = wifiManager?.dhcpInfo
+                if (dhcp != null && dhcp.gateway != 0) {
+                    val gw = dhcp.gateway
+                    val gwIp = String.format(
+                        Locale.US,
+                        "%d.%d.%d.%d",
+                        gw and 0xff,
+                        gw shr 8 and 0xff,
+                        gw shr 16 and 0xff,
+                        gw shr 24 and 0xff
+                    )
+                    candidateIps.add(gwIp)
+                    Log.d(TAG, "Tìm thấy DHCP Gateway IP (Hotspot): $gwIp")
+                }
+
+                // 2. Thêm các IP điện thoại gửi sang
+                if (ipsArray != null) {
+                    for (i in 0 until ipsArray.length()) {
+                        val ip = ipsArray.optString(i, "").trim()
+                        if (ip.isNotEmpty()) {
+                            candidateIps.add(ip)
+                        }
+                    }
+                }
+
+                // 3. Fallback IP Hotspot mặc định
+                candidateIps.add("192.168.43.1")
+
+                Log.d(TAG, "Bắt đầu dò kết nối tới các IP: $candidateIps trên port $port")
+
+                var connectedSocket: Socket? = null
+                for (targetIp in candidateIps) {
+                    try {
+                        val testSocket = Socket()
+                        testSocket.connect(InetSocketAddress(targetIp, port), 1200) // 1.2s timeout
+                        connectedSocket = testSocket
+                        Log.i(TAG, "✓ Ghép nối Wi-Fi thành công tới điện thoại tại $targetIp:$port!")
+                        break
+                    } catch (e: Exception) {
+                        Log.d(TAG, "Không kết nối được $targetIp:$port: ${e.message}")
+                    }
+                }
+
+                if (connectedSocket == null) {
+                    Log.w(TAG, "Đồng hồ không thể kết nối tới IP nào qua Wi-Fi (sẽ fallback sang Bluetooth)")
+                    return@thread
+                }
+
+                connectedSocket.use { socket ->
+                    socket.tcpNoDelay = true
+                    socket.receiveBufferSize = 131072
+
+                    val writer = PrintWriter(OutputStreamWriter(socket.getOutputStream(), Charsets.UTF_8), true)
+                    val reader = BufferedReader(InputStreamReader(socket.getInputStream(), Charsets.UTF_8))
+
+                    // Gửi token xác nhận
+                    writer.println("READY:$token")
+
+                    val startResponse = reader.readLine()
+                    if (startResponse != "START") {
+                        Log.e(TAG, "Điện thoại từ chối bắt đầu truyền: $startResponse")
+                        return@use
+                    }
+
+                    Log.i(TAG, "Bắt đầu nhận file APK qua Wi-Fi...")
+                    val updateFile = File(cacheDir, "gemini_watch_update.apk")
+                    if (updateFile.exists()) {
+                        updateFile.delete()
+                    }
+
+                    val inStream = socket.getInputStream()
+                    FileOutputStream(updateFile).use { fos ->
+                        val buffer = ByteArray(65536)
+                        var totalRead = 0L
+                        var read: Int
+                        while (inStream.read(buffer).also { read = it } != -1) {
+                            fos.write(buffer, 0, read)
+                            totalRead += read
+                            if (fileSize > 0 && totalRead >= fileSize) {
+                                break
+                            }
+                        }
+                        fos.flush()
+                    }
+
+                    // Gửi phản hồi hoàn tất
+                    writer.println("DONE")
+                    Log.i(TAG, "✓ Đã nhận xong toàn bộ APK qua Wi-Fi (${updateFile.length()} bytes)!")
+
+                    notifyVibrate(longArrayOf(0, 100, 80, 150))
+                    triggerApkInstall(updateFile)
+                }
+
+            } catch (e: Exception) {
+                Log.e(TAG, "Lỗi trong tiến trình nhận APK qua Wi-Fi: ${e.message}", e)
+            } finally {
+                try {
+                    if (wifiLock?.isHeld == true) wifiLock.release()
+                } catch (_: Exception) {}
+                try {
+                    if (wakeLock?.isHeld == true) wakeLock.release()
+                } catch (_: Exception) {}
+            }
+        }
     }
 
     private fun notifyVibrate(pattern: LongArray) {

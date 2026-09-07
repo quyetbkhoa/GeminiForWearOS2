@@ -184,17 +184,17 @@ object GitHubUpdateManager {
                         mainHandler.post { listener.onProgress("Tải Watch APK", percent) }
                     }
 
-                    // 3. Đẩy sang đồng hồ qua Bluetooth ChannelClient
-                    mainHandler.post {
-                        listener.onStatus("Đang đẩy bản cập nhật sang OPPO Watch qua Bluetooth...")
-                    }
-
+                    // 3. Đẩy sang đồng hồ (Tự động ưu tiên Wi-Fi siêu tốc, fallback Bluetooth)
                     var pushFinished = false
                     var pushError: String? = null
 
                     WatchApkPusher.pushApkToWatch(activity, watchApkFile, object : WatchApkPusher.PushCallback {
-                        override fun onProgress(percentage: Int) {
-                            mainHandler.post { listener.onProgress("Gửi sang Đồng hồ", percentage) }
+                        override fun onStatus(message: String) {
+                            mainHandler.post { listener.onStatus(message) }
+                        }
+
+                        override fun onProgress(stage: String, percentage: Int) {
+                            mainHandler.post { listener.onProgress(stage, percentage) }
                         }
 
                         override fun onSuccess() {

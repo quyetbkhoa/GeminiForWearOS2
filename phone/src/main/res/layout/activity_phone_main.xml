@@ -565,6 +565,15 @@
                 android:background="@drawable/bg_btn_gold"
                 android:backgroundTint="@null"
                 android:layout_marginTop="4dp" />
+
+            <TextView
+                android:id="@+id/tv_wifi_update_tip"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="⚡ Mẹo: Bật Điểm phát sóng (Hotspot) trên điện thoại cho đồng hồ bắt hoặc cùng Wi-Fi để app tự động ghép nối và truyền APK chỉ trong 2 giây!"
+                android:textColor="#94A3B8"
+                android:textSize="10sp"
+                android:layout_marginTop="6dp" />
         </LinearLayout>
 
     </LinearLayout>
