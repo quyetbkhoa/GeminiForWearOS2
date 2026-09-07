@@ -167,6 +167,13 @@ class PhoneMainActivity : AppCompatActivity() {
     private lateinit var btnReloadBluetooth: Button
     private lateinit var btnTestTts: Button
 
+    // Quick Reply Views
+    private lateinit var cardQuickReplyPanel: LinearLayout
+    private lateinit var tvQuickReplyHeader: TextView
+    private lateinit var tvNotificationAccessBadge: TextView
+    private lateinit var tvQuickReplyDesc: TextView
+    private lateinit var btnGrantNotificationAccess: Button
+
     // Sub-Page 3: Wireless ADB & GitHub Update Views
     private lateinit var cardUpdatePanel: LinearLayout
     private lateinit var tvAppVersion: TextView
@@ -393,6 +400,20 @@ class PhoneMainActivity : AppCompatActivity() {
         btnReloadBluetooth = findViewById(R.id.btn_reload_bluetooth)
         btnTestTts = findViewById(R.id.btn_test_tts)
 
+        cardQuickReplyPanel = findViewById(R.id.card_quick_reply_panel)
+        tvQuickReplyHeader = findViewById(R.id.tv_quick_reply_header)
+        tvNotificationAccessBadge = findViewById(R.id.tv_notification_access_badge)
+        tvQuickReplyDesc = findViewById(R.id.tv_quick_reply_desc)
+        btnGrantNotificationAccess = findViewById(R.id.btn_grant_notification_access)
+
+        btnGrantNotificationAccess.setOnClickListener {
+            try {
+                startActivity(Intent("android.settings.ACTION_NOTIFICATION_LISTENER_SETTINGS"))
+            } catch (e: Exception) {
+                Toast.makeText(this, "Vui lòng mở Cài đặt > Ứng dụng > Quyền truy cập thông báo", Toast.LENGTH_LONG).show()
+            }
+        }
+
         // Subpage 3 Views
         cardUpdatePanel = findViewById(R.id.card_update_panel)
         tvAppVersion = findViewById(R.id.tv_app_version)
@@ -580,8 +601,8 @@ class PhoneMainActivity : AppCompatActivity() {
 
         // 3. ADB & Update
         val currentVersion = try {
-            packageManager.getPackageInfo(packageName, 0).versionName ?: "1.2.9"
-        } catch (_: Exception) { "1.2.9" }
+            packageManager.getPackageInfo(packageName, 0).versionName ?: "1.3.0"
+        } catch (_: Exception) { "1.3.0" }
         tvHubAdbBadge.text = "v$currentVersion"
         tvHubAdbSummary.text = "Wireless ADB Sideload • Mobile v$currentVersion"
         if (::tvAppVersion.isInitialized) {
@@ -725,6 +746,7 @@ class PhoneMainActivity : AppCompatActivity() {
         cardModelSelector.setBackgroundResource(config.cardDrawable)
         cardApiKey.setBackgroundResource(config.cardDrawable)
         cardBluetoothRack.setBackgroundResource(config.bezelDrawable)
+        cardQuickReplyPanel.setBackgroundResource(config.bezelDrawable)
         cardHistoryRack.setBackgroundResource(config.bezelDrawable)
         cardErrorLogsRack.setBackgroundResource(config.bezelDrawable)
         cardUpdatePanel.setBackgroundResource(config.panelDrawable)
@@ -776,6 +798,12 @@ class PhoneMainActivity : AppCompatActivity() {
         tvBluetoothHeader.setTextColor(if (isLight) Color.parseColor("#047857") else config.headerBluetoothColor)
         tvBluetoothDesc.setTextColor(if (isLight) Color.parseColor("#475569") else config.textSecondaryColor)
         tvEmptyDevices.setTextColor(if (isLight) Color.parseColor("#64748B") else Color.parseColor("#94A3B8"))
+
+        tvQuickReplyHeader.setTextColor(if (isLight) Color.parseColor("#0284C7") else Color.parseColor("#38BDF8"))
+        tvQuickReplyDesc.setTextColor(if (isLight) Color.parseColor("#475569") else config.textSecondaryColor)
+        btnGrantNotificationAccess.setBackgroundResource(config.btnPrimaryDrawable)
+        btnGrantNotificationAccess.setTextColor(if (isLight) Color.parseColor("#0F172A") else Color.parseColor("#FFFFFF"))
+        updateNotificationAccessStatus()
 
         tvUpdateHeader.setTextColor(if (isLight) Color.parseColor("#B45309") else Color.parseColor("#F59E0B"))
         tvAppVersion.setTextColor(if (isLight) Color.parseColor("#047857") else Color.parseColor("#34D399"))
@@ -1678,9 +1706,24 @@ class PhoneMainActivity : AppCompatActivity() {
         loadErrorLogs()
         autoSyncApiKeyToWatch()
         updateHubSummaries()
+        updateNotificationAccessStatus()
         try {
             Wearable.getMessageClient(this).addListener(wearMessageListener)
         } catch (_: Exception) {}
+    }
+
+    private fun updateNotificationAccessStatus() {
+        if (!::tvNotificationAccessBadge.isInitialized) return
+        val isGranted = QuickReplyNotificationService.isNotificationAccessGranted(this)
+        if (isGranted) {
+            tvNotificationAccessBadge.text = "✓ ĐÃ BẬT"
+            tvNotificationAccessBadge.setTextColor(Color.parseColor("#34D399"))
+            btnGrantNotificationAccess.text = "✓ ĐÃ CẤP QUYỀN TRUY CẬP THÔNG BÁO"
+        } else {
+            tvNotificationAccessBadge.text = "CHƯA BẬT"
+            tvNotificationAccessBadge.setTextColor(Color.parseColor("#EF4444"))
+            btnGrantNotificationAccess.text = "⚙️ CẤP QUYỀN TRUY CẬP THÔNG BÁO"
+        }
     }
 
     override fun onPause() {

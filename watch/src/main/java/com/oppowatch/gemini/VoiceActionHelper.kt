@@ -8,11 +8,12 @@ import org.json.JSONObject
 import java.util.regex.Pattern
 
 data class VoiceAction(
-    val type: String, // "SET_ALARM" hoặc "SET_TIMER"
+    val type: String, // "SET_ALARM", "SET_TIMER", "REPLY_MESSAGE"
     val hour: Int = 0,
     val minute: Int = 0,
     val seconds: Int = 0,
-    val message: String = ""
+    val message: String = "",
+    val recipient: String = "" // Tên người nhận (rỗng nếu là tin nhắn gần nhất)
 )
 
 object VoiceActionHelper {
@@ -43,6 +44,13 @@ object VoiceActionHelper {
                         VoiceAction(type = "SET_TIMER", seconds = seconds, message = msg)
                     } else null
                 }
+                "REPLY_MESSAGE" -> {
+                    val msg = actObj.optString("message", "").trim()
+                    val recipient = actObj.optString("recipient", "").trim()
+                    if (msg.isNotEmpty()) {
+                        VoiceAction(type = "REPLY_MESSAGE", recipient = recipient, message = msg)
+                    } else null
+                }
                 else -> null
             }
         } catch (e: Exception) {
@@ -70,6 +78,13 @@ object VoiceActionHelper {
             lower.contains("bấm giờ") || lower.contains("timer")) {
             val timerAction = parseTimerFallback(lower)
             if (timerAction != null) return timerAction
+        }
+
+        // 3. Nhận diện TRẢ LỜI TIN NHẮN (Messenger, Zalo, Telegram, SMS)
+        if (lower.startsWith("rep") || lower.startsWith("trả lời") || lower.startsWith("nhắn lại") ||
+            lower.contains("rep tin") || lower.contains("trả lời tin")) {
+            val replyAction = parseReplyFallback(text)
+            if (replyAction != null) return replyAction
         }
 
         return null
@@ -159,8 +174,45 @@ object VoiceActionHelper {
         return null
     }
 
+    private fun parseReplyFallback(text: String): VoiceAction? {
+        try {
+            val trimmed = text.trim()
+            // Pattern 1: Nhận diện câu có từ dẫn "là / bảo / rằng / nói"
+            // VD: "rep là đang đi xe", "trả lời của Tuấn Anh bảo ok em", "nhắn lại cho mẹ là con sắp về", "rep sếp bảo em gửi rồi"
+            val pattern = Pattern.compile(
+                "^(?:trả lời|rep|nhắn lại)(?:\\s+tin(?:\\s+nhắn)?)?(?:\\s+(?:(?:của|cho)\\s+)?([a-zA-ZÀ-ỹ0-9]+(?:\\s+[a-zA-ZÀ-ỹ0-9]+)*))?\\s+(?:là|bảo|rằng|nói)\\s+(.+)$",
+                Pattern.CASE_INSENSITIVE
+            )
+            val matcher = pattern.matcher(trimmed)
+            if (matcher.find()) {
+                val recipient = matcher.group(1)?.trim() ?: ""
+                val message = matcher.group(2)?.trim() ?: ""
+                if (message.isNotEmpty()) {
+                    return VoiceAction(type = "REPLY_MESSAGE", recipient = recipient, message = message)
+                }
+            }
+
+            // Pattern 2: Nhận diện dạng trực tiếp không có từ nối "là / bảo"
+            // VD: "rep đang đi xe lát gọi lại", "trả lời tin nhắn ok bạn"
+            val directPattern = Pattern.compile(
+                "^(?:trả lời|rep|nhắn lại)(?:\\s+tin(?:\\s+nhắn)?)?\\s+(.+)$",
+                Pattern.CASE_INSENSITIVE
+            )
+            val directMatcher = directPattern.matcher(trimmed)
+            if (directMatcher.find()) {
+                val message = directMatcher.group(1)?.trim() ?: ""
+                if (message.isNotEmpty() && !message.startsWith("câu hỏi", ignoreCase = true)) {
+                    return VoiceAction(type = "REPLY_MESSAGE", recipient = "", message = message)
+                }
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Lỗi parseReplyFallback: ${e.message}")
+        }
+        return null
+    }
+
     /**
-     * Kích hoạt gọi Intent hệ thống HeyClock của OPPO Watch
+     * Kích hoạt gọi Intent hệ thống HeyClock hoặc gửi lệnh trả lời tin nhắn sang điện thoại
      */
     fun execute(context: Context, action: VoiceAction): Boolean {
         return try {
@@ -188,6 +240,11 @@ object VoiceActionHelper {
                     }
                     context.startActivity(intent)
                     Log.i(TAG, "SET_TIMER: ${action.seconds}s")
+                    true
+                }
+                "REPLY_MESSAGE" -> {
+                    PhoneCommunicator.sendReplyMessageToPhone(context, action.recipient, action.message)
+                    Log.i(TAG, "REPLY_MESSAGE: recipient='${action.recipient}', message='${action.message}'")
                     true
                 }
                 else -> false

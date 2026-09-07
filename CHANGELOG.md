@@ -7,6 +7,38 @@ phiên bản tuân theo [Semantic Versioning](https://semver.org/lang/vi/).
 
 ---
 
+## [v1.3.0] - 2026-09-07
+
+### 💬 Trả Lời Nhanh Tin Nhắn Bằng Giọng Nói Từ Đồng Hồ (Quick Voice Reply for Messages)
+- **Hỗ trợ trả lời tin nhắn rảnh tay khi lái xe hoặc khi điện thoại khóa màn hình / bỏ trong túi:**
+  - Ra lệnh bằng giọng nói tự nhiên từ OPPO Watch mà không cần chạm vào điện thoại hay mở màn hình điện thoại.
+  - **Không cần đọc lại nội dung tin nhắn trước khi gửi**: Tối ưu tốc độ trả lời tức thì, tiết kiệm thời gian khi đang di chuyển trên đường.
+  - **Hỗ trợ đầy đủ các ứng dụng nhắn tin phổ biến nhất:**
+    - Facebook Messenger & Messenger Lite (`com.facebook.orca`, `com.facebook.mlite`)
+    - Zalo (`com.zing.zalo`)
+    - Telegram & Telegram X (`org.telegram.messenger`, `org.thunderdog.challegram`)
+    - Tin nhắn SMS / MMS hệ thống (Google Messages, Samsung Messages, AOSP SMS)
+    - WhatsApp & WhatsApp Business (`com.whatsapp`, `com.whatsapp.w4b`)
+    - Mọi ứng dụng có thông báo danh mục `CATEGORY_MESSAGE` hỗ trợ Android `RemoteInput`.
+- **Cơ chế nhận diện thông minh (AI Gemini NLU & Local Regex Fallback):**
+  - **Trả lời tin nhắn vừa nhận gần nhất:**
+    - Câu lệnh mẫu: *"Rep là đang đi xe lát gọi lại"*, *"Trả lời tin nhắn bảo tôi đang bận"*, *"Nhắn lại bảo ok nhé"*.
+    - Gemini tự động xuất action: `{"type":"REPLY_MESSAGE","recipient":"","message":"..."}`.
+  - **Trả lời tin nhắn của người cụ thể:**
+    - Câu lệnh mẫu: *"Trả lời tin nhắn của Tuấn Anh bảo ok em"*, *"Rep mẹ là con sắp về"*, *"Nhắn lại cho Linh bảo tối nay đi ăn"*.
+    - Gemini tự động xuất action: `{"type":"REPLY_MESSAGE","recipient":"Tuấn Anh","message":"..."}`.
+  - **Local Regex Fallback**: Hỗ trợ regex tiếng Việt cục bộ đa dạng nếu kết nối mạng chậm hoặc Gemini không trả trường action.
+- **Xử lý ngầm 100% khi màn hình khóa (Keyguard Locked Background Execution):**
+  - Điện thoại tích hợp `QuickReplyNotificationService` kế thừa Android `NotificationListenerService`.
+  - Tự động bắt cổng `RemoteInput` và kích hoạt ngầm `PendingIntent.send()` mà không cần mở sáng màn hình điện thoại.
+  - Giao diện Phone Companion bổ sung khu vực quản lý và nút cấp quyền **Truy cập thông báo (Notification Listener Access)**.
+- **Phản hồi âm thanh TTS xác nhận qua loa ngoài / tai nghe điện thoại:**
+  - Sau khi gửi thành công, điện thoại tự động phát âm xác nhận rõ ràng: *"Đã trả lời Tuấn Anh qua Zalo: Đang đi xe lát gọi lại"*.
+  - Đồng hồ hiển thị nhãn: `✓ ĐÃ GỬI TIN` kèm chi tiết người nhận và nội dung.
+  - Tự động ghi nhật ký vào Lịch sử tác vụ trên điện thoại.
+
+---
+
 ## [v1.2.9] - 2026-09-07
 
 ### 📱 Hiển Thị Chi Tiết Phiên Bản Mobile & Android OS (Device & App Version Display)

@@ -565,7 +565,7 @@ class MainActivity : AppCompatActivity() {
                     // Rung haptic nhịp kép xác nhận thành công (chuyên dụng khi đi đường)
                     vibrateRoadHaptic(success = true)
 
-                    // Tự động thực thi tác vụ báo thức / hẹn giờ nếu Gemini nhận diện được
+                    // Tự động thực thi tác vụ báo thức / hẹn giờ / trả lời tin nhắn nếu Gemini nhận diện được
                     if (voiceAction != null) {
                         val executed = VoiceActionHelper.execute(this, voiceAction)
                         if (executed) {
@@ -577,39 +577,48 @@ class MainActivity : AppCompatActivity() {
                                     if (s > 0) "⏱ Đã hẹn giờ ${m} phút ${s} giây"
                                     else "⏱ Đã hẹn giờ ${m} phút"
                                 }
+                                "REPLY_MESSAGE" -> {
+                                    if (voiceAction.recipient.isNotEmpty()) {
+                                        "💬 Đã gửi trả lời cho ${voiceAction.recipient}: \"${voiceAction.message}\""
+                                    } else {
+                                        "💬 Đã gửi trả lời tin nhắn: \"${voiceAction.message}\""
+                                    }
+                                }
                                 else -> ""
                             }
                             if (actionLabel.isNotEmpty()) {
                                 tvResult.text = "$answer\n\n$actionLabel"
                             }
-                            tvStatus.text = "✓ ĐÃ THỰC HIỆN"
+                            tvStatus.text = if (voiceAction.type == "REPLY_MESSAGE") "✓ ĐÃ GỬI TIN" else "✓ ĐÃ THỰC HIỆN"
 
-                            // Xây dựng câu xác nhận TTS cho báo thức / hẹn giờ
-                            val ttsConfirm = when (voiceAction.type) {
-                                "SET_ALARM" -> {
-                                    val h = voiceAction.hour
-                                    val m = voiceAction.minute
-                                    val period = if (h < 12) "sáng" else if (h < 18) "chiều" else "tối"
-                                    val displayH = if (h == 0) 12 else if (h > 12) h - 12 else h
-                                    if (m == 0) "Đã đặt báo thức lúc $displayH giờ $period"
-                                    else "Đã đặt báo thức lúc $displayH giờ $m phút $period"
+                            // Xây dựng câu xác nhận TTS cho báo thức / hẹn giờ (REPLY_MESSAGE do điện thoại tự phát TTS sau khi gửi ngầm)
+                            if (voiceAction.type != "REPLY_MESSAGE") {
+                                val ttsConfirm = when (voiceAction.type) {
+                                    "SET_ALARM" -> {
+                                        val h = voiceAction.hour
+                                        val m = voiceAction.minute
+                                        val period = if (h < 12) "sáng" else if (h < 18) "chiều" else "tối"
+                                        val displayH = if (h == 0) 12 else if (h > 12) h - 12 else h
+                                        if (m == 0) "Đã đặt báo thức lúc $displayH giờ $period"
+                                        else "Đã đặt báo thức lúc $displayH giờ $m phút $period"
+                                    }
+                                    "SET_TIMER" -> {
+                                        val totalM = voiceAction.seconds / 60
+                                        val totalS = voiceAction.seconds % 60
+                                        if (totalS > 0) "Đã hẹn giờ $totalM phút $totalS giây"
+                                        else "Đã hẹn giờ $totalM phút"
+                                    }
+                                    else -> answer
                                 }
-                                "SET_TIMER" -> {
-                                    val totalM = voiceAction.seconds / 60
-                                    val totalS = voiceAction.seconds % 60
-                                    if (totalS > 0) "Đã hẹn giờ $totalM phút $totalS giây"
-                                    else "Đã hẹn giờ $totalM phút"
-                                }
-                                else -> answer
+
+                                // Gửi câu xác nhận sang điện thoại để đọc TTS
+                                val confirmPayload = org.json.JSONObject().apply {
+                                    put("question", question)
+                                    put("answer", ttsConfirm)
+                                    put("timestamp", System.currentTimeMillis())
+                                }.toString()
+                                PhoneCommunicator.sendTextToPhone(this, confirmPayload)
                             }
-
-                            // Gửi câu xác nhận sang điện thoại để đọc TTS
-                            val confirmPayload = org.json.JSONObject().apply {
-                                put("question", question)
-                                put("answer", ttsConfirm)
-                                put("timestamp", System.currentTimeMillis())
-                            }.toString()
-                            PhoneCommunicator.sendTextToPhone(this, confirmPayload)
                         }
                     }
 

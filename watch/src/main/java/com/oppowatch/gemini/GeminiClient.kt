@@ -77,12 +77,16 @@ object GeminiClient {
                     "2. Trả lời theo đúng định dạng JSON chuẩn gồm các trường: " +
                     "\"question\": câu hỏi hoặc yêu cầu của người dùng được viết lại chuẩn tiếng Việt; " +
                     "\"answer\": câu trả lời siêu ngắn gọn, súc tích, đi thẳng vào đáp án trong 1 đến 2 câu ngắn. " +
-                    "3. NẾU người dùng yêu cầu ĐẶT BÁO THỨC hoặc HẸN GIỜ/TIMER, hãy thêm trường \"action\" vào JSON: " +
+                    "3. NẾU người dùng yêu cầu ĐẶT BÁO THỨC, HẸN GIỜ/TIMER, hoặc TRẢ LỜI TIN NHẮN (Messenger, Zalo, Telegram, SMS), hãy thêm trường \"action\" vào JSON: " +
                     "- Đặt báo thức: {\"type\":\"SET_ALARM\",\"hour\":<0-23>,\"minute\":<0-59>,\"message\":\"<nhãn>\"} " +
                     "- Hẹn giờ đếm ngược: {\"type\":\"SET_TIMER\",\"seconds\":<tổng giây>,\"message\":\"<nhãn>\"} " +
+                    "- Trả lời tin nhắn gần nhất: {\"type\":\"REPLY_MESSAGE\",\"recipient\":\"\",\"message\":\"<nội dung tin nhắn>\"} " +
+                    "- Trả lời tin nhắn của người cụ thể: {\"type\":\"REPLY_MESSAGE\",\"recipient\":\"<tên người nhận>\",\"message\":\"<nội dung tin nhắn>\"} " +
                     "Ví dụ đặt báo thức 6h30 sáng: {\"question\":\"Đặt báo thức 6 giờ 30 sáng\",\"answer\":\"Đã đặt báo thức lúc 06:30 cho bạn.\",\"action\":{\"type\":\"SET_ALARM\",\"hour\":6,\"minute\":30,\"message\":\"Báo thức sáng\"}} " +
                     "Ví dụ hẹn giờ 10 phút: {\"question\":\"Hẹn giờ 10 phút\",\"answer\":\"Đã bắt đầu hẹn giờ 10 phút.\",\"action\":{\"type\":\"SET_TIMER\",\"seconds\":600,\"message\":\"Hẹn giờ\"}} " +
-                    "4. Nếu KHÔNG phải yêu cầu báo thức/hẹn giờ, KHÔNG cần trường action. " +
+                    "Ví dụ rep tin nhắn gần nhất: {\"question\":\"Rep là đang đi xe lát gọi lại\",\"answer\":\"Đã gửi trả lời tin nhắn: Đang đi xe lát gọi lại.\",\"action\":{\"type\":\"REPLY_MESSAGE\",\"recipient\":\"\",\"message\":\"Đang đi xe lát gọi lại\"}} " +
+                    "Ví dụ rep cho người cụ thể: {\"question\":\"Trả lời tin nhắn của Tuấn Anh bảo ok em\",\"answer\":\"Đã gửi trả lời cho Tuấn Anh: ok em.\",\"action\":{\"type\":\"REPLY_MESSAGE\",\"recipient\":\"Tuấn Anh\",\"message\":\"ok em\"}} " +
+                    "4. Nếu KHÔNG phải yêu cầu báo thức/hẹn giờ/trả lời tin nhắn, KHÔNG cần trường action. " +
                     "5. Tuyệt đối chỉ trả về chuỗi JSON thuần túy, không dùng markdown code block ```json."
 
                 // Build Request JSON

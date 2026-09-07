@@ -9,6 +9,37 @@ object PhoneCommunicator {
     private const val TAG = "PhoneCommunicator"
     const val PATH_TTS = "/gemini_tts_payload"
     const val PATH_ERROR_LOG = "/gemini_error_log"
+    const val PATH_REPLY_MESSAGE = "/gemini_reply_message"
+
+    fun sendReplyMessageToPhone(context: Context, recipient: String, message: String) {
+        val nodeClient = Wearable.getNodeClient(context)
+        val messageClient = Wearable.getMessageClient(context)
+
+        nodeClient.connectedNodes.addOnSuccessListener { nodes ->
+            if (nodes.isEmpty()) {
+                Log.w(TAG, "No connected phone found to send reply message")
+                return@addOnSuccessListener
+            }
+            val payload = org.json.JSONObject().apply {
+                put("recipient", recipient)
+                put("message", message)
+                put("timestamp", System.currentTimeMillis())
+            }.toString()
+
+            val bytes = payload.toByteArray(Charsets.UTF_8)
+            for (node in nodes) {
+                messageClient.sendMessage(node.id, PATH_REPLY_MESSAGE, bytes)
+                    .addOnSuccessListener {
+                        Log.d(TAG, "Sent reply message command to phone node: ${node.displayName}")
+                    }
+                    .addOnFailureListener { e ->
+                        Log.e(TAG, "Failed sending reply message command: ${e.message}")
+                    }
+            }
+        }.addOnFailureListener { e ->
+            Log.e(TAG, "Failed finding connected nodes for reply message: ${e.message}")
+        }
+    }
 
     fun sendTextToPhone(context: Context, text: String) {
         val nodeClient = Wearable.getNodeClient(context)

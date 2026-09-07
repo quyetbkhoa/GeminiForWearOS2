@@ -78,6 +78,51 @@ class PhoneWearableListenerService : WearableListenerService() {
             } catch (e: Exception) {
                 Log.e("PhoneListener", "Lỗi xử lý error log từ đồng hồ: ${e.message}")
             }
+        } else if (messageEvent.path == "/gemini_reply_message") {
+            val rawPayload = String(messageEvent.data, Charsets.UTF_8)
+            Log.d("PhoneListener", "Received reply message command from watch: $rawPayload")
+
+            var recipient = ""
+            var message = ""
+            try {
+                val json = org.json.JSONObject(rawPayload)
+                recipient = json.optString("recipient", "").trim()
+                message = json.optString("message", "").trim()
+            } catch (_: Exception) {
+                message = rawPayload
+            }
+
+            if (message.isEmpty()) {
+                Log.w("PhoneListener", "Nội dung tin nhắn trả lời rỗng.")
+                return
+            }
+
+            val replyResult = QuickReplyNotificationService.sendReply(this, recipient, message)
+
+            val ttsResponse = if (replyResult.success) {
+                val who = replyResult.senderName.ifEmpty { recipient }
+                if (who.isNotEmpty() && who != replyResult.appName) {
+                    "Đã trả lời $who qua ${replyResult.appName}: ${replyResult.replyText}"
+                } else {
+                    "Đã gửi tin nhắn qua ${replyResult.appName}: ${replyResult.replyText}"
+                }
+            } else {
+                replyResult.errorMessage
+            }
+
+            // Lưu vào lịch sử tác vụ
+            historyManager.addEntry(
+                "💬 Trả lời tin nhắn ${if (recipient.isNotEmpty()) recipient else "(gần nhất)"}",
+                ttsResponse,
+                System.currentTimeMillis()
+            )
+
+            // Đọc phản hồi TTS qua tai nghe / loa ngoài điện thoại
+            filterManager.checkAndPlayTtsIfAllowed(ttsResponse) { allowed, _ ->
+                if (allowed) {
+                    TtsSpeaker.speak(this, ttsResponse)
+                }
+            }
         }
     }
 }

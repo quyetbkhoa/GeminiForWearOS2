@@ -954,6 +954,68 @@
                         android:backgroundTint="@null"
                         android:layout_marginTop="10dp" />
                 </LinearLayout>
+
+                <!-- Quick Reply Settings Card -->
+                <LinearLayout
+                    android:id="@+id/card_quick_reply_panel"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:background="@drawable/bg_screen_bezel"
+                    android:padding="14dp"
+                    android:layout_marginBottom="14dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:layout_marginBottom="6dp">
+
+                        <TextView
+                            android:id="@+id/tv_quick_reply_header"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="💬 TRẢ LỜI TIN NHẮN (QUICK REPLY):"
+                            android:textSize="11.5sp"
+                            android:textStyle="bold"
+                            android:textColor="#38BDF8"
+                            android:letterSpacing="0.04" />
+
+                        <TextView
+                            android:id="@+id/tv_notification_access_badge"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="CHƯA BẬT"
+                            android:textSize="9sp"
+                            android:textStyle="bold"
+                            android:textColor="#EF4444"
+                            android:background="@drawable/bg_pill_badge"
+                            android:paddingHorizontal="6dp"
+                            android:paddingVertical="2dp" />
+                    </LinearLayout>
+
+                    <TextView
+                        android:id="@+id/tv_quick_reply_desc"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Hỗ trợ Messenger, Zalo, Telegram và Tin nhắn SMS. Bật quyền để trả lời bằng giọng nói từ đồng hồ ngay cả khi điện thoại khóa màn hình trong túi:"
+                        android:textSize="10sp"
+                        android:textColor="#94A3B8"
+                        android:layout_marginBottom="8dp" />
+
+                    <Button
+                        android:id="@+id/btn_grant_notification_access"
+                        android:layout_width="match_parent"
+                        android:layout_height="38dp"
+                        android:text="⚙️ CẤP QUYỀN TRUY CẬP THÔNG BÁO"
+                        android:textSize="10sp"
+                        android:textStyle="bold"
+                        android:textColor="#FFFFFF"
+                        android:background="@drawable/bg_btn_metallic"
+                        android:backgroundTint="@null" />
+                </LinearLayout>
             </LinearLayout>
 
             <!-- ============================================================= -->
@@ -992,7 +1054,7 @@
                         android:id="@+id/tv_app_version"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="📱 Phiên bản Mobile: v1.2.9"
+                        android:text="📱 Phiên bản Mobile: v1.3.0"
                         android:textSize="10.5sp"
                         android:textColor="#34D399"
                         android:textStyle="bold" />
