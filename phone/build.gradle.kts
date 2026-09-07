@@ -10,8 +10,8 @@ android {
         applicationId = "com.oppowatch.gemini"
         minSdk = 26
         targetSdk = 34
-        versionCode = 6
-        versionName = "1.2.3"
+        versionCode = 7
+        versionName = "1.2.4"
     }
 
     lint {
@@ -44,6 +44,15 @@ android {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
+    packaging {
+        resources {
+            excludes += "/META-INF/{AL2.0,LGPL2.1}"
+            excludes += "META-INF/LICENSE.md"
+            excludes += "META-INF/LICENSE-notice.md"
+            excludes += "META-INF/*.md"
+            excludes += "META-INF/*.txt"
+        }
+    }
 }
 
 dependencies {
@@ -51,4 +60,5 @@ dependencies {
     implementation(libs.androidx.appcompat)
     implementation(libs.material)
     implementation(libs.play.services.wearable)
+    implementation("dev.mobile:dadb:1.2.6")
 }

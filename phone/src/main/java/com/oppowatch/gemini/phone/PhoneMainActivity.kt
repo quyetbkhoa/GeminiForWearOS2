@@ -29,6 +29,8 @@ import androidx.core.widget.NestedScrollView
 import com.google.android.gms.wearable.PutDataMapRequest
 import com.google.android.gms.wearable.Wearable
 import org.json.JSONObject
+import java.io.File
+import kotlin.concurrent.thread
 
 class PhoneMainActivity : AppCompatActivity() {
 
@@ -99,6 +101,18 @@ class PhoneMainActivity : AppCompatActivity() {
     private lateinit var pbUpdateProgress: ProgressBar
     private lateinit var btnCheckUpdate: Button
 
+    // Wireless ADB Section
+    private lateinit var cardAdbPanel: LinearLayout
+    private lateinit var tvAdbHeader: TextView
+    private lateinit var tvAdbBadge: TextView
+    private lateinit var tvAdbInstructions: TextView
+    private lateinit var etWatchAdbIp: EditText
+    private lateinit var etWatchAdbPort: EditText
+    private lateinit var btnAutoDetectIp: Button
+    private lateinit var btnAdbInstall: Button
+    private lateinit var pbAdbProgress: ProgressBar
+    private lateinit var tvAdbStatus: TextView
+
     private var currentThemeStyle = ThemeManager.ThemeStyle.SKEUOMORPHISM
     private var currentColorMode = ThemeManager.ColorMode.DARK
 
@@ -144,6 +158,7 @@ class PhoneMainActivity : AppCompatActivity() {
         setupApiKeySection()
         setupQaHistorySection()
         setupUpdateSection()
+        setupAdbSection()
 
         checkPermissions()
         checkPermissionsAndLoadDevices(userInitiated = false)
@@ -220,6 +235,17 @@ class PhoneMainActivity : AppCompatActivity() {
         tvUpdateStatus = findViewById(R.id.tv_update_status)
         pbUpdateProgress = findViewById(R.id.pb_update_progress)
         btnCheckUpdate = findViewById(R.id.btn_check_update)
+
+        cardAdbPanel = findViewById(R.id.card_adb_panel)
+        tvAdbHeader = findViewById(R.id.tv_adb_header)
+        tvAdbBadge = findViewById(R.id.tv_adb_badge)
+        tvAdbInstructions = findViewById(R.id.tv_adb_instructions)
+        etWatchAdbIp = findViewById(R.id.et_watch_adb_ip)
+        etWatchAdbPort = findViewById(R.id.et_watch_adb_port)
+        btnAutoDetectIp = findViewById(R.id.btn_auto_detect_ip)
+        btnAdbInstall = findViewById(R.id.btn_adb_install)
+        pbAdbProgress = findViewById(R.id.pb_adb_progress)
+        tvAdbStatus = findViewById(R.id.tv_adb_status)
     }
 
     private fun setupThemeEngine() {
@@ -267,9 +293,14 @@ class PhoneMainActivity : AppCompatActivity() {
         cardBluetoothRack.setBackgroundResource(config.bezelDrawable)
         cardHistoryRack.setBackgroundResource(config.bezelDrawable)
         cardUpdatePanel.setBackgroundResource(config.panelDrawable)
+        cardAdbPanel.setBackgroundResource(config.panelDrawable)
 
         // Input & Controls
         etGeminiApiKey.setBackgroundResource(config.inputDrawable)
+        etWatchAdbIp.setBackgroundResource(config.inputDrawable)
+        etWatchAdbPort.setBackgroundResource(config.inputDrawable)
+        btnAutoDetectIp.setBackgroundResource(config.btnPrimaryDrawable)
+        btnAdbInstall.setBackgroundResource(config.btnEmeraldDrawable)
         btnToggleApiVisibility.setBackgroundResource(config.btnPrimaryDrawable)
         btnSaveApiKey.setBackgroundResource(config.btnEmeraldDrawable)
         btnReloadBluetooth.setBackgroundResource(config.btnPrimaryDrawable)
@@ -287,6 +318,10 @@ class PhoneMainActivity : AppCompatActivity() {
         tvApiKeyDesc.setTextColor(config.textSecondaryColor)
         tvBluetoothHeader.setTextColor(config.headerBluetoothColor)
         tvHistoryHeader.setTextColor(config.headerHistoryColor)
+        tvAdbHeader.setTextColor(config.titleTextColor)
+        tvAdbInstructions.setTextColor(config.textSecondaryColor)
+        etWatchAdbIp.setTextColor(if (isLight) Color.parseColor("#0F172A") else Color.parseColor("#FFFFFF"))
+        etWatchAdbPort.setTextColor(if (isLight) Color.parseColor("#0F172A") else Color.parseColor("#38BDF8"))
 
         val radioTextColor = if (isLight) Color.parseColor("#0F172A") else Color.parseColor("#E2E8F0")
         rbModel38Flash.setTextColor(if (isLight) Color.parseColor("#B45309") else Color.parseColor("#F59E0B"))
@@ -608,7 +643,16 @@ class PhoneMainActivity : AppCompatActivity() {
             }
 
             override fun onComplete() {
-                tvUpdateStatus.text = "✓ Đã hoàn tất! Đồng hồ đang mở hộp thoại cài đặt bản mới."
+                val ip = etWatchAdbIp.text.toString().trim()
+                val port = etWatchAdbPort.text.toString().trim().toIntOrNull() ?: 5555
+                val watchApk = File(cacheDir, "Gemini_Watch_App_Update.apk")
+
+                if (ip.isNotEmpty() && watchApk.exists() && watchApk.length() > 0L) {
+                    tvUpdateStatus.text = "✓ Phone xong! Đang tự động cài sang Watch qua Wireless ADB ($ip)..."
+                    executeAdbInstall(ip, port, watchApk)
+                } else {
+                    tvUpdateStatus.text = "✓ Đã hoàn tất tải! Bấm nút '⚡ KẾT NỐI ADB & CÀI ĐẶT' bên dưới để cài thẳng lên đồng hồ."
+                }
                 pbUpdateProgress.visibility = View.GONE
                 btnCheckUpdate.isEnabled = true
                 btnCheckUpdate.text = "KIỂM TRA CẬP NHẬT"
@@ -618,6 +662,147 @@ class PhoneMainActivity : AppCompatActivity() {
                 tvUpdateStatus.text = "Lỗi: $error"
                 pbUpdateProgress.visibility = View.GONE
                 btnCheckUpdate.isEnabled = true
+            }
+        })
+    }
+
+    private fun setupAdbSection() {
+        val prefs = getSharedPreferences("gemini_companion_prefs", Context.MODE_PRIVATE)
+        val savedIp = prefs.getString("saved_watch_adb_ip", "")
+        if (!savedIp.isNullOrEmpty()) {
+            etWatchAdbIp.setText(savedIp)
+        }
+
+        // Tự động quét IP đồng hồ khi mở app
+        WatchAdbInstaller.autoDetectWatchAdbIp(this) { foundIp ->
+            if (foundIp != null) {
+                etWatchAdbIp.setText(foundIp)
+                prefs.edit().putString("saved_watch_adb_ip", foundIp).apply()
+                tvAdbStatus.text = "✓ Đã tìm thấy đồng hồ tại $foundIp:5555 (ADB sẵn sàng)"
+            }
+        }
+
+        btnAutoDetectIp.setOnClickListener {
+            btnAutoDetectIp.isEnabled = false
+            tvAdbStatus.text = "🔍 Đang quét các dải IP trên Wi-Fi & Hotspot tìm cổng 5555..."
+            pbAdbProgress.visibility = View.VISIBLE
+            WatchAdbInstaller.autoDetectWatchAdbIp(this) { foundIp ->
+                btnAutoDetectIp.isEnabled = true
+                pbAdbProgress.visibility = View.GONE
+                if (foundIp != null) {
+                    etWatchAdbIp.setText(foundIp)
+                    prefs.edit().putString("saved_watch_adb_ip", foundIp).apply()
+                    tvAdbStatus.text = "✓ Đã tìm thấy đồng hồ tại $foundIp:5555!"
+                    Toast.makeText(this, "Đã tìm thấy đồng hồ: $foundIp", Toast.LENGTH_SHORT).show()
+                } else {
+                    tvAdbStatus.text = "⚠️ Không quét thấy đồng hồ mở cổng 5555.\nHãy đảm bảo: 1) Đã bật 'Gỡ lỗi qua Wi-Fi' trên đồng hồ, 2) Kết nối cùng Wi-Fi hoặc Hotspot của điện thoại."
+                    Toast.makeText(this, "Không tìm thấy. Bạn có thể nhập IP hiển thị trên đồng hồ vào ô.", Toast.LENGTH_LONG).show()
+                }
+            }
+        }
+
+        btnAdbInstall.setOnClickListener {
+            val ip = etWatchAdbIp.text.toString().trim()
+            val portStr = etWatchAdbPort.text.toString().trim()
+            val port = portStr.toIntOrNull() ?: 5555
+
+            if (ip.isEmpty()) {
+                Toast.makeText(this, "Vui lòng nhập IP đồng hồ hoặc bấm 'DÒ TỰ ĐỘNG'!", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+
+            prefs.edit().putString("saved_watch_adb_ip", ip).apply()
+
+            val watchApkFile = File(cacheDir, "Gemini_Watch_App_Update.apk")
+
+            // Nếu file APK chưa có trong cache, tải trực tiếp từ GitHub
+            if (!watchApkFile.exists() || watchApkFile.length() == 0L) {
+                btnAdbInstall.isEnabled = false
+                pbAdbProgress.visibility = View.VISIBLE
+                tvAdbStatus.text = "Đang kiểm tra và tải file APK đồng hồ mới nhất từ GitHub..."
+
+                GitHubUpdateManager.checkUpdate(this) { result ->
+                    result.onSuccess { info ->
+                        if (!info.watchDownloadUrl.isNullOrEmpty()) {
+                            tvAdbStatus.text = "Đang tải APK đồng hồ từ GitHub..."
+                            thread(name = "DownloadWatchApkThread") {
+                                try {
+                                    var currentUrl = info.watchDownloadUrl
+                                    var connection: java.net.HttpURLConnection
+                                    var redirects = 0
+                                    while (true) {
+                                        connection = java.net.URL(currentUrl).openConnection() as java.net.HttpURLConnection
+                                        connection.instanceFollowRedirects = false
+                                        connection.connectTimeout = 15000
+                                        connection.readTimeout = 30000
+                                        connection.connect()
+
+                                        val code = connection.responseCode
+                                        if (code in 301..308) {
+                                            currentUrl = connection.getHeaderField("Location")
+                                            connection.disconnect()
+                                            redirects++
+                                            if (redirects > 5) throw java.io.IOException("Quá nhiều lần chuyển hướng mạng")
+                                            continue
+                                        }
+                                        break
+                                    }
+
+                                    connection.inputStream.use { input ->
+                                        watchApkFile.outputStream().use { output ->
+                                            input.copyTo(output)
+                                        }
+                                    }
+                                    connection.disconnect()
+
+                                    runOnUiThread {
+                                        tvAdbStatus.text = "✓ Tải APK xong (${watchApkFile.length() / 1024} KB). Đang kết nối ADB tới $ip..."
+                                        executeAdbInstall(ip, port, watchApkFile)
+                                    }
+                                } catch (e: Exception) {
+                                    runOnUiThread {
+                                        btnAdbInstall.isEnabled = true
+                                        pbAdbProgress.visibility = View.GONE
+                                        tvAdbStatus.text = "Lỗi tải APK: ${e.message}"
+                                    }
+                                }
+                            }
+                        } else {
+                            btnAdbInstall.isEnabled = true
+                            pbAdbProgress.visibility = View.GONE
+                            tvAdbStatus.text = "Không tìm thấy link tải APK đồng hồ trên GitHub Release!"
+                        }
+                    }.onFailure { err ->
+                        btnAdbInstall.isEnabled = true
+                        pbAdbProgress.visibility = View.GONE
+                        tvAdbStatus.text = "Lỗi kiểm tra cập nhật: ${err.message}"
+                    }
+                }
+            } else {
+                executeAdbInstall(ip, port, watchApkFile)
+            }
+        }
+    }
+
+    private fun executeAdbInstall(ip: String, port: Int, apkFile: File) {
+        btnAdbInstall.isEnabled = false
+        pbAdbProgress.visibility = View.VISIBLE
+
+        WatchAdbInstaller.installApkOverAdb(this, ip, port, apkFile, object : WatchAdbInstaller.AdbInstallCallback {
+            override fun onStatus(message: String) {
+                tvAdbStatus.text = message
+            }
+
+            override fun onSuccess() {
+                btnAdbInstall.isEnabled = true
+                pbAdbProgress.visibility = View.GONE
+                Toast.makeText(this@PhoneMainActivity, "🎉 ĐÃ CÀI ĐẶT THÀNH CÔNG LÊN ĐỒNG HỒ!", Toast.LENGTH_LONG).show()
+            }
+
+            override fun onError(error: String) {
+                btnAdbInstall.isEnabled = true
+                pbAdbProgress.visibility = View.GONE
+                Toast.makeText(this@PhoneMainActivity, "Lỗi cài đặt qua ADB: $error", Toast.LENGTH_LONG).show()
             }
         })
     }

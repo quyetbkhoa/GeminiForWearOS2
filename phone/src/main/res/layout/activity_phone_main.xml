@@ -576,6 +576,144 @@
                 android:layout_marginTop="6dp" />
         </LinearLayout>
 
+        <!-- Wireless ADB Watch Installer (Avionics Panel) -->
+        <LinearLayout
+            android:id="@+id/card_adb_panel"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="@drawable/bg_rack_panel"
+            android:padding="12dp"
+            android:layout_marginBottom="24dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="6dp">
+
+                <TextView
+                    android:id="@+id/tv_adb_header"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="⚡ CÀI ĐẶT QUA WIRELESS ADB (SIÊU TỐC)"
+                    android:textColor="#38BDF8"
+                    android:textStyle="bold"
+                    android:textSize="11sp"
+                    android:letterSpacing="0.03" />
+
+                <TextView
+                    android:id="@+id/tv_adb_badge"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Không cần máy tính"
+                    android:textColor="#34D399"
+                    android:textSize="10sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/tv_adb_instructions"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="💡 Hướng dẫn 3 bước cài đặt APK trực tiếp lên Wear OS:\n1. Trên đồng hồ: Cài đặt > Tùy chọn nhà phát triển > Bật 'Gỡ lỗi ADB' &amp; 'Gỡ lỗi qua Wi-Fi' (sẽ hiện IP:Cổng).\n2. Bấm '🔍 DÒ TỰ ĐỘNG' hoặc nhập IP của đồng hồ bên dưới.\n3. Bấm '⚡ KẾT NỐI ADB &amp; CÀI ĐẶT' -> Màn hình đồng hồ sẽ hiện 'Cho phép gỡ lỗi?', hãy bấm OK (Luôn cho phép)."
+                android:textSize="10sp"
+                android:textColor="#94A3B8"
+                android:lineSpacingExtra="3dp"
+                android:layout_marginBottom="10dp" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="10dp">
+
+                <EditText
+                    android:id="@+id/et_watch_adb_ip"
+                    android:layout_width="0dp"
+                    android:layout_height="42dp"
+                    android:layout_weight="1"
+                    android:hint="IP đồng hồ (VD: 192.168.43.2)"
+                    android:textColorHint="#64748B"
+                    android:textColor="#FFFFFF"
+                    android:textSize="12sp"
+                    android:inputType="phone"
+                    android:background="@drawable/bg_screen_bezel"
+                    android:paddingLeft="10dp"
+                    android:paddingRight="10dp" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text=":"
+                    android:textColor="#94A3B8"
+                    android:textStyle="bold"
+                    android:paddingLeft="4dp"
+                    android:paddingRight="4dp" />
+
+                <EditText
+                    android:id="@+id/et_watch_adb_port"
+                    android:layout_width="65dp"
+                    android:layout_height="42dp"
+                    android:text="5555"
+                    android:textColor="#38BDF8"
+                    android:textSize="12sp"
+                    android:textStyle="bold"
+                    android:inputType="number"
+                    android:gravity="center"
+                    android:background="@drawable/bg_screen_bezel"
+                    android:paddingLeft="4dp"
+                    android:paddingRight="4dp" />
+
+                <Button
+                    android:id="@+id/btn_auto_detect_ip"
+                    android:layout_width="wrap_content"
+                    android:layout_height="42dp"
+                    android:text="🔍 DÒ TỰ ĐỘNG"
+                    android:textColor="#FFFFFF"
+                    android:textStyle="bold"
+                    android:textSize="10sp"
+                    android:background="@drawable/bg_btn_metallic"
+                    android:backgroundTint="@null"
+                    android:paddingLeft="10dp"
+                    android:paddingRight="10dp"
+                    android:layout_marginStart="6dp" />
+            </LinearLayout>
+
+            <Button
+                android:id="@+id/btn_adb_install"
+                android:layout_width="match_parent"
+                android:layout_height="44dp"
+                android:text="⚡ KẾT NỐI ADB &amp; CÀI ĐẶT LÊN ĐỒNG HỒ"
+                android:textColor="#FFFFFF"
+                android:textStyle="bold"
+                android:textSize="11sp"
+                android:background="@drawable/bg_btn_emerald"
+                android:backgroundTint="@null"
+                android:layout_marginBottom="8dp" />
+
+            <ProgressBar
+                android:id="@+id/pb_adb_progress"
+                style="?android:attr/progressBarStyleHorizontal"
+                android:layout_width="match_parent"
+                android:layout_height="6dp"
+                android:visibility="gone"
+                android:indeterminate="true"
+                android:layout_marginBottom="6dp" />
+
+            <TextView
+                android:id="@+id/tv_adb_status"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Trạng thái: Sẵn sàng kết nối ADB."
+                android:textSize="10.5sp"
+                android:textColor="#E2E8F0"
+                android:lineSpacingExtra="2dp" />
+        </LinearLayout>
+
     </LinearLayout>
 
 </androidx.core.widget.NestedScrollView>

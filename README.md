@@ -27,14 +27,20 @@ Một giải pháp mã nguồn mở hoàn chỉnh nhằm thay thế **Google Ass
 - Người dùng chỉ tick chọn thiết bị cá nhân (ví dụ: tai nghe Bluetooth, intercom nón bảo hiểm).
 - Nếu ngắt kết nối hoặc kết nối loa ngoài / loa ô tô chưa được tick, app sẽ **tự động giữ im lặng** để bảo đảm tính riêng tư.
 
-### 5. Tự động Cập nhật Không Dây Siêu Tốc (OTA Wi-Fi & Bluetooth)
+### 5. Cập nhật Không Dây & Tích Hợp Sẵn Wireless ADB Client (Không Cần Máy Tính)
+- **Tích hợp Wireless ADB Client trực tiếp trên điện thoại (Zero-PC Sideloading):**
+  - Hệ điều hành Wear OS cố tình vô hiệu hóa giao diện xác nhận cài đặt APK của người dùng (`NotSupportedOnWearDialog` - *"Không hỗ trợ tác vụ Cài đặt/Gỡ cài đặt trên Wear"*).
+  - Để giải quyết triệt để vấn đề này khi không có máy tính bên cạnh, ứng dụng Phone Companion tích hợp thư viện **`dadb` (Pure-Kotlin ADB Client)** đóng vai trò như một máy trạm ADB độc lập:
+    1. Trên đồng hồ: Vào *Cài đặt > Tùy chọn nhà phát triển > Bật 'Gỡ lỗi ADB' & 'Gỡ lỗi qua Wi-Fi'*.
+    2. Trên điện thoại: Bấm **🔍 DÒ TỰ ĐỘNG** (ứng dụng tự động quét bảng ARP và dải IP Hotspot/Wi-Fi để tìm đồng hồ).
+    3. Bấm **⚡ KẾT NỐI ADB & CÀI ĐẶT** $\rightarrow$ Mặt đồng hồ sẽ hiện thông báo *"Cho phép gỡ lỗi từ thiết bị này?"* $\rightarrow$ tích chọn **Luôn cho phép** và bấm **OK**.
+    4. Ứng dụng tự động flash file APK trực tiếp qua giao thức ADB và tự khởi động ứng dụng trên đồng hồ!
 - **Kiểm tra trực tiếp từ GitHub Releases:** App điện thoại có nút kiểm tra bản mới từ repository `quyetbkhoa/GeminiForWearOS2`, tự động chọn bản phát hành mới nhất (SemVer) mà không qua trung gian.
 - **Tự động ghép nối Wi-Fi & Truyền APK trong 2 giây (Wi-Fi Pair & Push):**
-  - Khi người dùng bật Điểm phát sóng (Hotspot) trên điện thoại cho đồng hồ bắt hoặc cả 2 cùng kết nối một Wi-Fi, app sẽ **tự động bắt tay ghép nối qua kết nối Bluetooth có sẵn** mà không cần nhập IP thủ công.
-  - APK đồng hồ (~11.5 MB) được truyền thẳng qua TCP Socket tốc độ cao (5 - 15 MB/s) chỉ mất **1 - 2 giây**!
+  - Khi người dùng bật Điểm phát sóng (Hotspot) trên điện thoại cho đồng hồ bắt hoặc cả 2 cùng kết nối một Wi-Fi, app tự động bắt tay ghép nối qua kết nối Bluetooth có sẵn.
+  - APK đồng hồ được truyền thẳng qua TCP Socket tốc độ cao (5 - 15 MB/s) chỉ mất **1 - 2 giây**!
   - Giữ `WifiLock (HIGH_PERF)` và `WakeLock` trên OPPO Watch để đường truyền luôn thông suốt kể cả khi tắt màn hình.
 - **Dự phòng an toàn qua Bluetooth (ChannelClient):** Nếu đồng hồ không bật Wi-Fi, app tự động chuyển sang Bluetooth an toàn mà không gây lỗi.
-- **Cài đặt không cần máy tính:** Đồng hồ và điện thoại tự động mở hộp thoại cài đặt APK ngay khi nhận xong mà không cần cáp USB hay lệnh ADB!
 - **Chữ ký số đồng nhất (Keystore):** Dự án sử dụng keystore cố định cho cả build local và GitHub Actions CI/CD, đảm bảo mọi lần cập nhật APK không bao giờ bị lỗi xung đột chữ ký (`INSTALL_FAILED_UPDATE_INCOMPATIBLE`).
 
 ### 6. 🗣️ Đặt Báo thức & Hẹn giờ Tự động bằng Giọng nói
@@ -72,12 +78,13 @@ GeminiVoiceAssistant/
 │   └── src/main/res/                    # Giao diện Skeuomorphism kim loại
 └── phone/                               # Module ứng dụng chạy trên Điện thoại Android
     ├── src/main/java/com/oppowatch/gemini/phone/
-    │   ├── PhoneMainActivity.kt         # Giao diện lọc Checkbox & Nút Cập nhật GitHub
+    │   ├── PhoneMainActivity.kt         # Giao diện lọc Checkbox & Điều khiển Wireless ADB
+    │   ├── WatchAdbInstaller.kt         # Client Wireless ADB (dadb) kết nối port 5555 & pm install
     │   ├── BluetoothFilterManager.kt    # Quản lý danh sách MAC address được tick
     │   ├── TtsSpeaker.kt                # Khởi tạo và phát Google TTS tiếng Việt
     │   ├── PhoneWearableListenerService.kt # Lắng nghe tin nhắn từ đồng hồ
     │   ├── GitHubUpdateManager.kt       # Kiểm tra và tải bản cập nhật từ GitHub API
-    │   └── WatchApkPusher.kt            # Đẩy APK đồng hồ qua Bluetooth ChannelClient
+    │   └── WatchApkPusher.kt            # Đẩy APK đồng hồ qua Wi-Fi / Bluetooth ChannelClient
     └── src/main/res/
 ```
 

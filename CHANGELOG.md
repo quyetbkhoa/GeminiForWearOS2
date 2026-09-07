@@ -7,6 +7,24 @@ phiên bản tuân theo [Semantic Versioning](https://semver.org/lang/vi/).
 
 ---
 
+## [v1.2.4] - 2026-09-07
+
+### ⚡ Tích Hợp Wireless ADB Client Trực Tiếp Vào Điện Thoại (Direct Wear OS Sideload)
+- **Tích hợp Wireless ADB Client thuần Kotlin (`dadb`):**
+  - Khắc phục triệt để rào cản của Wear OS: Google cố tình vô hiệu hóa giao diện cài đặt APK của người dùng trên toàn bộ hệ điều hành Wear OS (`NotSupportedOnWearDialog` - *"Không hỗ trợ tác vụ Cài đặt/Gỡ cài đặt trên Wear"*).
+  - Giờ đây, ứng dụng Companion trên điện thoại đóng vai trò là một **máy trạm ADB không dây hoàn chỉnh** (Standalone Wireless ADB Host) với cặp khóa RSA bảo mật riêng biệt, kết nối trực tiếp tới cổng `5555` của đồng hồ qua Wi-Fi hoặc Hotspot.
+- **Cài đặt ngầm không cần máy tính (Zero-PC Wireless Sideloading):**
+  - Thực thi lệnh cài đặt hệ thống `pm install -r` trực tiếp từ điện thoại sang đồng hồ.
+  - Tự động mở ứng dụng Gemini trên đồng hồ ngay sau khi cài đặt thành công (`am start -n com.oppowatch.gemini/.MainActivity`).
+- **Giao diện điều khiển ADB trực quan & Dò IP tự động (Auto-Scan IP):**
+  - Thêm bảng điều khiển **⚡ CÀI ĐẶT QUA WIRELESS ADB (SIÊU TỐC)** trên app điện thoại.
+  - Tính năng **🔍 DÒ TỰ ĐỘNG**: Tự động quét bảng ARP hệ thống và subnet Wi-Fi / Hotspot (`192.168.43.x`) để tìm chính xác địa chỉ IP của đồng hồ đang mở cổng 5555.
+  - Tự động lưu địa chỉ IP đồng hồ để tiện sử dụng cho các lần cập nhật sau.
+- **Tự động tải APK từ GitHub Release:**
+  - Nếu điện thoại chưa lưu sẵn APK đồng hồ trong bộ nhớ đệm, ứng dụng sẽ tự động tải file APK mới nhất từ GitHub Release và thực hiện cài đặt ADB.
+
+---
+
 ## [v1.2.3] - 2026-09-07
 
 ### 🛠️ Sửa Lỗi Cài Đặt Ứng Dụng Trên Đồng Hồ (Fix Cannot Install / App Not Installed)
