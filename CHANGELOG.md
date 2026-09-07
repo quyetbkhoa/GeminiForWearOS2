@@ -7,6 +7,20 @@ phiên bản tuân theo [Semantic Versioning](https://semver.org/lang/vi/).
 
 ---
 
+## [v1.2.3] - 2026-09-07
+
+### 🛠️ Sửa Lỗi Cài Đặt Ứng Dụng Trên Đồng Hồ (Fix Cannot Install / App Not Installed)
+- **Hạ `minSdk` xuống 26 (Android 8.0 Oreo) trên đồng hồ:**
+  - Khắc phục lỗi `INSTALL_FAILED_OLDER_SDK_VERSION`: Chiếc OPPO Watch 46mm chạy ColorOS Watch / Wear OS 2 nền tảng Android 8.1 Oreo (API 27). Trước đó cấu hình `minSdk = 28` (Android 9.0) khiến trình cài đặt hệ thống từ chối cài đặt và báo *"Không thể cài đặt ứng dụng"*. Hạ xuống `minSdk = 26` tương thích hoàn toàn 100% với OPPO Watch 46mm.
+- **Khắc phục lỗi nuốt byte stream khi truyền Wi-Fi (Binary Stream Fix):**
+  - Loại bỏ hoàn toàn `BufferedReader` vốn tự động đọc đệm 8KB dữ liệu làm khuyết phần đầu file APK khi truyền qua TCP Socket.
+  - Chuyển sang giao thức nhị phân thuần túy `DataInputStream` / `DataOutputStream` với định dạng Magic `GEMI` + 8 bytes độ dài + ack xác thực 100%. File APK truyền qua Wi-Fi đảm bảo vẹn nguyên 100% từng byte.
+- **Kiểm tra tính toàn vẹn file APK trước khi kích hoạt cài đặt:**
+  - Bổ sung bước xác thực header ZIP chuẩn (`PK\003\004`) và đối chiếu độ dài file nhận được. Nếu file lỗi hoặc chưa hoàn tất sẽ không mở trình cài đặt gây lỗi màn hình.
+  - Cấp quyền `FLAG_GRANT_WRITE_URI_PERMISSION` và duyệt cấp quyền `grantUriPermission` trực tiếp tới tiến trình PackageInstaller của Wear OS.
+
+---
+
 ## [v1.2.2] - 2026-09-07
 
 ### 🚀 Tự động Ghép nối & Cài đặt Cập nhật Siêu tốc qua Wi-Fi (Wi-Fi Pair & Push)

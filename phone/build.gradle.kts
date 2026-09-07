@@ -10,8 +10,8 @@ android {
         applicationId = "com.oppowatch.gemini"
         minSdk = 26
         targetSdk = 34
-        versionCode = 5
-        versionName = "1.2.2"
+        versionCode = 6
+        versionName = "1.2.3"
     }
 
     lint {
@@ -25,6 +25,8 @@ android {
             storePassword = "geminiwearos"
             keyAlias = "geminikey"
             keyPassword = "geminiwearos"
+            enableV1Signing = true
+            enableV2Signing = true
         }
     }
 

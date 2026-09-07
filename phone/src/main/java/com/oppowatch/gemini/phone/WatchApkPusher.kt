@@ -122,34 +122,38 @@ object WatchApkPusher {
                 socket.tcpNoDelay = true
                 socket.sendBufferSize = 131072
 
-                val reader = BufferedReader(InputStreamReader(socket.getInputStream(), Charsets.UTF_8))
-                val writer = PrintWriter(OutputStreamWriter(socket.getOutputStream(), Charsets.UTF_8), true)
+                val dis = java.io.DataInputStream(socket.getInputStream())
+                val dos = java.io.DataOutputStream(socket.getOutputStream())
 
-                // Kiểm tra handshake
-                val handshakeLine = reader.readLine()
-                if (handshakeLine == null || !handshakeLine.startsWith("READY:$token")) {
-                    Log.w(TAG, "Handshake token không hợp lệ: $handshakeLine")
+                // 1. Nhận 8 bytes token từ đồng hồ
+                val tokenBytes = ByteArray(8)
+                dis.readFully(tokenBytes)
+                val clientToken = String(tokenBytes, Charsets.UTF_8).trim()
+                if (clientToken != token) {
+                    Log.w(TAG, "Handshake token không khớp: '$clientToken' != '$token'")
                     return false
                 }
 
                 Log.i(TAG, "✓ Ghép nối Wi-Fi thành công với đồng hồ tại ${socket.inetAddress.hostAddress}!")
                 callback.onStatus("✓ Đã ghép nối Wi-Fi! Đang truyền siêu tốc...")
 
-                // Gửi xác nhận bắt đầu truyền
-                writer.println("START")
-
-                // Truyền dữ liệu file APK
+                // 2. Gửi Magic 4 bytes ("GEMI") + 8 bytes totalLength
+                val magic = byteArrayOf('G'.code.toByte(), 'E'.code.toByte(), 'M'.code.toByte(), 'I'.code.toByte())
+                dos.write(magic)
                 val totalBytes = apkFile.length()
+                dos.writeLong(totalBytes)
+                dos.flush()
+
+                // 3. Truyền dữ liệu file APK
                 var bytesSent = 0L
                 val buffer = ByteArray(65536)
-                val out = socket.getOutputStream()
                 val startTime = System.currentTimeMillis()
 
                 FileInputStream(apkFile).use { input ->
                     var read: Int
                     var lastReportedPercent = -1
                     while (input.read(buffer).also { read = it } != -1) {
-                        out.write(buffer, 0, read)
+                        dos.write(buffer, 0, read)
                         bytesSent += read
 
                         val percent = ((bytesSent * 100) / totalBytes).toInt()
@@ -163,12 +167,16 @@ object WatchApkPusher {
                             )
                         }
                     }
-                    out.flush()
+                    dos.flush()
                 }
 
-                // Chờ đồng hồ xác nhận nhận xong
-                val doneLine = reader.readLine()
-                Log.i(TAG, "Đồng hồ phản hồi hoàn tất: $doneLine")
+                // 4. Chờ đồng hồ xác nhận nhận đủ 100% bằng ack byte
+                val ack = dis.readByte()
+                Log.i(TAG, "Đồng hồ phản hồi mã xác nhận: $ack")
+                if (ack != 1.toByte()) {
+                    Log.w(TAG, "Đồng hồ báo lỗi nhận file qua Wi-Fi (ack=$ack)")
+                    return false
+                }
 
                 val totalTime = (System.currentTimeMillis() - startTime) / 1000.0
                 val avgSpeed = (totalBytes / (1024.0 * 1024.0)) / maxOf(0.1, totalTime)

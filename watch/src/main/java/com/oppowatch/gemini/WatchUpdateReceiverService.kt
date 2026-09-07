@@ -18,7 +18,10 @@ import com.google.android.gms.wearable.DataEventBuffer
 import com.google.android.gms.wearable.DataMapItem
 import org.json.JSONObject
 import java.io.BufferedReader
+import java.io.DataInputStream
+import java.io.DataOutputStream
 import java.io.File
+import java.io.FileInputStream
 import java.io.FileOutputStream
 import java.io.InputStream
 import java.io.InputStreamReader
@@ -85,6 +88,26 @@ class WatchUpdateReceiverService : WearableListenerService() {
 
     private fun triggerApkInstall(apkFile: File) {
         try {
+            if (!apkFile.exists() || apkFile.length() < 1000L) {
+                Log.e(TAG, "File APK không tồn tại hoặc quá nhỏ (${apkFile.length()} bytes)")
+                return
+            }
+
+            // Kiểm tra header zip (PK..)
+            val isValidZip = try {
+                FileInputStream(apkFile).use { fis ->
+                    val header = ByteArray(4)
+                    fis.read(header) == 4 && header[0] == 0x50.toByte() && header[1] == 0x4B.toByte()
+                }
+            } catch (_: Exception) { false }
+
+            if (!isValidZip) {
+                Log.e(TAG, "File APK nhận được bị lỗi định dạng (không phải file ZIP/APK hợp lệ)!")
+                return
+            }
+
+            apkFile.setReadable(true, false)
+
             val contentUri = FileProvider.getUriForFile(
                 this,
                 "${packageName}.fileprovider",
@@ -94,7 +117,16 @@ class WatchUpdateReceiverService : WearableListenerService() {
             val installIntent = Intent(Intent.ACTION_VIEW).apply {
                 setDataAndType(contentUri, "application/vnd.android.package-archive")
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK or
-                        Intent.FLAG_GRANT_READ_URI_PERMISSION
+                        Intent.FLAG_GRANT_READ_URI_PERMISSION or
+                        Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+                putExtra(Intent.EXTRA_NOT_UNKNOWN_SOURCE, true)
+            }
+
+            // Cấp quyền rõ ràng cho package xử lý
+            val resInfoList = packageManager.queryIntentActivities(installIntent, 0)
+            for (resolveInfo in resInfoList) {
+                val pkg = resolveInfo.activityInfo.packageName
+                grantUriPermission(pkg, contentUri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
             }
 
             notifyVibrate(longArrayOf(0, 150, 100, 150))
@@ -320,45 +352,57 @@ class WatchUpdateReceiverService : WearableListenerService() {
                     socket.tcpNoDelay = true
                     socket.receiveBufferSize = 131072
 
-                    val writer = PrintWriter(OutputStreamWriter(socket.getOutputStream(), Charsets.UTF_8), true)
-                    val reader = BufferedReader(InputStreamReader(socket.getInputStream(), Charsets.UTF_8))
+                    val dos = java.io.DataOutputStream(socket.getOutputStream())
+                    val dis = java.io.DataInputStream(socket.getInputStream())
 
-                    // Gửi token xác nhận
-                    writer.println("READY:$token")
+                    // Gửi 8 bytes token xác nhận
+                    val tokenBytes = token.toByteArray(Charsets.UTF_8).copyOf(8)
+                    dos.write(tokenBytes)
+                    dos.flush()
 
-                    val startResponse = reader.readLine()
-                    if (startResponse != "START") {
-                        Log.e(TAG, "Điện thoại từ chối bắt đầu truyền: $startResponse")
+                    // Nhận Magic 4 bytes ("GEMI")
+                    val magic = ByteArray(4)
+                    dis.readFully(magic)
+                    if (magic[0] != 'G'.code.toByte() || magic[1] != 'E'.code.toByte() ||
+                        magic[2] != 'M'.code.toByte() || magic[3] != 'I'.code.toByte()) {
+                        Log.e(TAG, "Magic header không hợp lệ từ điện thoại!")
+                        dos.writeByte(0)
+                        dos.flush()
                         return@use
                     }
 
-                    Log.i(TAG, "Bắt đầu nhận file APK qua Wi-Fi...")
+                    val streamLength = dis.readLong()
+                    Log.i(TAG, "Bắt đầu nhận file APK qua Wi-Fi ($streamLength bytes)...")
+
                     val updateFile = File(cacheDir, "gemini_watch_update.apk")
                     if (updateFile.exists()) {
                         updateFile.delete()
                     }
 
-                    val inStream = socket.getInputStream()
                     FileOutputStream(updateFile).use { fos ->
                         val buffer = ByteArray(65536)
-                        var totalRead = 0L
-                        var read: Int
-                        while (inStream.read(buffer).also { read = it } != -1) {
+                        var remaining = streamLength
+                        while (remaining > 0L) {
+                            val toRead = minOf(buffer.size.toLong(), remaining).toInt()
+                            val read = dis.read(buffer, 0, toRead)
+                            if (read == -1) break
                             fos.write(buffer, 0, read)
-                            totalRead += read
-                            if (fileSize > 0 && totalRead >= fileSize) {
-                                break
-                            }
+                            remaining -= read
                         }
                         fos.flush()
                     }
 
-                    // Gửi phản hồi hoàn tất
-                    writer.println("DONE")
-                    Log.i(TAG, "✓ Đã nhận xong toàn bộ APK qua Wi-Fi (${updateFile.length()} bytes)!")
-
-                    notifyVibrate(longArrayOf(0, 100, 80, 150))
-                    triggerApkInstall(updateFile)
+                    if (updateFile.length() == streamLength) {
+                        dos.writeByte(1)
+                        dos.flush()
+                        Log.i(TAG, "✓ Đã nhận trọn vẹn 100% APK qua Wi-Fi (${updateFile.length()} bytes)!")
+                        notifyVibrate(longArrayOf(0, 100, 80, 150))
+                        triggerApkInstall(updateFile)
+                    } else {
+                        Log.e(TAG, "File APK bị thiếu bytes: ${updateFile.length()} / $streamLength")
+                        dos.writeByte(0)
+                        dos.flush()
+                    }
                 }
 
             } catch (e: Exception) {
