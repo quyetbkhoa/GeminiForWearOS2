@@ -1,4 +1,4 @@
-﻿package com.oppowatch.gemini.phone
+package com.oppowatch.gemini.phone
 
 import android.content.Context
 import android.util.Log
@@ -48,7 +48,7 @@ object WatchApkPusher {
 
                 val totalBytes = apkFile.length()
                 var bytesSent = 0L
-                val buffer = ByteArray(8192)
+                val buffer = ByteArray(65536)
 
                 FileInputStream(apkFile).use { input ->
                     var read: Int

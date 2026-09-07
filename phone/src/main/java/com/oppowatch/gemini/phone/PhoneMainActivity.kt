@@ -608,10 +608,10 @@ class PhoneMainActivity : AppCompatActivity() {
             }
 
             override fun onComplete() {
-                tvUpdateStatus.text = "Đã hoàn tất truyền cập nhật!"
+                tvUpdateStatus.text = "✓ Đã hoàn tất! Đồng hồ đang mở hộp thoại cài đặt bản mới."
                 pbUpdateProgress.visibility = View.GONE
                 btnCheckUpdate.isEnabled = true
-                btnCheckUpdate.text = "KIỂM TRA CẬP NHẬT KHÁC"
+                btnCheckUpdate.text = "KIỂM TRA CẬP NHẬT"
             }
 
             override fun onError(error: String) {

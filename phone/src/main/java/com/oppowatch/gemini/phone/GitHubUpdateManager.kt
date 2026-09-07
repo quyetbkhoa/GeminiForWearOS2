@@ -1,4 +1,4 @@
-﻿package com.oppowatch.gemini.phone
+package com.oppowatch.gemini.phone
 
 import android.app.Activity
 import android.content.Context
@@ -19,7 +19,7 @@ object GitHubUpdateManager {
     private const val TAG = "GitHubUpdateManager"
     const val GITHUB_REPO_OWNER = "quyetbkhoa"
     const val GITHUB_REPO_NAME = "GeminiForWearOS2"
-    private const val API_URL = "https://api.github.com/repos/$GITHUB_REPO_OWNER/$GITHUB_REPO_NAME/releases/latest"
+    private const val RELEASES_LIST_URL = "https://api.github.com/repos/$GITHUB_REPO_OWNER/$GITHUB_REPO_NAME/releases"
 
     data class UpdateInfo(
         val hasUpdate: Boolean,
@@ -40,6 +40,19 @@ object GitHubUpdateManager {
 
     private val mainHandler = Handler(Looper.getMainLooper())
 
+    fun isVersionNewer(newVer: String, currentVer: String): Boolean {
+        val p1 = newVer.replace("v", "").trim().split(".").mapNotNull { it.toIntOrNull() }
+        val p2 = currentVer.replace("v", "").trim().split(".").mapNotNull { it.toIntOrNull() }
+        val maxLen = maxOf(p1.size, p2.size)
+        for (i in 0 until maxLen) {
+            val v1 = p1.getOrElse(i) { 0 }
+            val v2 = p2.getOrElse(i) { 0 }
+            if (v1 > v2) return true
+            if (v1 < v2) return false
+        }
+        return false
+    }
+
     fun checkUpdate(context: Context, onResult: (Result<UpdateInfo>) -> Unit) {
         thread(name = "CheckUpdateThread") {
             try {
@@ -48,11 +61,15 @@ object GitHubUpdateManager {
                     pInfo.versionName ?: "1.0.0"
                 } catch (_: Exception) { "1.0.0" }
 
-                val url = URL(API_URL)
+                // Gọi trực tiếp API danh sách releases kèm nocache để chống CDN Fastly cache trễ
+                val timestamp = System.currentTimeMillis()
+                val url = URL("$RELEASES_LIST_URL?per_page=10&nocache=$timestamp")
                 val conn = (url.openConnection() as HttpURLConnection).apply {
                     requestMethod = "GET"
                     setRequestProperty("Accept", "application/vnd.github.v3+json")
                     setRequestProperty("User-Agent", "Gemini-WearOS-Companion")
+                    setRequestProperty("Cache-Control", "no-cache, no-store, must-revalidate")
+                    setRequestProperty("Pragma", "no-cache")
                     connectTimeout = 10000
                     readTimeout = 10000
                 }
@@ -60,22 +77,50 @@ object GitHubUpdateManager {
                 val responseCode = conn.responseCode
                 if (responseCode != 200) {
                     mainHandler.post {
-                        onResult(Result.failure(Exception("GitHub API phản hồi mã: $responseCode (Chưa có Release hoặc vượt giới hạn request)")))
+                        onResult(Result.failure(Exception("GitHub API phản hồi mã: $responseCode")))
                     }
                     return@thread
                 }
 
                 val jsonStr = conn.inputStream.bufferedReader().use { it.readText() }
-                val root = JSONObject(jsonStr)
+                val releasesArray = org.json.JSONArray(jsonStr)
 
-                val tagName = root.optString("tag_name", "v1.0.0")
-                val releaseName = root.optString("name", tagName)
-                val body = root.optString("body", "Không có ghi chú phát hành.")
+                if (releasesArray.length() == 0) {
+                    mainHandler.post {
+                        onResult(Result.failure(Exception("Chưa tìm thấy bản phát hành nào trên repository!")))
+                    }
+                    return@thread
+                }
+
+                // Duyệt tìm release công khai mới nhất (bỏ qua draft và prerelease)
+                var newestRelease: JSONObject? = null
+                var highestTag = ""
+
+                for (i in 0 until releasesArray.length()) {
+                    val rel = releasesArray.getJSONObject(i)
+                    if (rel.optBoolean("draft", false) || rel.optBoolean("prerelease", false)) continue
+                    val tag = rel.optString("tag_name", "").trim()
+                    if (tag.isEmpty()) continue
+
+                    if (newestRelease == null || isVersionNewer(tag, highestTag)) {
+                        newestRelease = rel
+                        highestTag = tag
+                    }
+                }
+
+                if (newestRelease == null) {
+                    newestRelease = releasesArray.getJSONObject(0)
+                    highestTag = newestRelease.optString("tag_name", "v1.0.0")
+                }
+
+                val tagName = highestTag
+                val releaseName = newestRelease.optString("name", tagName)
+                val body = newestRelease.optString("body", "Không có ghi chú phát hành.")
 
                 var phoneUrl: String? = null
                 var watchUrl: String? = null
 
-                val assets = root.optJSONArray("assets")
+                val assets = newestRelease.optJSONArray("assets")
                 if (assets != null) {
                     for (i in 0 until assets.length()) {
                         val asset = assets.getJSONObject(i)
@@ -90,10 +135,9 @@ object GitHubUpdateManager {
                     }
                 }
 
-                // So sánh version đơn giản (nếu tag khác version hiện tại thì có update)
                 val cleanTag = tagName.replace("v", "").trim()
                 val cleanCurrent = currentVersion.replace("v", "").trim()
-                val hasUpdate = cleanTag != cleanCurrent
+                val hasUpdate = isVersionNewer(cleanTag, cleanCurrent) || (cleanTag != cleanCurrent)
 
                 val info = UpdateInfo(
                     hasUpdate = hasUpdate,

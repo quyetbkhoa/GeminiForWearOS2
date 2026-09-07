@@ -7,6 +7,18 @@ phiên bản tuân theo [Semantic Versioning](https://semver.org/lang/vi/).
 
 ---
 
+## [v1.2.1] - 2026-09-07
+
+### ⚡ Nâng cấp Cơ chế Cập nhật OTA & Tăng tốc độ Bluetooth
+- **Tự động nhảy thẳng lên bản mới nhất (Skip intermediate versions):**
+  - Tích hợp bộ so sánh phiên bản ngữ nghĩa (Semantic Versioning Comparator), duyệt toàn bộ danh sách releases trên GitHub để luôn chọn và cập nhật trực tiếp lên bản phát hành có version cao nhất, không bị kẹt ở các phiên bản trung gian.
+  - Chống cache CDN: Truy vấn trực tiếp API `/releases` kèm timestamp `nocache` và headers chống lưu đệm, đảm bảo nhận diện ngay tức khắc khi có bản phát hành mới trên GitHub Actions.
+- **Tăng tốc truyền APK sang OPPO Watch:**
+  - Tăng kích thước bộ đệm (buffer) của `WatchApkPusher` từ 8KB lên 64KB (`ByteArray(65536)`), tăng thông lượng truyền qua Bluetooth RFCOMM channel.
+  - Hiển thị phần trăm truyền file mượt mà và thông báo trạng thái trực quan: *"✓ Đã hoàn tất! Đồng hồ đang mở hộp thoại cài đặt bản mới."*
+
+---
+
 ## [v1.2.0] - 2026-09-07
 
 ### ✨ Tính năng mới & Tối ưu Trải nghiệm (UX)
