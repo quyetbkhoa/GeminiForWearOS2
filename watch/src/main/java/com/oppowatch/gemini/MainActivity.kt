@@ -56,6 +56,22 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    // Khi người dùng đập tay tắt màn hình (palm gesture) hoặc màn hình tắt do timeout:
+    // Tự động đóng hoàn toàn app để khi mở lại sẽ hiển thị màn hình chính (Watch Face)
+    private val screenOffReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            if (intent?.action == Intent.ACTION_SCREEN_OFF) {
+                Log.d("MainActivity", "Đã tắt màn hình -> Thoát app về màn hình chính")
+                isDismissedOrCancelled = true
+                if (::recorderHelper.isInitialized) {
+                    recorderHelper.cancelRecording()
+                }
+                GeminiClient.cancelCurrentRequest()
+                finishAndRemoveTask()
+            }
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
@@ -99,6 +115,8 @@ class MainActivity : AppCompatActivity() {
         } else {
             registerReceiver(themeReceiver, filter)
         }
+
+        registerReceiver(screenOffReceiver, IntentFilter(Intent.ACTION_SCREEN_OFF))
 
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO)
             != PackageManager.PERMISSION_GRANTED) {
@@ -193,6 +211,9 @@ class MainActivity : AppCompatActivity() {
         try {
             unregisterReceiver(themeReceiver)
         } catch (_: Exception) {}
+        try {
+            unregisterReceiver(screenOffReceiver)
+        } catch (_: Exception) {}
     }
 
     override fun onNewIntent(intent: Intent?) {
@@ -254,8 +275,13 @@ class MainActivity : AppCompatActivity() {
         super.onStop()
         isAppActivelyLaunched = false
         isDismissedOrCancelled = true
-        recorderHelper.cancelRecording()
+        if (::recorderHelper.isInitialized) {
+            recorderHelper.cancelRecording()
+        }
         GeminiClient.cancelCurrentRequest()
+        // Khi màn hình tắt (đập tay hoặc timeout): Đóng và giải phóng hoàn toàn task
+        // để khi mở lại màn hình sẽ là Màn hình chính (Watch Face) chứ không lưu giữ app
+        finishAndRemoveTask()
     }
 
     override fun finish() {
