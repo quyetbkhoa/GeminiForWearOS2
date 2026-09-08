@@ -138,11 +138,19 @@ class PhoneWearableListenerService : WearableListenerService() {
             }
 
             if (title.isNotEmpty()) {
+                val mode = GoogleTasksManager.getSyncMode(this)
                 GoogleTasksManager.addTask(this, title, notes)
-                val ttsResponse = "Đã thêm vào Google Tasks: $title"
+
+                val modeDesc = when (mode) {
+                    SyncMode.LOCAL_ONLY -> "việc cần làm"
+                    SyncMode.WEBHOOK -> "Google Tasks"
+                    SyncMode.BOTH -> "việc cần làm và Google Tasks"
+                    SyncMode.SHARE_DIALOG -> "Google Tasks"
+                }
+                val ttsResponse = "Đã thêm vào $modeDesc: $title"
 
                 historyManager.addEntry(
-                    "📝 Google Tasks",
+                    "📝 Việc cần làm",
                     title,
                     System.currentTimeMillis()
                 )

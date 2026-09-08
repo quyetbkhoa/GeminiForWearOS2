@@ -49,7 +49,8 @@ class PhoneMainActivity : AppCompatActivity() {
         THEME,
         QA_HISTORY,
         ERROR_LOGS,
-        VOICE_GUIDE
+        VOICE_GUIDE,
+        TASKS_MANAGER
     }
 
     private var currentPage = NavPage.HUB
@@ -76,6 +77,7 @@ class PhoneMainActivity : AppCompatActivity() {
     private lateinit var pageQaHistory: LinearLayout
     private lateinit var pageErrorLogs: LinearLayout
     private lateinit var pageVoiceGuide: LinearLayout
+    private lateinit var pageTasks: LinearLayout
 
     // Hub Menu Rows & Badges
     private lateinit var cardTitlePlate: LinearLayout
@@ -103,6 +105,12 @@ class PhoneMainActivity : AppCompatActivity() {
     private lateinit var rowMenuTheme: LinearLayout
     private lateinit var tvHubThemeSummary: TextView
     private lateinit var tvHubThemeBadge: TextView
+
+    private lateinit var rowMenuTasks: LinearLayout
+    private lateinit var tvMenuTitleTasks: TextView
+    private lateinit var tvHubTasksSummary: TextView
+    private lateinit var tvHubTasksBadge: TextView
+    private lateinit var tvChevronTasks: TextView
 
     private lateinit var rowMenuQaHistory: LinearLayout
     private lateinit var tvHubHistorySummary: TextView
@@ -239,6 +247,33 @@ class PhoneMainActivity : AppCompatActivity() {
     private lateinit var llErrorLogsList: LinearLayout
     private lateinit var tvEmptyErrorLogs: TextView
 
+    // Sub-Page 7: Tasks Manager & Webhook Views
+    private lateinit var cardTasksMode: LinearLayout
+    private lateinit var tvTasksModeTitle: TextView
+    private lateinit var tvTasksModeDesc: TextView
+    private lateinit var rgTasksSyncMode: RadioGroup
+    private lateinit var rbTasksLocal: RadioButton
+    private lateinit var rbTasksWebhook: RadioButton
+    private lateinit var rbTasksBoth: RadioButton
+    private lateinit var rbTasksShare: RadioButton
+
+    private lateinit var cardTasksWebhook: LinearLayout
+    private lateinit var tvTasksWebhookTitle: TextView
+    private lateinit var tvTasksWebhookDesc: TextView
+    private lateinit var etTasksWebhookUrl: EditText
+    private lateinit var btnSaveWebhook: Button
+    private lateinit var btnTestWebhook: Button
+    private lateinit var tvWebhookTestStatus: TextView
+    private lateinit var layoutScriptGuide: LinearLayout
+    private lateinit var btnCopyAppsScript: Button
+
+    private lateinit var cardTasksList: LinearLayout
+    private lateinit var tvTasksListTitle: TextView
+    private lateinit var tvTasksCounter: TextView
+    private lateinit var btnClearCompletedTasks: Button
+    private lateinit var llTasksList: LinearLayout
+    private lateinit var tvEmptyTasks: TextView
+
     private var currentThemeStyle = ThemeManager.ThemeStyle.SKEUOMORPHISM
     private var currentColorMode = ThemeManager.ColorMode.DARK
 
@@ -262,6 +297,7 @@ class PhoneMainActivity : AppCompatActivity() {
             }
             loadQaHistory()
             loadErrorLogs()
+            renderTasksList()
             updateHubSummaries()
         }
     }
@@ -351,16 +387,22 @@ class PhoneMainActivity : AppCompatActivity() {
         setupUpdateSection()
         setupQaHistorySection()
         setupErrorLogsSection()
+        setupTasksManagerSection()
 
         checkPermissions()
         checkPermissionsAndLoadDevices(userInitiated = false)
         autoSyncApiKeyToWatch()
         updateHubSummaries()
 
+        if (intent?.getStringExtra("OPEN_PAGE") == "TASKS") {
+            navigateTo(NavPage.TASKS_MANAGER)
+        }
+
         val filter = IntentFilter().apply {
             addAction("com.oppowatch.gemini.TTS_RECEIVED")
             addAction("com.oppowatch.gemini.ERROR_LOG_RECEIVED")
             addAction("com.oppowatch.gemini.WATCH_ADB_INFO_RECEIVED")
+            addAction("com.oppowatch.gemini.TASK_ADDED")
         }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             registerReceiver(receiver, filter, Context.RECEIVER_NOT_EXPORTED)
@@ -369,6 +411,13 @@ class PhoneMainActivity : AppCompatActivity() {
         }
 
         Wearable.getMessageClient(this).addListener(wearMessageListener)
+    }
+
+    override fun onNewIntent(intent: Intent?) {
+        super.onNewIntent(intent)
+        if (intent?.getStringExtra("OPEN_PAGE") == "TASKS") {
+            navigateTo(NavPage.TASKS_MANAGER)
+        }
     }
 
     private fun initViews() {
@@ -567,6 +616,40 @@ class PhoneMainActivity : AppCompatActivity() {
         tvUpdateHeader = findViewById(R.id.tv_update_header)
         tvStyleLabel = findViewById(R.id.tv_style_label)
         tvColorModeLabel = findViewById(R.id.tv_color_mode_label)
+
+        // Tasks Hub Menu
+        rowMenuTasks = findViewById(R.id.row_menu_tasks)
+        tvMenuTitleTasks = findViewById(R.id.tv_menu_title_tasks)
+        tvHubTasksSummary = findViewById(R.id.tv_hub_tasks_summary)
+        tvHubTasksBadge = findViewById(R.id.tv_hub_tasks_badge)
+        tvChevronTasks = findViewById(R.id.tv_chevron_tasks)
+
+        // Tasks Page Views
+        cardTasksMode = findViewById(R.id.card_tasks_mode)
+        tvTasksModeTitle = findViewById(R.id.tv_tasks_mode_title)
+        tvTasksModeDesc = findViewById(R.id.tv_tasks_mode_desc)
+        rgTasksSyncMode = findViewById(R.id.rg_tasks_sync_mode)
+        rbTasksLocal = findViewById(R.id.rb_tasks_local)
+        rbTasksWebhook = findViewById(R.id.rb_tasks_webhook)
+        rbTasksBoth = findViewById(R.id.rb_tasks_both)
+        rbTasksShare = findViewById(R.id.rb_tasks_share)
+
+        cardTasksWebhook = findViewById(R.id.card_tasks_webhook)
+        tvTasksWebhookTitle = findViewById(R.id.tv_tasks_webhook_title)
+        tvTasksWebhookDesc = findViewById(R.id.tv_tasks_webhook_desc)
+        etTasksWebhookUrl = findViewById(R.id.et_tasks_webhook_url)
+        btnSaveWebhook = findViewById(R.id.btn_save_webhook)
+        btnTestWebhook = findViewById(R.id.btn_test_webhook)
+        tvWebhookTestStatus = findViewById(R.id.tv_webhook_test_status)
+        layoutScriptGuide = findViewById(R.id.layout_script_guide)
+        btnCopyAppsScript = findViewById(R.id.btn_copy_apps_script)
+
+        cardTasksList = findViewById(R.id.card_tasks_list)
+        tvTasksListTitle = findViewById(R.id.tv_tasks_list_title)
+        tvTasksCounter = findViewById(R.id.tv_tasks_counter)
+        btnClearCompletedTasks = findViewById(R.id.btn_clear_completed_tasks)
+        llTasksList = findViewById(R.id.ll_tasks_list)
+        tvEmptyTasks = findViewById(R.id.tv_empty_tasks)
     }
 
     private fun setupNavigationFlow() {
@@ -579,6 +662,7 @@ class PhoneMainActivity : AppCompatActivity() {
         rowMenuBluetooth.setOnClickListener { navigateTo(NavPage.BLUETOOTH) }
         rowMenuAdbUpdate.setOnClickListener { navigateTo(NavPage.ADB_UPDATE) }
         rowMenuTheme.setOnClickListener { navigateTo(NavPage.THEME) }
+        rowMenuTasks.setOnClickListener { navigateTo(NavPage.TASKS_MANAGER) }
         rowMenuQaHistory.setOnClickListener { navigateTo(NavPage.QA_HISTORY) }
         rowMenuErrorLogs.setOnClickListener { navigateTo(NavPage.ERROR_LOGS) }
 
@@ -613,6 +697,7 @@ class PhoneMainActivity : AppCompatActivity() {
         pageTheme.visibility = if (page == NavPage.THEME) View.VISIBLE else View.GONE
         pageQaHistory.visibility = if (page == NavPage.QA_HISTORY) View.VISIBLE else View.GONE
         pageErrorLogs.visibility = if (page == NavPage.ERROR_LOGS) View.VISIBLE else View.GONE
+        pageTasks.visibility = if (page == NavPage.TASKS_MANAGER) View.VISIBLE else View.GONE
 
         if (page == NavPage.HUB) {
             btnNavBack.visibility = View.GONE
@@ -650,6 +735,12 @@ class PhoneMainActivity : AppCompatActivity() {
                     tvNavTitle.text = "🚨 NHẬT KÝ LỖI API"
                     tvNavSubtitle.text = "Cài đặt > Chi tiết mã lỗi & Google JSON"
                 }
+                NavPage.TASKS_MANAGER -> {
+                    tvNavTitle.text = "📝 VIỆC CẦN LÀM"
+                    tvNavSubtitle.text = "Cài đặt > Google Tasks Webhook & Bộ quản lý"
+                    syncTasksUiWithSettings()
+                    renderTasksList()
+                }
                 else -> {}
             }
         }
@@ -681,8 +772,8 @@ class PhoneMainActivity : AppCompatActivity() {
 
         // 3. ADB & Update
         val currentVersion = try {
-            packageManager.getPackageInfo(packageName, 0).versionName ?: "1.3.3"
-        } catch (_: Exception) { "1.3.3" }
+            packageManager.getPackageInfo(packageName, 0).versionName ?: "1.3.4"
+        } catch (_: Exception) { "1.3.4" }
         tvHubAdbBadge.text = "v$currentVersion"
         tvHubAdbSummary.text = "Wireless ADB Sideload • Mobile v$currentVersion"
         if (::tvAppVersion.isInitialized) {
@@ -702,12 +793,28 @@ class PhoneMainActivity : AppCompatActivity() {
         }
         tvHubThemeSummary.text = "${style.title} • ${if (mode == ThemeManager.ColorMode.LIGHT) "Sáng (Light)" else "Tối (Dark)"}"
 
-        // 5. Q&A History
+        // 5. Tasks
+        if (::tvHubTasksBadge.isInitialized) {
+            val syncMode = GoogleTasksManager.getSyncMode(this)
+            val taskList = GoogleTasksManager.getTasks(this)
+            val activeCount = taskList.count { !it.completed }
+            val webhookConfigured = GoogleTasksManager.getWebhookUrl(this).isNotBlank()
+
+            tvHubTasksBadge.text = when (syncMode) {
+                SyncMode.LOCAL_ONLY -> "Lưu máy ($activeCount)"
+                SyncMode.WEBHOOK -> if (webhookConfigured) "Webhook" else "Chưa URL"
+                SyncMode.BOTH -> "Cả hai ($activeCount)"
+                SyncMode.SHARE_DIALOG -> "Thủ công"
+            }
+            tvHubTasksSummary.text = "${syncMode.displayName} • $activeCount việc đang làm"
+        }
+
+        // 6. Q&A History
         val historyCount = qaHistoryManager.getHistory().size
         tvHubHistoryBadge.text = "$historyCount mục"
         tvHubHistorySummary.text = "$historyCount câu hỏi đã ghi nhận từ đồng hồ"
 
-        // 6. Error Logs
+        // 7. Error Logs
         val errorCount = apiErrorLogManager.getErrorLogs().size
         if (errorCount == 0) {
             tvHubErrorBadge.text = "0 lỗi"
@@ -787,6 +894,7 @@ class PhoneMainActivity : AppCompatActivity() {
         rowMenuBluetooth.setBackgroundResource(config.cardDrawable)
         rowMenuAdbUpdate.setBackgroundResource(config.cardDrawable)
         rowMenuTheme.setBackgroundResource(config.cardDrawable)
+        rowMenuTasks.setBackgroundResource(config.cardDrawable)
         rowMenuQaHistory.setBackgroundResource(config.cardDrawable)
         rowMenuErrorLogs.setBackgroundResource(config.cardDrawable)
 
@@ -807,6 +915,7 @@ class PhoneMainActivity : AppCompatActivity() {
         tvMenuTitleBluetooth.setTextColor(menuTitleColor)
         tvMenuTitleAdb.setTextColor(menuTitleColor)
         tvMenuTitleTheme.setTextColor(menuTitleColor)
+        tvMenuTitleTasks.setTextColor(menuTitleColor)
         tvMenuTitleHistory.setTextColor(menuTitleColor)
         tvMenuTitleError.setTextColor(menuTitleColor)
 
@@ -814,6 +923,7 @@ class PhoneMainActivity : AppCompatActivity() {
         tvHubBluetoothSummary.setTextColor(menuSubColor)
         tvHubAdbSummary.setTextColor(menuSubColor)
         tvHubThemeSummary.setTextColor(menuSubColor)
+        tvHubTasksSummary.setTextColor(menuSubColor)
         tvHubHistorySummary.setTextColor(menuSubColor)
         tvHubErrorSummary.setTextColor(menuSubColor)
 
@@ -821,6 +931,7 @@ class PhoneMainActivity : AppCompatActivity() {
         tvChevronBluetooth.setTextColor(chevronColor)
         tvChevronAdb.setTextColor(chevronColor)
         tvChevronTheme.setTextColor(chevronColor)
+        tvChevronTasks.setTextColor(chevronColor)
         tvChevronHistory.setTextColor(chevronColor)
         tvChevronError.setTextColor(chevronColor)
 
@@ -831,6 +942,10 @@ class PhoneMainActivity : AppCompatActivity() {
         cardBluetoothRack.setBackgroundResource(config.bezelDrawable)
         cardQuickReplyPanel.setBackgroundResource(config.bezelDrawable)
         cardOverlayPanel.setBackgroundResource(config.bezelDrawable)
+        cardTasksMode.setBackgroundResource(config.cardDrawable)
+        cardTasksWebhook.setBackgroundResource(config.cardDrawable)
+        cardTasksList.setBackgroundResource(config.cardDrawable)
+        layoutScriptGuide.setBackgroundResource(config.bezelDrawable)
         cardHistoryRack.setBackgroundResource(config.bezelDrawable)
         cardErrorLogsRack.setBackgroundResource(config.bezelDrawable)
         cardUpdatePanel.setBackgroundResource(config.panelDrawable)
@@ -868,6 +983,10 @@ class PhoneMainActivity : AppCompatActivity() {
         etWatchAdbPort.setTextColor(if (isLight) Color.parseColor("#0284C7") else Color.parseColor("#38BDF8"))
         etWatchAdbPort.setHintTextColor(inputHintColor)
 
+        etTasksWebhookUrl.setBackgroundResource(config.inputDrawable)
+        etTasksWebhookUrl.setTextColor(inputTextColor)
+        etTasksWebhookUrl.setHintTextColor(inputHintColor)
+
         btnAutoDetectIp.setBackgroundResource(config.btnPrimaryDrawable)
         btnAutoDetectIp.setTextColor(if (isLight) Color.parseColor("#0F172A") else Color.parseColor("#FFFFFF"))
         btnAdbInstall.setBackgroundResource(config.btnEmeraldDrawable)
@@ -883,6 +1002,27 @@ class PhoneMainActivity : AppCompatActivity() {
         btnCheckUpdate.setBackgroundResource(config.btnGoldDrawable)
         btnUpdateStep1.setBackgroundResource(config.btnGoldDrawable)
         btnUpdateStep1.setTextColor(Color.parseColor("#0F172A"))
+
+        btnSaveWebhook.setBackgroundResource(config.btnGoldDrawable)
+        btnSaveWebhook.setTextColor(if (isLight) Color.parseColor("#0F172A") else Color.parseColor("#0F172A"))
+        btnTestWebhook.setBackgroundResource(config.btnPrimaryDrawable)
+        btnTestWebhook.setTextColor(if (isLight) Color.parseColor("#0F172A") else Color.parseColor("#FFFFFF"))
+        btnCopyAppsScript.setBackgroundResource(config.btnPrimaryDrawable)
+        btnCopyAppsScript.setTextColor(if (isLight) Color.parseColor("#0F172A") else Color.parseColor("#FFFFFF"))
+        btnClearCompletedTasks.setBackgroundResource(config.btnCrimsonDrawable)
+
+        val radioColor = if (isLight) Color.parseColor("#0F172A") else Color.parseColor("#E2E8F0")
+        rbTasksLocal.setTextColor(radioColor)
+        rbTasksWebhook.setTextColor(radioColor)
+        rbTasksBoth.setTextColor(radioColor)
+        rbTasksShare.setTextColor(radioColor)
+
+        tvTasksModeTitle.setTextColor(if (isLight) Color.parseColor("#0284C7") else Color.parseColor("#38BDF8"))
+        tvTasksModeDesc.setTextColor(menuSubColor)
+        tvTasksWebhookTitle.setTextColor(if (isLight) Color.parseColor("#059669") else Color.parseColor("#34D399"))
+        tvTasksWebhookDesc.setTextColor(menuSubColor)
+        tvTasksListTitle.setTextColor(if (isLight) Color.parseColor("#B45309") else Color.parseColor("#F59E0B"))
+        tvTasksCounter.setTextColor(menuSubColor)
 
         // Typography Colors
         tvMainTitle.setTextColor(if (isLight) Color.parseColor("#B45309") else config.titleTextColor)
@@ -1497,6 +1637,184 @@ class PhoneMainActivity : AppCompatActivity() {
             }
 
             llErrorLogsList.addView(itemView)
+        }
+    }
+
+    private fun setupTasksManagerSection() {
+        rgTasksSyncMode.setOnCheckedChangeListener { _, checkedId ->
+            val selectedMode = when (checkedId) {
+                R.id.rb_tasks_local -> SyncMode.LOCAL_ONLY
+                R.id.rb_tasks_webhook -> SyncMode.WEBHOOK
+                R.id.rb_tasks_both -> SyncMode.BOTH
+                R.id.rb_tasks_share -> SyncMode.SHARE_DIALOG
+                else -> SyncMode.LOCAL_ONLY
+            }
+            GoogleTasksManager.setSyncMode(this, selectedMode)
+            updateHubSummaries()
+        }
+
+        btnSaveWebhook.setOnClickListener {
+            val url = etTasksWebhookUrl.text.toString().trim()
+            GoogleTasksManager.setWebhookUrl(this, url)
+            Toast.makeText(this, "Đã lưu Webhook URL thành công", Toast.LENGTH_SHORT).show()
+            updateHubSummaries()
+        }
+
+        btnTestWebhook.setOnClickListener {
+            val url = etTasksWebhookUrl.text.toString().trim()
+            if (url.isBlank()) {
+                Toast.makeText(this, "Vui lòng nhập URL Webhook trước khi thử nghiệm", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+            tvWebhookTestStatus.visibility = View.VISIBLE
+            tvWebhookTestStatus.setTextColor(Color.parseColor("#38BDF8"))
+            tvWebhookTestStatus.text = "⏳ Đang gửi task thử nghiệm đến Webhook..."
+            btnTestWebhook.isEnabled = false
+
+            GoogleTasksManager.testWebhook(url) { success, msg ->
+                runOnUiThread {
+                    btnTestWebhook.isEnabled = true
+                    tvWebhookTestStatus.visibility = View.VISIBLE
+                    if (success) {
+                        tvWebhookTestStatus.setTextColor(Color.parseColor("#34D399"))
+                        tvWebhookTestStatus.text = "✓ $msg\nTask thử nghiệm đã được thêm vào Google Tasks của bạn!"
+                    } else {
+                        tvWebhookTestStatus.setTextColor(Color.parseColor("#EF4444"))
+                        tvWebhookTestStatus.text = "✗ $msg\nHãy kiểm tra lại quyền 'Bất kỳ ai' (Anyone) khi triển khai Apps Script."
+                    }
+                }
+            }
+        }
+
+        btnCopyAppsScript.setOnClickListener {
+            val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
+            val clip = android.content.ClipData.newPlainText("Apps Script Code", GoogleTasksManager.APPS_SCRIPT_SAMPLE_CODE)
+            clipboard.setPrimaryClip(clip)
+            Toast.makeText(this, "📋 Đã sao chép 3 dòng mã Apps Script vào Clipboard!", Toast.LENGTH_SHORT).show()
+        }
+
+        btnClearCompletedTasks.setOnClickListener {
+            val deleted = GoogleTasksManager.clearCompletedTasks(this)
+            Toast.makeText(this, "Đã xóa $deleted việc đã hoàn thành", Toast.LENGTH_SHORT).show()
+            renderTasksList()
+            updateHubSummaries()
+        }
+    }
+
+    private fun syncTasksUiWithSettings() {
+        val currentMode = GoogleTasksManager.getSyncMode(this)
+        when (currentMode) {
+            SyncMode.LOCAL_ONLY -> rbTasksLocal.isChecked = true
+            SyncMode.WEBHOOK -> rbTasksWebhook.isChecked = true
+            SyncMode.BOTH -> rbTasksBoth.isChecked = true
+            SyncMode.SHARE_DIALOG -> rbTasksShare.isChecked = true
+        }
+        etTasksWebhookUrl.setText(GoogleTasksManager.getWebhookUrl(this))
+    }
+
+    private fun renderTasksList() {
+        if (!::llTasksList.isInitialized) return
+        llTasksList.removeAllViews()
+
+        val tasks = GoogleTasksManager.getTasks(this)
+        val activeCount = tasks.count { !it.completed }
+        val completedCount = tasks.count { it.completed }
+
+        tvTasksCounter.text = "Đang làm: $activeCount | Hoàn thành: $completedCount"
+        tvEmptyTasks.visibility = if (tasks.isEmpty()) View.VISIBLE else View.GONE
+        btnClearCompletedTasks.visibility = if (completedCount > 0) View.VISIBLE else View.GONE
+
+        val isLight = (currentColorMode == ThemeManager.ColorMode.LIGHT)
+        val titleNormalColor = if (isLight) Color.parseColor("#0F172A") else Color.parseColor("#F8FAFC")
+        val titleDoneColor = if (isLight) Color.parseColor("#94A3B8") else Color.parseColor("#64748B")
+        val subTextColor = if (isLight) Color.parseColor("#475569") else Color.parseColor("#94A3B8")
+        val rowBg = if (isLight) Color.parseColor("#F1F5F9") else Color.parseColor("#161B26")
+
+        val dateFormat = java.text.SimpleDateFormat("HH:mm, dd/MM", java.util.Locale.getDefault())
+
+        for (item in tasks) {
+            val row = LinearLayout(this).apply {
+                orientation = LinearLayout.HORIZONTAL
+                gravity = android.view.Gravity.CENTER_VERTICAL
+                setPadding(20, 16, 20, 16)
+                val params = LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT
+                ).apply {
+                    setMargins(0, 0, 0, 10)
+                }
+                layoutParams = params
+                setBackgroundColor(rowBg)
+            }
+
+            // Checkbox
+            val cb = android.widget.CheckBox(this).apply {
+                isChecked = item.completed
+                setOnCheckedChangeListener { _, _ ->
+                    GoogleTasksManager.toggleTaskComplete(this@PhoneMainActivity, item.id)
+                    renderTasksList()
+                    updateHubSummaries()
+                }
+            }
+            row.addView(cb)
+
+            // Text Layout (Title, Notes, Time)
+            val textLayout = LinearLayout(this).apply {
+                orientation = LinearLayout.VERTICAL
+                layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply {
+                    setMargins(14, 0, 14, 0)
+                }
+            }
+
+            val tvTitle = TextView(this).apply {
+                text = item.title
+                textSize = 12.5f
+                setTypeface(null, android.graphics.Typeface.BOLD)
+                setTextColor(if (item.completed) titleDoneColor else titleNormalColor)
+                if (item.completed) {
+                    paintFlags = paintFlags or android.graphics.Paint.STRIKE_THRU_TEXT_FLAG
+                }
+            }
+            textLayout.addView(tvTitle)
+
+            if (item.notes.isNotBlank()) {
+                val tvNotes = TextView(this).apply {
+                    text = item.notes
+                    textSize = 10.5f
+                    setTextColor(subTextColor)
+                    setPadding(0, 2, 0, 0)
+                }
+                textLayout.addView(tvNotes)
+            }
+
+            val tvTime = TextView(this).apply {
+                text = dateFormat.format(java.util.Date(item.timestamp))
+                textSize = 9.5f
+                setTextColor(titleDoneColor)
+                setPadding(0, 2, 0, 0)
+            }
+            textLayout.addView(tvTime)
+
+            row.addView(textLayout)
+
+            // Delete button
+            val btnDelete = Button(this).apply {
+                text = "✕"
+                textSize = 12f
+                setTypeface(null, android.graphics.Typeface.BOLD)
+                setTextColor(Color.parseColor("#EF4444"))
+                setBackgroundColor(Color.TRANSPARENT)
+                val btnParams = LinearLayout.LayoutParams(80, 80)
+                layoutParams = btnParams
+                setOnClickListener {
+                    GoogleTasksManager.deleteTask(this@PhoneMainActivity, item.id)
+                    renderTasksList()
+                    updateHubSummaries()
+                }
+            }
+            row.addView(btnDelete)
+
+            llTasksList.addView(row)
         }
     }
 

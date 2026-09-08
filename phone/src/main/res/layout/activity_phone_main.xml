@@ -513,7 +513,7 @@
                         android:id="@+id/tv_hub_adb_badge"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="v1.3.3"
+                        android:text="v1.3.4"
                         android:textSize="10sp"
                         android:textStyle="bold"
                         android:textColor="#38BDF8"
@@ -524,6 +524,76 @@
 
                     <TextView
                         android:id="@+id/tv_chevron_adb"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="›"
+                        android:textSize="18sp"
+                        android:textStyle="bold"
+                        android:textColor="#64748B" />
+                </LinearLayout>
+
+                <!-- 1.5: Việc cần làm & Google Tasks -->
+                <LinearLayout
+                    android:id="@+id/row_menu_tasks"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:background="@drawable/bg_menu_item_row"
+                    android:padding="12dp"
+                    android:layout_marginBottom="14dp"
+                    android:clickable="true"
+                    android:focusable="true">
+
+                    <TextView
+                        android:layout_width="38dp"
+                        android:layout_height="38dp"
+                        android:gravity="center"
+                        android:text="📝"
+                        android:textSize="18sp"
+                        android:background="@drawable/bg_menu_icon_badge"
+                        android:layout_marginEnd="12dp" />
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:id="@+id/tv_menu_title_tasks"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Việc cần làm (Google Tasks)"
+                            android:textSize="13.5sp"
+                            android:textStyle="bold"
+                            android:textColor="#F8FAFC" />
+
+                        <TextView
+                            android:id="@+id/tv_hub_tasks_summary"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Đồng bộ Webhook Google Tasks / Quản lý việc trong máy"
+                            android:textSize="10.5sp"
+                            android:textColor="#94A3B8"
+                            android:layout_marginTop="2dp" />
+                    </LinearLayout>
+
+                    <TextView
+                        android:id="@+id/tv_hub_tasks_badge"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Lưu máy"
+                        android:textSize="9.5sp"
+                        android:textStyle="bold"
+                        android:textColor="#34D399"
+                        android:background="@drawable/bg_pill_badge"
+                        android:paddingHorizontal="7dp"
+                        android:paddingVertical="3dp"
+                        android:layout_marginEnd="8dp" />
+
+                    <TextView
+                        android:id="@+id/tv_chevron_tasks"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="›"
@@ -2539,6 +2609,296 @@
                         android:padding="20dp"
                         android:visibility="gone" />
                 </LinearLayout>
+            </LinearLayout>
+
+            <!-- ============================================================= -->
+            <!-- SUBPAGE: VIỆC CẦN LÀM & GOOGLE TASKS (WEBHOOK & COMPANION)     -->
+            <!-- ============================================================= -->
+            <LinearLayout
+                android:id="@+id/page_tasks"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:visibility="gone">
+
+                <!-- CARD 1: CHỌN CHẾ ĐỘ ĐỒNG BỘ -->
+                <LinearLayout
+                    android:id="@+id/card_tasks_mode"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:background="@drawable/bg_rack_card"
+                    android:padding="16dp"
+                    android:layout_marginBottom="14dp">
+
+                    <TextView
+                        android:id="@+id/tv_tasks_mode_title"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="⚙️ CHỌN CHẾ ĐỘ LƯU VIỆC CẦN LÀM"
+                        android:textSize="12sp"
+                        android:textStyle="bold"
+                        android:textColor="#38BDF8"
+                        android:letterSpacing="0.05"
+                        android:layout_marginBottom="6dp" />
+
+                    <TextView
+                        android:id="@+id/tv_tasks_mode_desc"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Tùy chọn cách thức lưu trữ khi bạn đọc khẩu lệnh 'Thêm việc cần làm...' hoặc 'Thêm vào Google Task...'"
+                        android:textSize="10.5sp"
+                        android:textColor="#94A3B8"
+                        android:layout_marginBottom="12dp" />
+
+                    <RadioGroup
+                        android:id="@+id/rg_tasks_sync_mode"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical">
+
+                        <RadioButton
+                            android:id="@+id/rb_tasks_local"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="Lưu trong Companion (100% ngầm, không cần mạng)"
+                            android:textSize="11.5sp"
+                            android:textColor="#E2E8F0"
+                            android:buttonTint="#38BDF8"
+                            android:paddingVertical="4dp" />
+
+                        <RadioButton
+                            android:id="@+id/rb_tasks_webhook"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="Đồng bộ tự động Google Tasks qua Webhook (Khuyên dùng)"
+                            android:textSize="11.5sp"
+                            android:textColor="#E2E8F0"
+                            android:buttonTint="#38BDF8"
+                            android:paddingVertical="4dp" />
+
+                        <RadioButton
+                            android:id="@+id/rb_tasks_both"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="Song song cả hai (Lưu Companion + Gửi Google Tasks)"
+                            android:textSize="11.5sp"
+                            android:textColor="#E2E8F0"
+                            android:buttonTint="#38BDF8"
+                            android:paddingVertical="4dp" />
+
+                        <RadioButton
+                            android:id="@+id/rb_tasks_share"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="Mở popup Google Tasks (Thủ công - bấm nút Lưu)"
+                            android:textSize="11.5sp"
+                            android:textColor="#E2E8F0"
+                            android:buttonTint="#38BDF8"
+                            android:paddingVertical="4dp" />
+                    </RadioGroup>
+                </LinearLayout>
+
+                <!-- CARD 2: CẤU HÌNH WEBHOOK GOOGLE APPS SCRIPT -->
+                <LinearLayout
+                    android:id="@+id/card_tasks_webhook"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:background="@drawable/bg_rack_card"
+                    android:padding="16dp"
+                    android:layout_marginBottom="14dp">
+
+                    <TextView
+                        android:id="@+id/tv_tasks_webhook_title"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="🌐 CẤU HÌNH GOOGLE APPS SCRIPT WEBHOOK"
+                        android:textSize="12sp"
+                        android:textStyle="bold"
+                        android:textColor="#34D399"
+                        android:letterSpacing="0.05"
+                        android:layout_marginBottom="6dp" />
+
+                    <TextView
+                        android:id="@+id/tv_tasks_webhook_desc"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Tự động thêm việc ngầm vào Google Tasks trong 0.3s khi điện thoại tắt màn hình trong túi:"
+                        android:textSize="10.5sp"
+                        android:textColor="#94A3B8"
+                        android:layout_marginBottom="10dp" />
+
+                    <EditText
+                        android:id="@+id/et_tasks_webhook_url"
+                        android:layout_width="match_parent"
+                        android:layout_height="44dp"
+                        android:hint="Dán Webhook URL (https://script.google.com/...)"
+                        android:textColor="#F8FAFC"
+                        android:textColorHint="#64748B"
+                        android:textSize="11sp"
+                        android:background="@drawable/bg_input_skeuo"
+                        android:paddingHorizontal="12dp"
+                        android:inputType="textUri"
+                        android:layout_marginBottom="10dp" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal">
+
+                        <Button
+                            android:id="@+id/btn_save_webhook"
+                            android:layout_width="0dp"
+                            android:layout_height="38dp"
+                            android:layout_weight="1"
+                            android:text="💾 LƯU URL"
+                            android:textSize="11sp"
+                            android:textStyle="bold"
+                            android:textColor="#0F172A"
+                            android:background="@drawable/bg_btn_gold"
+                            android:backgroundTint="@null"
+                            android:layout_marginEnd="8dp" />
+
+                        <Button
+                            android:id="@+id/btn_test_webhook"
+                            android:layout_width="0dp"
+                            android:layout_height="38dp"
+                            android:layout_weight="1"
+                            android:text="⚡ THỬ KẾT NỐI"
+                            android:textSize="11sp"
+                            android:textStyle="bold"
+                            android:textColor="#FFFFFF"
+                            android:background="@drawable/bg_btn_metallic"
+                            android:backgroundTint="@null" />
+                    </LinearLayout>
+
+                    <TextView
+                        android:id="@+id/tv_webhook_test_status"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text=""
+                        android:textSize="10.5sp"
+                        android:textColor="#34D399"
+                        android:layout_marginTop="8dp"
+                        android:visibility="gone" />
+
+                    <!-- Hướng dẫn tạo Script -->
+                    <LinearLayout
+                        android:id="@+id/layout_script_guide"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:background="@drawable/bg_screen_bezel"
+                        android:padding="12dp"
+                        android:layout_marginTop="12dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="📖 3 BƯỚC TẠO WEBHOOK GOOGLE TASKS (MIỄN PHÍ 100%):"
+                            android:textSize="10.5sp"
+                            android:textStyle="bold"
+                            android:textColor="#F59E0B"
+                            android:layout_marginBottom="6dp" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="1. Vào script.google.com -&gt; Nhấn 'Dự án mới' (New project).\n2. Mục 'Dịch vụ' (Services) bên trái -&gt; Nhấn dấu + -&gt; Chọn 'Google Tasks API' -&gt; Nhấn Thêm (Add).\n3. Dán đoạn mã 3 dòng bên dưới vào -&gt; Nhấn 'Triển khai' (Deploy) -&gt; 'Ứng dụng web mới' (New deployment) -&gt; Ai có quyền truy cập: chọn 'Bất kỳ ai' (Anyone) -&gt; Copy URL Webhook dán vào ô trên."
+                            android:textSize="10sp"
+                            android:textColor="#CBD5E1"
+                            android:lineSpacingExtra="3dp"
+                            android:layout_marginBottom="8dp" />
+
+                        <Button
+                            android:id="@+id/btn_copy_apps_script"
+                            android:layout_width="match_parent"
+                            android:layout_height="34dp"
+                            android:text="📋 SAO CHÉP MÃ APPS SCRIPT (3 DÒNG)"
+                            android:textSize="10.5sp"
+                            android:textStyle="bold"
+                            android:textColor="#F8FAFC"
+                            android:background="@drawable/bg_btn_metallic"
+                            android:backgroundTint="@null" />
+                    </LinearLayout>
+                </LinearLayout>
+
+                <!-- CARD 3: TRÌNH QUẢN LÝ VIỆC CẦN LÀM NỘI BỘ -->
+                <LinearLayout
+                    android:id="@+id/card_tasks_list"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:background="@drawable/bg_rack_card"
+                    android:padding="16dp"
+                    android:layout_marginBottom="24dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:layout_marginBottom="8dp">
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:id="@+id/tv_tasks_list_title"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="📋 VIỆC CẦN LÀM ĐÃ GHI NHẬN"
+                                android:textSize="12sp"
+                                android:textStyle="bold"
+                                android:textColor="#F59E0B"
+                                android:letterSpacing="0.05" />
+
+                            <TextView
+                                android:id="@+id/tv_tasks_counter"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Đang làm: 0 | Hoàn thành: 0"
+                                android:textSize="10sp"
+                                android:textColor="#94A3B8"
+                                android:layout_marginTop="2dp" />
+                        </LinearLayout>
+
+                        <Button
+                            android:id="@+id/btn_clear_completed_tasks"
+                            android:layout_width="wrap_content"
+                            android:layout_height="32dp"
+                            android:text="🗑️ XÓA ĐÃ XONG"
+                            android:textSize="9.5sp"
+                            android:textStyle="bold"
+                            android:textColor="#FFFFFF"
+                            android:background="@drawable/bg_btn_crimson"
+                            android:backgroundTint="@null"
+                            android:paddingHorizontal="10dp" />
+                    </LinearLayout>
+
+                    <!-- Danh sách Task items -->
+                    <LinearLayout
+                        android:id="@+id/ll_tasks_list"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical" />
+
+                    <TextView
+                        android:id="@+id/tv_empty_tasks"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="✓ Chưa có việc cần làm nào. Hãy đọc trên đồng hồ:\n'Thêm việc cần làm: Mua sữa' hoặc 'Thêm vào Google Task...'"
+                        android:textColor="#64748B"
+                        android:textSize="10.5sp"
+                        android:gravity="center"
+                        android:padding="20dp"
+                        android:visibility="gone" />
+                </LinearLayout>
+
             </LinearLayout>
 
         </LinearLayout>

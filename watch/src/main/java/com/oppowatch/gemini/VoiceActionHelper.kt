@@ -168,11 +168,13 @@ object VoiceActionHelper {
             if (replyAction != null) return replyAction
         }
 
-        // 6. Nhận diện THÊM VIỆC CẦN LÀM / OPPO TASK
-        if (lower.startsWith("thêm việc") || lower.startsWith("tạo việc") || lower.startsWith("ghi việc cần làm") ||
-            lower.startsWith("lưu task") || lower.startsWith("thêm task") || lower.startsWith("việc cần làm")) {
+        // 6. Nhận diện THÊM VIỆC CẦN LÀM / GOOGLE TASK / OPPO TASK
+        if (lower.startsWith("thêm việc") || lower.startsWith("tạo việc") || lower.startsWith("ghi việc") ||
+            lower.startsWith("lưu task") || lower.startsWith("thêm task") || lower.startsWith("tạo task") ||
+            lower.startsWith("việc cần làm") || lower.startsWith("thêm vào google task") || lower.startsWith("thêm vào task") ||
+            lower.startsWith("thêm vào việc cần làm") || lower.startsWith("lưu vào google task") || lower.startsWith("lưu việc")) {
             val cleanTask = text.replace(
-                Regex("^(?:thêm việc(?: cần làm)?|tạo việc(?: cần làm)?|ghi việc cần làm|lưu task|thêm task|việc cần làm)(?:\\s*[:là-]?\\s*)", RegexOption.IGNORE_CASE),
+                Regex("^(?:thêm vào google tasks?|lưu vào google tasks?|thêm vào tasks?|thêm vào việc cần làm|lưu vào việc cần làm|thêm việc(?: cần làm)?|tạo việc(?: cần làm)?|lưu việc(?: cần làm)?|ghi việc(?: cần làm)?|lưu task|thêm task|tạo task|việc cần làm)(?:\\s*[:là-]?\\s*)", RegexOption.IGNORE_CASE),
                 ""
             ).trim()
             if (cleanTask.isNotEmpty()) {

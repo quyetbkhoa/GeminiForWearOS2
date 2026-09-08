@@ -130,6 +130,9 @@ object MediaControlHelper {
         return null
     }
 
+    // Cache ID video để không phải gọi mạng lại khi tìm lại câu tương tự
+    private val videoCache = java.util.concurrent.ConcurrentHashMap<String, String>()
+
     /**
      * Tự động tìm kiếm video trên YouTube, trích xuất ID video đầu tiên
      * và gọi Intent phát trực tiếp video đó mà không cần người dùng chọn
@@ -139,6 +142,14 @@ object MediaControlHelper {
         query: String,
         onResult: (Boolean, String) -> Unit
     ) {
+        val cacheKey = query.lowercase().trim()
+        val cachedId = videoCache[cacheKey]
+        if (!cachedId.isNullOrEmpty()) {
+            Log.i(TAG, "Using cached YouTube videoId for '$query': $cachedId")
+            launchYouTubePlayer(context, query, cachedId, onResult)
+            return
+        }
+
         thread(name = "YouTubeSearchLauncherThread") {
             // Đánh thức màn hình tạm thời nếu điện thoại đang tắt màn hình trong túi
             var wakeLock: PowerManager.WakeLock? = null
@@ -158,51 +169,53 @@ object MediaControlHelper {
                 val url = URL(searchUrlStr)
                 val conn = (url.openConnection() as HttpURLConnection).apply {
                     requestMethod = "GET"
-                    setRequestProperty("User-Agent", "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36")
+                    // Dùng Desktop Chrome User-Agent kèm Cookie Consent để YouTube luôn trả về kết quả desktop đầy đủ, không bị chặn hay redirect sang consent wall
+                    setRequestProperty("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36")
                     setRequestProperty("Accept-Language", "vi-VN,vi;q=0.9,en-US;q=0.8,en;q=0.7")
-                    connectTimeout = 5000
-                    readTimeout = 6000
+                    setRequestProperty("Cookie", "CONSENT=YES+cb.20210328-17-p0.en+FX+999; SOCS=CAISNQgDEitib3FfaWRlbnRpdHlmcm9udGVuZHVpc2VydmVyXzIwMjMwODI5LjA4X3AwGgJ2aSACGgYIgLCFpwY")
+                    connectTimeout = 7000
+                    readTimeout = 8000
                 }
 
-                val html = conn.inputStream.bufferedReader().use { it.readText() }
+                val patternVideoId = Pattern.compile("\"videoId\":\"([a-zA-Z0-9_-]{11})\"")
+                val patternWatchUrl = Pattern.compile("/watch\\?v=([a-zA-Z0-9_-]{11})")
+
+                // Đọc theo chunk 16KB và quét Regex dần, dừng ngay khi tìm thấy ID đầu tiên
+                conn.inputStream.use { input ->
+                    val buffer = ByteArray(16384)
+                    val textBuilder = StringBuilder()
+                    var bytesRead: Int
+                    var totalRead = 0
+                    val maxBytesToRead = 1500000 // Tối đa 1.5MB
+
+                    while (input.read(buffer).also { bytesRead = it } != -1 && totalRead < maxBytesToRead) {
+                        totalRead += bytesRead
+                        textBuilder.append(String(buffer, 0, bytesRead, Charsets.UTF_8))
+
+                        val matcher1 = patternVideoId.matcher(textBuilder)
+                        if (matcher1.find()) {
+                            foundVideoId = matcher1.group(1)
+                            break
+                        }
+                        val matcher2 = patternWatchUrl.matcher(textBuilder)
+                        if (matcher2.find()) {
+                            foundVideoId = matcher2.group(1)
+                            break
+                        }
+                    }
+                }
                 conn.disconnect()
 
-                // Tìm videoId đầu tiên trong trang kết quả tìm kiếm của YouTube
-                val pattern = Pattern.compile("\"videoId\":\"([a-zA-Z0-9_-]{11})\"")
-                val matcher = pattern.matcher(html)
-                if (matcher.find()) {
-                    foundVideoId = matcher.group(1)
-                    Log.i(TAG, "Found first YouTube videoId for query '$query': $foundVideoId")
+                if (!foundVideoId.isNullOrEmpty()) {
+                    Log.i(TAG, "Found first YouTube videoId for '$query': $foundVideoId")
+                    videoCache[cacheKey] = foundVideoId!!
                 }
             } catch (e: Exception) {
                 Log.w(TAG, "Search query scrape failed: ${e.message}")
             }
 
-            val targetPackage = getTargetYouTubePackage(context)
-
             try {
-                if (!foundVideoId.isNullOrEmpty()) {
-                    // Mở trực tiếp video để Morphe YouTube autoplay ngay lập tức
-                    val videoUri = Uri.parse("vnd.youtube:$foundVideoId")
-                    val intent = Intent(Intent.ACTION_VIEW, videoUri).apply {
-                        targetPackage?.let { setPackage(it) }
-                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
-                    }
-                    context.startActivity(intent)
-                    onResult(true, "Đang phát video $query trên YouTube")
-                } else {
-                    // Dự phòng nếu không parse được videoId: Mở trang kết quả tìm kiếm của YouTube
-                    val searchUri = Uri.parse("vnd.youtube:results?q=" + URLEncoder.encode(query, "UTF-8"))
-                    val intent = Intent(Intent.ACTION_VIEW, searchUri).apply {
-                        targetPackage?.let { setPackage(it) }
-                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
-                    }
-                    context.startActivity(intent)
-                    onResult(true, "Đang mở tìm kiếm $query trên YouTube")
-                }
-            } catch (e: Exception) {
-                Log.e(TAG, "Cannot launch YouTube activity: ${e.message}")
-                onResult(false, "Không thể mở ứng dụng YouTube: ${e.message}")
+                launchYouTubePlayer(context, query, foundVideoId, onResult)
             } finally {
                 try {
                     if (wakeLock?.isHeld == true) {
@@ -210,6 +223,41 @@ object MediaControlHelper {
                     }
                 } catch (_: Exception) {}
             }
+        }
+    }
+
+    private fun launchYouTubePlayer(
+        context: Context,
+        query: String,
+        videoId: String?,
+        onResult: (Boolean, String) -> Unit
+    ) {
+        val targetPackage = getTargetYouTubePackage(context)
+        try {
+            if (!videoId.isNullOrEmpty()) {
+                // Mở trực tiếp video để Morphe YouTube / YouTube autoplay ngay lập tức
+                val videoUri = Uri.parse("vnd.youtube:$videoId")
+                val intent = Intent(Intent.ACTION_VIEW, videoUri).apply {
+                    targetPackage?.let { setPackage(it) }
+                    putExtra("autoplay", true)
+                    putExtra("play", true)
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+                }
+                context.startActivity(intent)
+                onResult(true, "Đang phát video $query trên YouTube")
+            } else {
+                // Dự phòng nếu không parse được videoId: Mở trang kết quả tìm kiếm của YouTube
+                val searchUri = Uri.parse("vnd.youtube:results?q=" + URLEncoder.encode(query, "UTF-8"))
+                val intent = Intent(Intent.ACTION_VIEW, searchUri).apply {
+                    targetPackage?.let { setPackage(it) }
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+                }
+                context.startActivity(intent)
+                onResult(true, "Đang mở tìm kiếm $query trên YouTube")
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Cannot launch YouTube activity: ${e.message}")
+            onResult(false, "Không thể mở ứng dụng YouTube: ${e.message}")
         }
     }
 }

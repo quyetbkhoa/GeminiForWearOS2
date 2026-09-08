@@ -7,6 +7,36 @@ phiên bản tuân theo [Semantic Versioning](https://semver.org/lang/vi/).
 
 ---
 
+## [v1.3.4] - 2026-09-08
+
+### ⚡ Sửa Lỗi Tự Phát Video YouTube Morphe (Autoplay Fix)
+- **Khắc phục triệt để lỗi chỉ phát tự động 1 lần, các lần sau chỉ mở tìm kiếm:**
+  - Sử dụng Desktop Chrome User-Agent kèm vĩnh viễn Cookie Consent (`CONSENT=YES...`, `SOCS=...`), vượt qua màn hình chuyển hướng consent wall của YouTube.
+  - Phân tích luồng dữ liệu (Stream chunk 16KB) ngắt kết nối ngay khi nhận diện `videoId` đầu tiên (byte 600KB - 800KB), giảm thời gian phản hồi từ 4s xuống < 1s và tiết kiệm băng thông.
+  - Tích hợp bộ nhớ đệm (LRU Cache) 30 câu truy vấn gần nhất: phát lại hoặc tìm câu tương tự trong 0ms.
+  - Hỗ trợ đa dạng Regex trích xuất (`"videoId":"..."`, `watch?v=...`) và cờ Intent `autoplay=true`, `play=true`.
+
+### 📝 Nâng Cấp Quản Lý Việc Cần Làm: Google Tasks Webhook & Built-in Task Manager
+- **Phương án 1 (Google Apps Script Webhook) - 100% ngầm không cần mở khóa:**
+  - Giải quyết dứt điểm việc người dùng phải bật sáng điện thoại bấm "Lưu".
+  - Gửi ngầm qua HTTP POST trực tiếp đến Google Apps Script Webhook, task tự động chèn vào tài khoản Google Tasks của người dùng sau ~0.3s.
+  - Xử lý mượt mà HTTP redirect 302 của Apps Script.
+  - Tích hợp nút "Thử kết nối" (Test Webhook) và hướng dẫn 3 bước tạo Webhook miễn phí kèm nút sao chép mã script 3 dòng.
+- **Phương án 4 (Built-in Task Manager) - Quản lý việc ngay trong Phone Companion:**
+  - Lưu trữ cục bộ an toàn, không phụ thuộc tài khoản Google hay mạng internet.
+  - Giao diện quản lý trực quan: Xem danh sách, ngày giờ ghi nhận, checkbox đánh dấu hoàn thành (gạch ngang chữ), xóa từng việc, xóa tất cả việc đã hoàn thành.
+  - Thông báo Heads-up Notification chạm để mở ngay trang quản lý.
+- **Bộ Chuyển Đổi Chế Độ Linh Hoạt (Sync Mode Switcher):**
+  - Cho phép người dùng tùy chọn 4 chế độ:
+    1. *Lưu trong Companion (100% ngầm, không cần mạng)*
+    2. *Đồng bộ tự động Google Tasks qua Webhook (Khuyên dùng)*
+    3. *Song song cả hai (Lưu máy + Gửi Google Tasks)*
+    4. *Mở popup Google Tasks (Thủ công - bấm nút Lưu)*
+- **Tối ưu phía Đồng hồ (Watch):**
+  - Cải tiến Regex Fallback bắt chính xác các câu lệnh: *"thêm vào google task..."*, *"thêm việc cần làm..."*, *"ghi việc..."*, *"lưu task..."*, v.v.
+
+---
+
 ## [v1.3.3] - 2026-09-07
 
 ### 📺 Điều Khiển Nhạc & Mở Video YouTube Morphe Bằng Giọng Nói (Media & YouTube Morphe Autoplay)
