@@ -480,7 +480,7 @@
                         android:layout_width="38dp"
                         android:layout_height="38dp"
                         android:gravity="center"
-                        android:text="⚡"
+                        android:text="🥝"
                         android:textSize="18sp"
                         android:background="@drawable/bg_menu_icon_badge"
                         android:layout_marginEnd="12dp" />
@@ -495,7 +495,7 @@
                             android:id="@+id/tv_menu_title_adb"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="Cài đặt không dây (ADB) &amp; Cập nhật"
+                            android:text="Quản lý &amp; Cập nhật (Kiwi Manager)"
                             android:textSize="12.5sp"
                             android:textStyle="bold"
                             android:textColor="#F8FAFC" />
@@ -504,7 +504,7 @@
                             android:id="@+id/tv_hub_adb_summary"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="Đồng hồ tự nhận diện IP:5555 qua Bluetooth"
+                            android:text="Cập nhật tự động cho Phone &amp; Watch qua Kiwi Manager"
                             android:textSize="10.5sp"
                             android:textColor="#94A3B8" />
                     </LinearLayout>
@@ -513,7 +513,7 @@
                         android:id="@+id/tv_hub_adb_badge"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="v1.3.4"
+                        android:text="v1.3.5"
                         android:textSize="10sp"
                         android:textStyle="bold"
                         android:textColor="#38BDF8"
@@ -2031,306 +2031,7 @@
             </LinearLayout>
 
             <!-- ============================================================= -->
-            <!-- 4. SUB-PAGE 3: WIRELESS ADB & CẬP NHẬT HỆ THỐNG               -->
-            <!-- ============================================================= -->
-            <LinearLayout
-                android:id="@+id/page_adb_update"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:visibility="gone">
-
-                <!-- GitHub Update Section -->
-                <LinearLayout
-                    android:id="@+id/card_update_panel"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:background="@drawable/bg_rack_panel"
-                    android:padding="14dp"
-                    android:layout_marginBottom="14dp">
-
-                    <TextView
-                        android:id="@+id/tv_update_header"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="🌐 TRUNG TÂM CẬP NHẬT HỆ THỐNG:"
-                        android:textSize="11.5sp"
-                        android:textStyle="bold"
-                        android:textColor="#F59E0B"
-                        android:letterSpacing="0.04"
-                        android:layout_marginBottom="6dp" />
-
-                    <!-- Mobile App Version -->
-                    <TextView
-                        android:id="@+id/tv_app_version"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="📱 Phiên bản Mobile: v1.3.2"
-                        android:textSize="10.5sp"
-                        android:textColor="#34D399"
-                        android:textStyle="bold" />
-
-                    <!-- Android OS Version -->
-                    <TextView
-                        android:id="@+id/tv_android_version"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="🤖 Hệ điều hành Android: Đang tải..."
-                        android:textSize="10.5sp"
-                        android:textColor="#38BDF8"
-                        android:textStyle="bold"
-                        android:layout_marginTop="2dp"
-                        android:layout_marginBottom="4dp" />
-
-                    <TextView
-                        android:id="@+id/tv_repo_info"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Kho lưu trữ: quyetbkhoa/GeminiForWearOS2"
-                        android:textSize="10sp"
-                        android:textColor="#64748B"
-                        android:layout_marginBottom="8dp" />
-
-                    <TextView
-                        android:id="@+id/tv_update_status"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Bấm nút bên dưới để kiểm tra bản phát hành mới nhất từ GitHub:"
-                        android:textSize="10sp"
-                        android:textColor="#94A3B8"
-                        android:layout_marginBottom="8dp" />
-
-                    <ProgressBar
-                        android:id="@+id/pb_update_progress"
-                        style="?android:attr/progressBarStyleHorizontal"
-                        android:layout_width="match_parent"
-                        android:layout_height="8dp"
-                        android:visibility="gone"
-                        android:max="100"
-                        android:layout_marginBottom="8dp" />
-
-                    <Button
-                        android:id="@+id/btn_check_update"
-                        android:layout_width="match_parent"
-                        android:layout_height="40dp"
-                        android:text="🔍 KIỂM TRA BẢN PHÁT HÀNH MỚI"
-                        android:textSize="10.5sp"
-                        android:textStyle="bold"
-                        android:textColor="#0F172A"
-                        android:background="@drawable/bg_btn_gold"
-                        android:backgroundTint="@null" />
-                </LinearLayout>
-
-                <!-- BƯỚC 1: Cập nhật Mobile Section -->
-                <LinearLayout
-                    android:id="@+id/card_step1_panel"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:background="@drawable/bg_rack_panel"
-                    android:padding="14dp"
-                    android:layout_marginBottom="14dp">
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:gravity="center_vertical"
-                        android:layout_marginBottom="6dp">
-
-                        <TextView
-                            android:id="@+id/tv_step1_header"
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:text="📲 BƯỚC 1: CẬP NHẬT ỨNG DỤNG MOBILE"
-                            android:textSize="11.5sp"
-                            android:textStyle="bold"
-                            android:textColor="#F59E0B"
-                            android:letterSpacing="0.04" />
-
-                        <TextView
-                            android:id="@+id/tv_step1_badge"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="BƯỚC 1"
-                            android:textSize="9sp"
-                            android:textStyle="bold"
-                            android:textColor="#F59E0B"
-                            android:background="@drawable/bg_pill_badge"
-                            android:paddingHorizontal="6dp"
-                            android:paddingVertical="2dp" />
-                    </LinearLayout>
-
-                    <TextView
-                        android:id="@+id/tv_step1_desc"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="Cập nhật ứng dụng điện thoại trước. Sau khi cài đặt thành công bản Mobile, mới tiến hành Bước 2 để cập nhật đồng hồ."
-                        android:textSize="10sp"
-                        android:textColor="#94A3B8"
-                        android:layout_marginBottom="8dp" />
-
-                    <ProgressBar
-                        android:id="@+id/pb_step1_progress"
-                        style="?android:attr/progressBarStyleHorizontal"
-                        android:layout_width="match_parent"
-                        android:layout_height="6dp"
-                        android:visibility="gone"
-                        android:max="100"
-                        android:layout_marginBottom="8dp" />
-
-                    <Button
-                        android:id="@+id/btn_update_step1"
-                        android:layout_width="match_parent"
-                        android:layout_height="40dp"
-                        android:text="📲 BƯỚC 1: TẢI &amp; CÀI ĐẶT BẢN MOBILE"
-                        android:textSize="10.5sp"
-                        android:textStyle="bold"
-                        android:textColor="#FFFFFF"
-                        android:background="@drawable/bg_btn_gold"
-                        android:backgroundTint="@null" />
-                </LinearLayout>
-
-                <!-- BƯỚC 2: Wireless ADB Wear OS Section -->
-                <LinearLayout
-                    android:id="@+id/card_adb_panel"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:background="@drawable/bg_rack_panel"
-                    android:padding="14dp"
-                    android:layout_marginBottom="14dp">
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:gravity="center_vertical"
-                        android:layout_marginBottom="6dp">
-
-                        <TextView
-                            android:id="@+id/tv_adb_header"
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:text="⚡ BƯỚC 2: CẬP NHẬT WEAR OS QUA ADB"
-                            android:textSize="11.5sp"
-                            android:textStyle="bold"
-                            android:textColor="#38BDF8"
-                            android:letterSpacing="0.04" />
-
-                        <TextView
-                            android:id="@+id/tv_adb_badge"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="BƯỚC 2"
-                            android:textSize="9sp"
-                            android:textStyle="bold"
-                            android:textColor="#34D399"
-                            android:background="@drawable/bg_pill_badge"
-                            android:paddingHorizontal="6dp"
-                            android:paddingVertical="2dp" />
-                    </LinearLayout>
-
-                    <TextView
-                        android:id="@+id/tv_adb_instructions"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="Chỉ cập nhật Wear qua Wireless Debug (không dùng Bluetooth). Sau khi cập nhật Mobile thành công, bật 'Gỡ lỗi qua Wi-Fi' trên đồng hồ và bấm cài đặt bên dưới:"
-                        android:textSize="10sp"
-                        android:textColor="#94A3B8"
-                        android:layout_marginBottom="8dp" />
-
-                    <!-- IP and Port inputs -->
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:gravity="center_vertical"
-                        android:layout_marginBottom="8dp">
-
-                        <EditText
-                            android:id="@+id/et_watch_adb_ip"
-                            android:layout_width="0dp"
-                            android:layout_height="40dp"
-                            android:layout_weight="3"
-                            android:background="@drawable/bg_input_skeuo"
-                            android:hint="IP Watch (192.168.x.x)"
-                            android:textColorHint="#475569"
-                            android:textColor="#F8FAFC"
-                            android:textSize="11.5sp"
-                            android:fontFamily="monospace"
-                            android:paddingHorizontal="10dp"
-                            android:singleLine="true"
-                            android:inputType="text" />
-
-                        <EditText
-                            android:id="@+id/et_watch_adb_port"
-                            android:layout_width="0dp"
-                            android:layout_height="40dp"
-                            android:layout_weight="1.5"
-                            android:background="@drawable/bg_input_skeuo"
-                            android:text="5555"
-                            android:hint="Port"
-                            android:textColorHint="#475569"
-                            android:textColor="#38BDF8"
-                            android:textSize="11.5sp"
-                            android:fontFamily="monospace"
-                            android:gravity="center"
-                            android:singleLine="true"
-                            android:inputType="number"
-                            android:layout_marginStart="6dp" />
-
-                        <Button
-                            android:id="@+id/btn_auto_detect_ip"
-                            android:layout_width="wrap_content"
-                            android:layout_height="40dp"
-                            android:text="🔍 DÒ TỰ ĐỘNG"
-                            android:textSize="10sp"
-                            android:textStyle="bold"
-                            android:textColor="#FFFFFF"
-                            android:background="@drawable/bg_btn_metallic"
-                            android:backgroundTint="@null"
-                            android:paddingHorizontal="10dp"
-                            android:layout_marginStart="6dp" />
-                    </LinearLayout>
-
-                    <Button
-                        android:id="@+id/btn_adb_install"
-                        android:layout_width="match_parent"
-                        android:layout_height="42dp"
-                        android:text="⚡ BƯỚC 2: CÀI ĐẶT LÊN ĐỒNG HỒ QUA ADB"
-                        android:textSize="10.5sp"
-                        android:textStyle="bold"
-                        android:textColor="#FFFFFF"
-                        android:background="@drawable/bg_btn_emerald"
-                        android:backgroundTint="@null"
-                        android:layout_marginBottom="8dp" />
-
-                    <ProgressBar
-                        android:id="@+id/pb_adb_progress"
-                        style="?android:attr/progressBarStyleHorizontal"
-                        android:layout_width="match_parent"
-                        android:layout_height="6dp"
-                        android:visibility="gone"
-                        android:indeterminate="true"
-                        android:layout_marginBottom="6dp" />
-
-                    <TextView
-                        android:id="@+id/tv_adb_status"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="Sẵn sàng kết nối ADB (chỉ cập nhật qua Wireless Debug, không dùng Bluetooth)."
-                        android:textColor="#94A3B8"
-                        android:textSize="10sp"
-                        android:lineSpacingExtra="2dp" />
-                </LinearLayout>
-            </LinearLayout>
-
-            <!-- ============================================================= -->
-            <!-- 5. SUB-PAGE 4: GIAO DIỆN & CHỦ ĐỀ ĐỒNG BỘ                     -->
+            <!-- 4. SUB-PAGE 4: GIAO DIỆN & CHỦ ĐỀ ĐỒNG BỘ                     -->
             <!-- ============================================================= -->
             <LinearLayout
                 android:id="@+id/page_theme"

@@ -80,13 +80,12 @@ GeminiVoiceAssistant/
 │   └── src/main/res/                    # Giao diện Skeuomorphism kim loại
 └── phone/                               # Module ứng dụng chạy trên Điện thoại Android
     ├── src/main/java/com/oppowatch/gemini/phone/
-    │   ├── PhoneMainActivity.kt         # Giao diện lọc Checkbox & Điều khiển Wireless ADB
-    │   ├── WatchAdbInstaller.kt         # Client Wireless ADB (dadb) kết nối port 5555 & pm install
+    │   ├── PhoneMainActivity.kt         # Giao diện Companion & điều hướng tính năng
+    │   ├── KiwiManagerLauncher.kt       # Kết nối Kiwi Manager quản lý cập nhật tập trung
     │   ├── BluetoothFilterManager.kt    # Quản lý danh sách MAC address được tick
     │   ├── TtsSpeaker.kt                # Khởi tạo và phát Google TTS tiếng Việt
     │   ├── PhoneWearableListenerService.kt # Lắng nghe tin nhắn từ đồng hồ
-    │   ├── GitHubUpdateManager.kt       # Kiểm tra và tải bản cập nhật từ GitHub API
-    │   └── WatchApkPusher.kt            # Đẩy APK đồng hồ qua Wi-Fi / Bluetooth ChannelClient
+    │   └── GoogleTasksManager.kt        # Quản lý Google Tasks và Apps Script Webhook
     └── src/main/res/
 ```
 

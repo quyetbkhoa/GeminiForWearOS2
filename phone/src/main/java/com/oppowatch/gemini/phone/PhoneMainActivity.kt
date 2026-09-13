@@ -45,7 +45,6 @@ class PhoneMainActivity : AppCompatActivity() {
         HUB,
         GEMINI_API,
         BLUETOOTH,
-        ADB_UPDATE,
         THEME,
         QA_HISTORY,
         ERROR_LOGS,
@@ -72,7 +71,6 @@ class PhoneMainActivity : AppCompatActivity() {
     private lateinit var layoutHub: LinearLayout
     private lateinit var pageGeminiApi: LinearLayout
     private lateinit var pageBluetooth: LinearLayout
-    private lateinit var pageAdbUpdate: LinearLayout
     private lateinit var pageTheme: LinearLayout
     private lateinit var pageQaHistory: LinearLayout
     private lateinit var pageErrorLogs: LinearLayout
@@ -143,7 +141,6 @@ class PhoneMainActivity : AppCompatActivity() {
     // Subpage Labels & Notes
     private lateinit var tvApiKeyNote: TextView
     private lateinit var tvBluetoothDesc: TextView
-    private lateinit var tvUpdateHeader: TextView
     private lateinit var tvStyleLabel: TextView
     private lateinit var tvColorModeLabel: TextView
 
@@ -193,35 +190,6 @@ class PhoneMainActivity : AppCompatActivity() {
     private lateinit var tvOverlayAccessBadge: TextView
     private lateinit var tvOverlayDesc: TextView
     private lateinit var btnGrantOverlayAccess: Button
-
-    // Sub-Page 3: Wireless ADB & GitHub Update Views
-    private lateinit var cardUpdatePanel: LinearLayout
-    private lateinit var tvAppVersion: TextView
-    private lateinit var tvAndroidVersion: TextView
-    private lateinit var tvRepoInfo: TextView
-    private lateinit var tvUpdateStatus: TextView
-    private lateinit var pbUpdateProgress: ProgressBar
-    private lateinit var btnCheckUpdate: Button
-
-    private lateinit var cardStep1Panel: LinearLayout
-    private lateinit var tvStep1Header: TextView
-    private lateinit var tvStep1Badge: TextView
-    private lateinit var tvStep1Desc: TextView
-    private lateinit var pbStep1Progress: ProgressBar
-    private lateinit var btnUpdateStep1: Button
-
-    private lateinit var cardAdbPanel: LinearLayout
-    private lateinit var tvAdbHeader: TextView
-    private lateinit var tvAdbBadge: TextView
-    private lateinit var tvAdbInstructions: TextView
-    private lateinit var etWatchAdbIp: EditText
-    private lateinit var etWatchAdbPort: EditText
-    private lateinit var btnAutoDetectIp: Button
-    private lateinit var btnAdbInstall: Button
-    private lateinit var pbAdbProgress: ProgressBar
-    private lateinit var tvAdbStatus: TextView
-
-    private var latestUpdateInfo: GitHubUpdateManager.UpdateInfo? = null
 
     // Sub-Page 4: Theme Selector Views
     private lateinit var cardThemeSelector: LinearLayout
@@ -279,22 +247,6 @@ class PhoneMainActivity : AppCompatActivity() {
 
     private val receiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
-            if (intent?.action == "com.oppowatch.gemini.WATCH_ADB_INFO_RECEIVED") {
-                val ip = intent.getStringExtra("ip") ?: ""
-                val port = intent.getIntExtra("port", 5555)
-                val adbReady = intent.getBooleanExtra("adb_ready", false)
-                if (ip.isNotEmpty() && ::etWatchAdbIp.isInitialized) {
-                    etWatchAdbIp.setText(ip)
-                    etWatchAdbPort.setText(port.toString())
-                    if (::tvAdbStatus.isInitialized) {
-                        if (adbReady) {
-                            tvAdbStatus.text = "✓ Đồng hồ gửi IP qua Bluetooth: $ip:$port (Gỡ lỗi Wi-Fi: BẬT)"
-                        } else {
-                            tvAdbStatus.text = "ℹ️ Đồng hồ báo IP: $ip (Chưa bật 'Gỡ lỗi qua Wi-Fi' hoặc cổng 5555 chưa mở)"
-                        }
-                    }
-                }
-            }
             loadQaHistory()
             loadErrorLogs()
             renderTasksList()
@@ -344,26 +296,6 @@ class PhoneMainActivity : AppCompatActivity() {
                 loadErrorLogs()
                 updateHubSummaries()
             }
-        } else if (messageEvent.path == "/watch_adb_info") {
-            try {
-                val json = JSONObject(String(messageEvent.data, Charsets.UTF_8))
-                val ip = json.optString("ip", "")
-                val port = json.optInt("port", 5555)
-                val adbReady = json.optBoolean("adb_ready", false)
-                if (ip.isNotEmpty()) {
-                    runOnUiThread {
-                        if (::etWatchAdbIp.isInitialized) etWatchAdbIp.setText(ip)
-                        if (::etWatchAdbPort.isInitialized) etWatchAdbPort.setText(port.toString())
-                        if (::tvAdbStatus.isInitialized) {
-                            if (adbReady) {
-                                tvAdbStatus.text = "✓ Đồng hồ gửi IP qua Bluetooth: $ip:$port (Gỡ lỗi Wi-Fi: BẬT)"
-                            } else {
-                                tvAdbStatus.text = "ℹ️ Đồng hồ báo IP: $ip (Chưa bật 'Gỡ lỗi qua Wi-Fi' hoặc cổng 5555 chưa mở)"
-                            }
-                        }
-                    }
-                }
-            } catch (_: Exception) {}
         }
     }
 
@@ -383,8 +315,6 @@ class PhoneMainActivity : AppCompatActivity() {
         setupModelSection()
         setupApiKeySection()
         setupBluetoothSection()
-        setupAdbSection()
-        setupUpdateSection()
         setupQaHistorySection()
         setupErrorLogsSection()
         setupTasksManagerSection()
@@ -401,7 +331,6 @@ class PhoneMainActivity : AppCompatActivity() {
         val filter = IntentFilter().apply {
             addAction("com.oppowatch.gemini.TTS_RECEIVED")
             addAction("com.oppowatch.gemini.ERROR_LOG_RECEIVED")
-            addAction("com.oppowatch.gemini.WATCH_ADB_INFO_RECEIVED")
             addAction("com.oppowatch.gemini.TASK_ADDED")
         }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -433,7 +362,6 @@ class PhoneMainActivity : AppCompatActivity() {
         layoutHub = findViewById(R.id.layout_hub)
         pageGeminiApi = findViewById(R.id.page_gemini_api)
         pageBluetooth = findViewById(R.id.page_bluetooth)
-        pageAdbUpdate = findViewById(R.id.page_adb_update)
         pageTheme = findViewById(R.id.page_theme)
         pageQaHistory = findViewById(R.id.page_qa_history)
         pageErrorLogs = findViewById(R.id.page_error_logs)
@@ -539,33 +467,6 @@ class PhoneMainActivity : AppCompatActivity() {
             }
         }
 
-        // Subpage 3 Views
-        cardUpdatePanel = findViewById(R.id.card_update_panel)
-        tvAppVersion = findViewById(R.id.tv_app_version)
-        tvAndroidVersion = findViewById(R.id.tv_android_version)
-        tvRepoInfo = findViewById(R.id.tv_repo_info)
-        tvUpdateStatus = findViewById(R.id.tv_update_status)
-        pbUpdateProgress = findViewById(R.id.pb_update_progress)
-        btnCheckUpdate = findViewById(R.id.btn_check_update)
-
-        cardStep1Panel = findViewById(R.id.card_step1_panel)
-        tvStep1Header = findViewById(R.id.tv_step1_header)
-        tvStep1Badge = findViewById(R.id.tv_step1_badge)
-        tvStep1Desc = findViewById(R.id.tv_step1_desc)
-        pbStep1Progress = findViewById(R.id.pb_step1_progress)
-        btnUpdateStep1 = findViewById(R.id.btn_update_step1)
-
-        cardAdbPanel = findViewById(R.id.card_adb_panel)
-        tvAdbHeader = findViewById(R.id.tv_adb_header)
-        tvAdbBadge = findViewById(R.id.tv_adb_badge)
-        tvAdbInstructions = findViewById(R.id.tv_adb_instructions)
-        etWatchAdbIp = findViewById(R.id.et_watch_adb_ip)
-        etWatchAdbPort = findViewById(R.id.et_watch_adb_port)
-        btnAutoDetectIp = findViewById(R.id.btn_auto_detect_ip)
-        btnAdbInstall = findViewById(R.id.btn_adb_install)
-        pbAdbProgress = findViewById(R.id.pb_adb_progress)
-        tvAdbStatus = findViewById(R.id.tv_adb_status)
-
         // Subpage 4 Views
         cardThemeSelector = findViewById(R.id.card_theme_selector)
         tvThemeLabel = findViewById(R.id.tv_theme_label)
@@ -613,7 +514,6 @@ class PhoneMainActivity : AppCompatActivity() {
         // Subpage Notes & Descriptions
         tvApiKeyNote = findViewById(R.id.tv_api_key_note)
         tvBluetoothDesc = findViewById(R.id.tv_bluetooth_desc)
-        tvUpdateHeader = findViewById(R.id.tv_update_header)
         tvStyleLabel = findViewById(R.id.tv_style_label)
         tvColorModeLabel = findViewById(R.id.tv_color_mode_label)
 
@@ -660,7 +560,7 @@ class PhoneMainActivity : AppCompatActivity() {
         rowMenuVoiceGuide.setOnClickListener { navigateTo(NavPage.VOICE_GUIDE) }
         rowMenuGeminiApi.setOnClickListener { navigateTo(NavPage.GEMINI_API) }
         rowMenuBluetooth.setOnClickListener { navigateTo(NavPage.BLUETOOTH) }
-        rowMenuAdbUpdate.setOnClickListener { navigateTo(NavPage.ADB_UPDATE) }
+        rowMenuAdbUpdate.setOnClickListener { KiwiManagerLauncher.openOrPrompt(this) }
         rowMenuTheme.setOnClickListener { navigateTo(NavPage.THEME) }
         rowMenuTasks.setOnClickListener { navigateTo(NavPage.TASKS_MANAGER) }
         rowMenuQaHistory.setOnClickListener { navigateTo(NavPage.QA_HISTORY) }
@@ -693,7 +593,6 @@ class PhoneMainActivity : AppCompatActivity() {
         pageVoiceGuide.visibility = if (page == NavPage.VOICE_GUIDE) View.VISIBLE else View.GONE
         pageGeminiApi.visibility = if (page == NavPage.GEMINI_API) View.VISIBLE else View.GONE
         pageBluetooth.visibility = if (page == NavPage.BLUETOOTH) View.VISIBLE else View.GONE
-        pageAdbUpdate.visibility = if (page == NavPage.ADB_UPDATE) View.VISIBLE else View.GONE
         pageTheme.visibility = if (page == NavPage.THEME) View.VISIBLE else View.GONE
         pageQaHistory.visibility = if (page == NavPage.QA_HISTORY) View.VISIBLE else View.GONE
         pageErrorLogs.visibility = if (page == NavPage.ERROR_LOGS) View.VISIBLE else View.GONE
@@ -718,10 +617,6 @@ class PhoneMainActivity : AppCompatActivity() {
                 NavPage.BLUETOOTH -> {
                     tvNavTitle.text = "🎧 TAI NGHE BLUETOOTH"
                     tvNavSubtitle.text = "Cài đặt > Bộ lọc thiết bị phát âm TTS"
-                }
-                NavPage.ADB_UPDATE -> {
-                    tvNavTitle.text = "⚡ WIRELESS ADB"
-                    tvNavSubtitle.text = "Cài đặt > Cài APK qua Wi-Fi & Cập nhật"
                 }
                 NavPage.THEME -> {
                     tvNavTitle.text = "🎨 GIAO DIỆN & THEME"
@@ -770,18 +665,12 @@ class PhoneMainActivity : AppCompatActivity() {
         tvHubBluetoothSummary.text = "Lọc phát âm TTS • $selectedCount thiết bị đang BẬT"
         tvHubBluetoothBadge.text = "$selectedCount Bật"
 
-        // 3. ADB & Update
+        // 3. Kiwi Manager & Update
         val currentVersion = try {
-            packageManager.getPackageInfo(packageName, 0).versionName ?: "1.3.4"
-        } catch (_: Exception) { "1.3.4" }
+            packageManager.getPackageInfo(packageName, 0).versionName ?: "1.3.5"
+        } catch (_: Exception) { "1.3.5" }
         tvHubAdbBadge.text = "v$currentVersion"
-        tvHubAdbSummary.text = "Wireless ADB Sideload • Mobile v$currentVersion"
-        if (::tvAppVersion.isInitialized) {
-            tvAppVersion.text = "📱 Phiên bản Mobile: v$currentVersion"
-        }
-        if (::tvAndroidVersion.isInitialized) {
-            tvAndroidVersion.text = "🤖 Hệ điều hành Android: Android ${Build.VERSION.RELEASE} (API ${Build.VERSION.SDK_INT})"
-        }
+        tvHubAdbSummary.text = "Quản lý cập nhật qua Kiwi Manager • v$currentVersion"
 
         // 4. Theme
         val style = ThemeManager.getStyle(this)
@@ -948,9 +837,6 @@ class PhoneMainActivity : AppCompatActivity() {
         layoutScriptGuide.setBackgroundResource(config.bezelDrawable)
         cardHistoryRack.setBackgroundResource(config.bezelDrawable)
         cardErrorLogsRack.setBackgroundResource(config.bezelDrawable)
-        cardUpdatePanel.setBackgroundResource(config.panelDrawable)
-        cardStep1Panel.setBackgroundResource(config.panelDrawable)
-        cardAdbPanel.setBackgroundResource(config.panelDrawable)
 
         val guideCardIds = listOf(
             R.id.card_guide_header,
@@ -970,26 +856,17 @@ class PhoneMainActivity : AppCompatActivity() {
 
         // Inputs & Buttons
         etGeminiApiKey.setBackgroundResource(config.inputDrawable)
-        etWatchAdbIp.setBackgroundResource(config.inputDrawable)
-        etWatchAdbPort.setBackgroundResource(config.inputDrawable)
 
         val inputTextColor = if (isLight) Color.parseColor("#0F172A") else Color.parseColor("#F8FAFC")
         val inputHintColor = if (isLight) Color.parseColor("#94A3B8") else Color.parseColor("#475569")
 
         etGeminiApiKey.setTextColor(inputTextColor)
         etGeminiApiKey.setHintTextColor(inputHintColor)
-        etWatchAdbIp.setTextColor(inputTextColor)
-        etWatchAdbIp.setHintTextColor(inputHintColor)
-        etWatchAdbPort.setTextColor(if (isLight) Color.parseColor("#0284C7") else Color.parseColor("#38BDF8"))
-        etWatchAdbPort.setHintTextColor(inputHintColor)
 
         etTasksWebhookUrl.setBackgroundResource(config.inputDrawable)
         etTasksWebhookUrl.setTextColor(inputTextColor)
         etTasksWebhookUrl.setHintTextColor(inputHintColor)
 
-        btnAutoDetectIp.setBackgroundResource(config.btnPrimaryDrawable)
-        btnAutoDetectIp.setTextColor(if (isLight) Color.parseColor("#0F172A") else Color.parseColor("#FFFFFF"))
-        btnAdbInstall.setBackgroundResource(config.btnEmeraldDrawable)
         btnToggleApiVisibility.setBackgroundResource(config.btnPrimaryDrawable)
         btnSaveApiKey.setBackgroundResource(config.btnEmeraldDrawable)
         btnTestApiKey.setBackgroundResource(config.btnPrimaryDrawable)
@@ -999,9 +876,6 @@ class PhoneMainActivity : AppCompatActivity() {
         btnClearHistory.setBackgroundResource(config.btnCrimsonDrawable)
         btnClearErrorLogs.setBackgroundResource(config.btnCrimsonDrawable)
         btnTestTts.setBackgroundResource(config.btnEmeraldDrawable)
-        btnCheckUpdate.setBackgroundResource(config.btnGoldDrawable)
-        btnUpdateStep1.setBackgroundResource(config.btnGoldDrawable)
-        btnUpdateStep1.setTextColor(Color.parseColor("#0F172A"))
 
         btnSaveWebhook.setBackgroundResource(config.btnGoldDrawable)
         btnSaveWebhook.setTextColor(if (isLight) Color.parseColor("#0F172A") else Color.parseColor("#0F172A"))
@@ -1050,20 +924,6 @@ class PhoneMainActivity : AppCompatActivity() {
         btnGrantOverlayAccess.setBackgroundResource(config.btnPrimaryDrawable)
         btnGrantOverlayAccess.setTextColor(if (isLight) Color.parseColor("#0F172A") else Color.parseColor("#FFFFFF"))
         updateOverlayPermissionStatus()
-
-        tvUpdateHeader.setTextColor(if (isLight) Color.parseColor("#B45309") else Color.parseColor("#F59E0B"))
-        tvAppVersion.setTextColor(if (isLight) Color.parseColor("#047857") else Color.parseColor("#34D399"))
-        tvAndroidVersion.setTextColor(if (isLight) Color.parseColor("#0284C7") else Color.parseColor("#38BDF8"))
-        tvRepoInfo.setTextColor(if (isLight) Color.parseColor("#64748B") else Color.parseColor("#94A3B8"))
-        tvUpdateStatus.setTextColor(if (isLight) Color.parseColor("#475569") else config.textSecondaryColor)
-
-        tvStep1Header.setTextColor(if (isLight) Color.parseColor("#B45309") else Color.parseColor("#F59E0B"))
-        tvStep1Badge.setTextColor(if (isLight) Color.parseColor("#B45309") else Color.parseColor("#F59E0B"))
-        tvStep1Desc.setTextColor(if (isLight) Color.parseColor("#475569") else config.textSecondaryColor)
-
-        tvAdbHeader.setTextColor(if (isLight) Color.parseColor("#0284C7") else Color.parseColor("#38BDF8"))
-        tvAdbInstructions.setTextColor(if (isLight) Color.parseColor("#475569") else config.textSecondaryColor)
-        tvAdbStatus.setTextColor(if (isLight) Color.parseColor("#475569") else Color.parseColor("#94A3B8"))
 
         tvThemeLabel.setTextColor(if (isLight) Color.parseColor("#B45309") else config.titleTextColor)
         tvThemeSublabel.setTextColor(if (isLight) Color.parseColor("#475569") else config.textSecondaryColor)
@@ -1818,273 +1678,6 @@ class PhoneMainActivity : AppCompatActivity() {
         }
     }
 
-    private fun setupUpdateSection() {
-        val currentMobileVersion = try {
-            packageManager.getPackageInfo(packageName, 0).versionName ?: "1.0.0"
-        } catch (_: Exception) { "1.0.0" }
-
-        tvAppVersion.text = "📱 Phiên bản Mobile: v$currentMobileVersion"
-        tvAndroidVersion.text = "🤖 Hệ điều hành Android: Android ${Build.VERSION.RELEASE} (API ${Build.VERSION.SDK_INT})"
-
-        btnCheckUpdate.setOnClickListener {
-            btnCheckUpdate.isEnabled = false
-            tvUpdateStatus.text = "Đang kiểm tra GitHub Releases..."
-            pbUpdateProgress.visibility = View.VISIBLE
-            pbUpdateProgress.isIndeterminate = true
-
-            GitHubUpdateManager.checkUpdate(this) { result ->
-                pbUpdateProgress.isIndeterminate = false
-                pbUpdateProgress.visibility = View.GONE
-                btnCheckUpdate.isEnabled = true
-
-                result.onSuccess { info ->
-                    latestUpdateInfo = info
-                    val isMobileNewer = GitHubUpdateManager.isVersionNewer(info.tagName, currentMobileVersion)
-
-                    if (info.hasUpdate && isMobileNewer) {
-                        tvUpdateStatus.text = "Phát hiện bản mới: ${info.tagName} (Hiện tại: v$currentMobileVersion)!\n👉 Hãy thực hiện Bước 1 (Cập nhật Mobile), sau đó thực hiện Bước 2 (Cập nhật Wear qua ADB)."
-                        tvStep1Desc.text = "Có bản mới: ${info.tagName}. Bấm nút bên dưới để tải và cài đặt bản Mobile trước."
-                        btnUpdateStep1.text = "📲 BƯỚC 1: CẬP NHẬT MOBILE LÊN ${info.tagName}"
-                        tvAdbInstructions.text = "⚠️ Hãy hoàn thành Bước 1 (Cập nhật Mobile) trước. Sau đó bật 'Gỡ lỗi qua Wi-Fi' trên đồng hồ và bấm cài đặt Bước 2 bên dưới (không qua Bluetooth):"
-                    } else {
-                        tvUpdateStatus.text = "Mobile đang ở bản mới nhất (${info.tagName}).\n👉 Bạn có thể tiến hành Bước 2 để cập nhật đồng hồ qua Wireless ADB."
-                        tvStep1Desc.text = "✓ Ứng dụng Mobile đã ở phiên bản mới nhất (${info.tagName})."
-                        btnUpdateStep1.text = "✓ CÀI LẠI MOBILE (${info.tagName})"
-                        tvAdbInstructions.text = "Bật 'Gỡ lỗi qua Wi-Fi' trên OPPO Watch và bấm nút Bước 2 bên dưới để cập nhật đồng hồ qua Wireless ADB (không qua Bluetooth):"
-                    }
-                }.onFailure { err ->
-                    tvUpdateStatus.text = "Lỗi kiểm tra bản mới: ${err.message}"
-                }
-            }
-        }
-
-        btnUpdateStep1.setOnClickListener {
-            val info = latestUpdateInfo
-            if (info != null) {
-                performStep1MobileUpdate(info)
-            } else {
-                tvStep1Desc.text = "Đang kiểm tra thông tin bản phát hành..."
-                pbStep1Progress.visibility = View.VISIBLE
-                pbStep1Progress.isIndeterminate = true
-                GitHubUpdateManager.checkUpdate(this) { result ->
-                    pbStep1Progress.isIndeterminate = false
-                    pbStep1Progress.visibility = View.GONE
-                    result.onSuccess { checkedInfo ->
-                        latestUpdateInfo = checkedInfo
-                        performStep1MobileUpdate(checkedInfo)
-                    }.onFailure { err ->
-                        tvStep1Desc.text = "Lỗi kiểm tra bản phát hành: ${err.message}"
-                    }
-                }
-            }
-        }
-    }
-
-    private fun performStep1MobileUpdate(info: GitHubUpdateManager.UpdateInfo) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            if (!packageManager.canRequestPackageInstalls()) {
-                Toast.makeText(this, "Vui lòng bật quyền 'Cài đặt ứng dụng không rõ nguồn' để cập nhật Mobile", Toast.LENGTH_LONG).show()
-                val intent = Intent(android.provider.Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES).apply {
-                    data = android.net.Uri.parse("package:$packageName")
-                }
-                startActivity(intent)
-                return
-            }
-        }
-
-        if (info.phoneDownloadUrl.isNullOrEmpty()) {
-            Toast.makeText(this, "Không tìm thấy link tải Phone APK trên GitHub Release!", Toast.LENGTH_LONG).show()
-            tvStep1Desc.text = "Lỗi: Bản phát hành ${info.tagName} không chứa Phone APK."
-            return
-        }
-
-        btnUpdateStep1.isEnabled = false
-        pbStep1Progress.visibility = View.VISIBLE
-        pbStep1Progress.progress = 0
-        tvStep1Desc.text = "Đang tải bản cập nhật Mobile ${info.tagName} từ GitHub..."
-
-        val phoneApkFile = File(cacheDir, "Gemini_Phone_Companion_Update.apk")
-        GitHubUpdateManager.downloadPhoneApk(this, info.phoneDownloadUrl, phoneApkFile, object : GitHubUpdateManager.UpdateProgressListener {
-            override fun onStatus(message: String) {
-                tvStep1Desc.text = message
-            }
-
-            override fun onProgress(stage: String, percent: Int) {
-                pbStep1Progress.progress = percent
-                tvStep1Desc.text = "$stage: $percent%"
-            }
-
-            override fun onComplete() {
-                pbStep1Progress.visibility = View.GONE
-                btnUpdateStep1.isEnabled = true
-                tvStep1Desc.text = "✓ Đã tải xong Mobile APK! Đang mở trình cài đặt Android..."
-                GitHubUpdateManager.installPhoneApk(this@PhoneMainActivity, phoneApkFile)
-                Toast.makeText(this@PhoneMainActivity, "Hãy bấm 'Cập nhật' trên màn hình để hoàn tất Bước 1!", Toast.LENGTH_LONG).show()
-            }
-
-            override fun onError(error: String) {
-                pbStep1Progress.visibility = View.GONE
-                btnUpdateStep1.isEnabled = true
-                tvStep1Desc.text = "Lỗi tải Mobile: $error"
-            }
-        })
-    }
-
-    private fun setupAdbSection() {
-        val prefs = getSharedPreferences("gemini_companion_prefs", Context.MODE_PRIVATE)
-        val savedIp = prefs.getString("saved_watch_adb_ip", "")
-        if (!savedIp.isNullOrEmpty()) {
-            etWatchAdbIp.setText(savedIp)
-        }
-
-        WatchAdbInstaller.autoDetectWatchAdbIp(this) { foundIp ->
-            if (foundIp != null) {
-                etWatchAdbIp.setText(foundIp)
-                prefs.edit().putString("saved_watch_adb_ip", foundIp).apply()
-                tvAdbStatus.text = "✓ Đã tìm thấy đồng hồ tại $foundIp:5555 (ADB sẵn sàng)"
-            }
-        }
-
-        btnAutoDetectIp.setOnClickListener {
-            btnAutoDetectIp.isEnabled = false
-            tvAdbStatus.text = "🔍 Đang quét các dải IP trên Wi-Fi & Hotspot tìm cổng 5555..."
-            pbAdbProgress.visibility = View.VISIBLE
-            WatchAdbInstaller.autoDetectWatchAdbIp(this) { foundIp ->
-                btnAutoDetectIp.isEnabled = true
-                pbAdbProgress.visibility = View.GONE
-                if (foundIp != null) {
-                    etWatchAdbIp.setText(foundIp)
-                    prefs.edit().putString("saved_watch_adb_ip", foundIp).apply()
-                    tvAdbStatus.text = "✓ Đã tìm thấy đồng hồ tại $foundIp:5555!"
-                    Toast.makeText(this, "Đã tìm thấy đồng hồ: $foundIp", Toast.LENGTH_SHORT).show()
-                } else {
-                    tvAdbStatus.text = "⚠️ Không quét thấy đồng hồ mở cổng 5555.\nHãy đảm bảo: 1) Đã bật 'Gỡ lỗi qua Wi-Fi' trên đồng hồ, 2) Kết nối cùng Wi-Fi hoặc Hotspot của điện thoại."
-                    Toast.makeText(this, "Không tìm thấy. Bạn có thể nhập IP hiển thị trên đồng hồ vào ô.", Toast.LENGTH_LONG).show()
-                }
-            }
-        }
-
-        btnAdbInstall.setOnClickListener {
-            val ip = etWatchAdbIp.text.toString().trim()
-            val portStr = etWatchAdbPort.text.toString().trim()
-            val port = portStr.toIntOrNull() ?: 5555
-
-            if (ip.isEmpty()) {
-                Toast.makeText(this, "Vui lòng nhập IP đồng hồ hoặc bấm 'DÒ TỰ ĐỘNG'!", Toast.LENGTH_SHORT).show()
-                return@setOnClickListener
-            }
-
-            prefs.edit().putString("saved_watch_adb_ip", ip).apply()
-
-            btnAdbInstall.isEnabled = false
-            pbAdbProgress.visibility = View.VISIBLE
-            tvAdbStatus.text = "🔍 Đang chuẩn bị bản APK Wear OS cho đồng hồ..."
-
-            val watchApkFile = File(cacheDir, "Gemini_Watch_App_Update.apk")
-
-            val info = latestUpdateInfo
-            if (info != null) {
-                proceedAdbWatchInstall(ip, port, watchApkFile, info)
-            } else {
-                GitHubUpdateManager.checkUpdate(this) { result ->
-                    result.onSuccess { checkedInfo ->
-                        latestUpdateInfo = checkedInfo
-                        proceedAdbWatchInstall(ip, port, watchApkFile, checkedInfo)
-                    }.onFailure { err ->
-                        if (watchApkFile.exists() && watchApkFile.length() > 0L) {
-                            tvAdbStatus.text = "⚠️ Không kiểm tra được GitHub, đang cài file APK có sẵn sang $ip..."
-                            executeAdbInstall(ip, port, watchApkFile)
-                        } else {
-                            btnAdbInstall.isEnabled = true
-                            pbAdbProgress.visibility = View.GONE
-                            tvAdbStatus.text = "Lỗi kiểm tra cập nhật: ${err.message}"
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    private fun proceedAdbWatchInstall(
-        ip: String,
-        port: Int,
-        watchApkFile: File,
-        info: GitHubUpdateManager.UpdateInfo
-    ) {
-        var needDownload = !watchApkFile.exists() || watchApkFile.length() == 0L
-        if (!needDownload) {
-            try {
-                val archiveInfo = packageManager.getPackageArchiveInfo(watchApkFile.absolutePath, 0)
-                val cachedVer = archiveInfo?.versionName ?: ""
-                if (cachedVer.isNotEmpty() && !info.tagName.contains(cachedVer)) {
-                    Log.i(TAG, "File APK trong cache ($cachedVer) cũ hơn bản mới (${info.tagName}), xóa để tải lại...")
-                    watchApkFile.delete()
-                    needDownload = true
-                }
-            } catch (_: Exception) {
-                watchApkFile.delete()
-                needDownload = true
-            }
-        }
-
-        if (needDownload) {
-            if (!info.watchDownloadUrl.isNullOrEmpty()) {
-                tvAdbStatus.text = "Đang tải APK Wear OS bản ${info.tagName} từ GitHub..."
-                GitHubUpdateManager.downloadWatchApk(this, info.watchDownloadUrl, watchApkFile, object : GitHubUpdateManager.UpdateProgressListener {
-                    override fun onStatus(message: String) {
-                        tvAdbStatus.text = message
-                    }
-
-                    override fun onProgress(stage: String, percent: Int) {
-                        tvAdbStatus.text = "$stage: $percent%"
-                    }
-
-                    override fun onComplete() {
-                        tvAdbStatus.text = "✓ Tải APK ${info.tagName} xong (${watchApkFile.length() / 1024} KB). Đang kết nối Wireless ADB tới $ip..."
-                        executeAdbInstall(ip, port, watchApkFile)
-                    }
-
-                    override fun onError(error: String) {
-                        btnAdbInstall.isEnabled = true
-                        pbAdbProgress.visibility = View.GONE
-                        tvAdbStatus.text = "Lỗi tải APK đồng hồ: $error"
-                    }
-                }, onComplete = {})
-            } else {
-                btnAdbInstall.isEnabled = true
-                pbAdbProgress.visibility = View.GONE
-                tvAdbStatus.text = "Không tìm thấy link tải APK đồng hồ trên GitHub Release!"
-            }
-        } else {
-            tvAdbStatus.text = "✓ APK bản ${info.tagName} đã sẵn sàng. Đang kết nối Wireless ADB tới $ip..."
-            executeAdbInstall(ip, port, watchApkFile)
-        }
-    }
-
-    private fun executeAdbInstall(ip: String, port: Int, apkFile: File) {
-        btnAdbInstall.isEnabled = false
-        pbAdbProgress.visibility = View.VISIBLE
-
-        WatchAdbInstaller.installApkOverAdb(this, ip, port, apkFile, object : WatchAdbInstaller.AdbInstallCallback {
-            override fun onStatus(message: String) {
-                tvAdbStatus.text = message
-            }
-
-            override fun onSuccess() {
-                btnAdbInstall.isEnabled = true
-                pbAdbProgress.visibility = View.GONE
-                updateHubSummaries()
-                Toast.makeText(this@PhoneMainActivity, "🎉 ĐÃ CÀI ĐẶT THÀNH CÔNG LÊN ĐỒNG HỒ!", Toast.LENGTH_LONG).show()
-            }
-
-            override fun onError(error: String) {
-                btnAdbInstall.isEnabled = true
-                pbAdbProgress.visibility = View.GONE
-                Toast.makeText(this@PhoneMainActivity, "Lỗi cài đặt qua ADB: $error", Toast.LENGTH_LONG).show()
-            }
-        })
-    }
-
     private fun autoSyncApiKeyToWatch() {
         val prefs = getSharedPreferences("gemini_prefs", Context.MODE_PRIVATE)
         val savedKey = prefs.getString("custom_api_key", "") ?: ""
@@ -2116,15 +1709,6 @@ class PhoneMainActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
-        val currentMobileVersion = try {
-            packageManager.getPackageInfo(packageName, 0).versionName ?: "1.0.0"
-        } catch (_: Exception) { "1.0.0" }
-        if (::tvAppVersion.isInitialized) {
-            tvAppVersion.text = "📱 Phiên bản Mobile: v$currentMobileVersion"
-        }
-        if (::tvAndroidVersion.isInitialized) {
-            tvAndroidVersion.text = "🤖 Hệ điều hành Android: Android ${Build.VERSION.RELEASE} (API ${Build.VERSION.SDK_INT})"
-        }
         checkPermissionsAndLoadDevices(userInitiated = false)
         loadQaHistory()
         loadErrorLogs()

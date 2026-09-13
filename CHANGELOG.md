@@ -7,6 +7,19 @@ phiên bản tuân theo [Semantic Versioning](https://semver.org/lang/vi/).
 
 ---
 
+## [v1.3.5] - 2026-09-14
+
+### 🥝 Tích Hợp Kiwi Manager & Chuyển Giao Quản Lý Cập Nhật Tập Trung
+- **Chuyển toàn bộ cơ chế cập nhật sang Kiwi Manager:**
+  - Loại bỏ hoàn toàn module kiểm tra và tải bản cập nhật cũ (`GitHubUpdateManager.kt`).
+  - Loại bỏ bộ điều khiển Wireless ADB thủ công (`WatchAdbInstaller.kt`) cùng giao diện 2 bước (Bước 1 Mobile APK, Bước 2 Wear ADB) khỏi ứng dụng Companion.
+  - Gỡ bỏ thư viện `dev.mobile:dadb:1.2.6` khỏi `phone/build.gradle.kts`, giảm dung lượng ứng dụng Companion.
+  - Tích hợp `KiwiManagerLauncher`: 1 chạm điều hướng trực tiếp sang Kiwi Manager để cập nhật tự động cho cả Điện thoại và Đồng hồ Wear OS; tự động gợi ý cài đặt nếu chưa có.
+- **Chuẩn hóa hệ sinh thái Kiwi Ecosystem:**
+  - Đồng bộ `versionCode` theo công thức quy chuẩn `MAJOR * 10000 + MINOR * 100 + PATCH` (`10305`).
+  - Nâng `versionName` lên `1.3.5` đồng bộ giữa hai module `phone` và `watch`.
+  - Cập nhật User-Agent kết nối Tasks Webhook thành `GeminiOppoWatch/1.3.5`.
+
 ## [v1.3.4] - 2026-09-08
 
 ### ⚡ Sửa Lỗi Tự Phát Video YouTube Morphe (Autoplay Fix)

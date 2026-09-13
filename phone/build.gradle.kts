@@ -10,8 +10,8 @@ android {
         applicationId = "com.oppowatch.gemini"
         minSdk = 26
         targetSdk = 34
-        versionCode = 17
-        versionName = "1.3.4"
+        versionCode = 10305
+        versionName = "1.3.5"
     }
 
     lint {
@@ -60,5 +60,4 @@ dependencies {
     implementation(libs.androidx.appcompat)
     implementation(libs.material)
     implementation(libs.play.services.wearable)
-    implementation("dev.mobile:dadb:1.2.6")
 }
