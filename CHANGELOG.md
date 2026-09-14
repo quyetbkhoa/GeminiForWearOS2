@@ -7,6 +7,32 @@ phiên bản tuân theo [Semantic Versioning](https://semver.org/lang/vi/).
 
 ---
 
+## [v1.3.6] - 2026-09-14
+
+### 🔲 Giao Diện Trắng - Đen Material Design & Tắt Màn Hình Khi Hủy
+- **Nút Hủy (Cancel) thoát app và tắt màn hình tức thì:**
+  - Chạm nút **✕** sẽ hủy ngay lập tức phiên thu âm hoặc yêu cầu gọi Gemini đang chạy, ngắt kết nối mạng và giải phóng WakeLock.
+  - Tắt / khóa màn hình đồng hồ đa cơ chế:
+    - Kích hoạt `GLOBAL_ACTION_LOCK_SCREEN` qua `SwipeAccessibilityService`.
+    - Lệnh giả lập phím Power/Sleep (`input keyevent 26` / `223`) hỗ trợ cả root (`su`) và shell.
+    - Ép độ sáng màn hình về 0.0f làm tối đen ngay lập tức.
+  - Thoát hoàn toàn ứng dụng bằng `finishAffinity()` và `finishAndRemoveTask()` quay về mặt đồng hồ (Watch Face).
+- **Thiết kế Trắng - Đen Material Design tối giản:**
+  - Loại bỏ hoàn toàn thanh tiêu đề mang tên ứng dụng "GEMINI AI" và các chi tiết viền kim loại / kính skeuomorphic nhiều màu.
+  - Sử dụng bảng màu thuần Đen OLED (`#000000`), Trắng sáng (`#FFFFFF`) và Xám (`#9E9E9E`).
+  - Biểu tượng micro và nút cancel đổi sang phong cách monochrome tương phản cao.
+- **Tối ưu bố cục tỷ lệ 80% / 20% trên đồng hồ:**
+  - **80% diện tích bên trên:** Dành trọn vẹn cho vùng hiển thị văn bản cuộn mượt (`ScrollView`), hiển thị câu trả lời và trạng thái sắc nét, dễ đọc trên mặt đồng hồ.
+  - **20% diện tích bên dưới (Bottom Bar):** Bố trí 3 thành phần vuông Material bo góc (Squircle) theo hàng ngang:
+    - **Nút Ghi âm:** Vuông bo góc 46x46dp. Trạng thái chờ: nền đen xám viền nét + mic trắng. Trạng thái nói: nền trắng nổi bật + mic đen. Hỗ trợ cả 2 chế độ: Chạm 1 lần để nói (Tap-to-talk tự dừng sau 1.3s im lặng) hoặc Nhấn giữ thả tay (Push-To-Talk).
+    - **Nút Hủy:** Vuông bo góc 46x46dp với biểu tượng `✕` màu trắng. Chạm vào để thoát app và tắt màn hình ngay.
+    - **Ô Phiên bản:** Khối vuông bo góc 46x46dp hiển thị chính xác phiên bản ứng dụng (`v1.3.6`).
+- **Nâng cấp phiên bản toàn hệ thống:**
+  - Đồng bộ `versionCode = 10306` và `versionName = "1.3.6"` cho cả hai module `watch` và `phone`.
+  - Cập nhật User-Agent kết nối Tasks Webhook thành `GeminiOppoWatch/1.3.6`.
+
+---
+
 ## [v1.3.5] - 2026-09-14
 
 ### 🥝 Tích Hợp Kiwi Manager & Chuyển Giao Quản Lý Cập Nhật Tập Trung

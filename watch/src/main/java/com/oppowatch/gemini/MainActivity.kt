@@ -31,13 +31,11 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var recorderHelper: AudioRecorderHelper
     private lateinit var layoutRoot: LinearLayout
-    private lateinit var tvHeaderTitle: TextView
-    private lateinit var tvHeaderVersion: TextView
     private lateinit var tvStatus: TextView
-    private lateinit var containerResultCard: LinearLayout
     private lateinit var tvResult: TextView
     private lateinit var scrollResult: ScrollView
     private lateinit var pttContainer: FrameLayout
+    private lateinit var ivMicIcon: ImageView
     private lateinit var tvAppVersion: TextView
     private lateinit var btnCancel: FrameLayout
     private lateinit var ivCancelIcon: ImageView
@@ -119,27 +117,24 @@ class MainActivity : AppCompatActivity() {
         }
 
         layoutRoot = findViewById(R.id.layout_root)
-        tvHeaderTitle = findViewById(R.id.tv_header_title)
-        tvHeaderVersion = findViewById(R.id.tv_header_version)
         tvStatus = findViewById(R.id.tv_status)
-        containerResultCard = findViewById(R.id.container_result_card)
         tvResult = findViewById(R.id.tv_result)
         scrollResult = findViewById(R.id.scroll_result)
         pttContainer = findViewById(R.id.btn_ptt_container)
-        tvAppVersion = findViewById(R.id.tv_app_version)
+        ivMicIcon = findViewById(R.id.iv_mic_icon)
         btnCancel = findViewById(R.id.btn_cancel)
         ivCancelIcon = findViewById(R.id.iv_cancel_icon)
+        tvAppVersion = findViewById(R.id.tv_app_version)
         viewDimOverlay = findViewById(R.id.view_dim_overlay)
 
         // Hiển thị số phiên bản ứng dụng động ở góc màn hình
         val versionName = try {
-            packageManager.getPackageInfo(packageName, 0).versionName ?: "1.3.5"
-        } catch (_: Exception) { "1.3.5" }
-        tvHeaderVersion.text = "v$versionName"
+            packageManager.getPackageInfo(packageName, 0).versionName ?: "1.3.6"
+        } catch (_: Exception) { "1.3.6" }
         tvAppVersion.text = "v$versionName"
 
         btnCancel.setOnClickListener {
-            cancelVoiceRecording()
+            exitAppAndTurnOffScreen()
         }
 
         recorderHelper = AudioRecorderHelper(this)
@@ -183,121 +178,85 @@ class MainActivity : AppCompatActivity() {
         PhoneCommunicator.sendWatchAdbInfoToPhone(this)
     }
 
-    private fun getPttIdleDrawable(): Int {
-        return when (currentThemeCombined) {
-            "skeuo_light" -> R.drawable.bg_watch_ptt_skeuo_light
-            "glass_dark" -> R.drawable.bg_watch_ptt_glass_dark
-            "glass_light" -> R.drawable.bg_watch_ptt_glass_light
-            "material_dark" -> R.drawable.bg_watch_ptt_m3
-            "material_light" -> R.drawable.bg_watch_ptt_light
-            else -> R.drawable.bg_watch_ptt_dark // skeuo_dark
-        }
-    }
+    private fun getPttIdleDrawable(): Int = R.drawable.bg_watch_btn_square
 
-    private fun getStatusIdleColor(): Int {
-        return when (currentThemeCombined) {
-            "skeuo_light" -> Color.parseColor("#475569")
-            "glass_dark" -> Color.parseColor("#7DD3FC")
-            "glass_light" -> Color.parseColor("#0284C7")
-            "material_dark" -> Color.parseColor("#A7F3D0")
-            "material_light" -> Color.parseColor("#334155")
-            else -> Color.parseColor("#94A3B8") // skeuo_dark
-        }
-    }
+    private fun getStatusIdleColor(): Int = Color.parseColor("#9E9E9E")
 
-    private fun getStatusAccentColor(): Int {
-        return when (currentThemeCombined) {
-            "skeuo_light" -> Color.parseColor("#B45309")
-            "glass_dark" -> Color.parseColor("#38BDF8")
-            "glass_light" -> Color.parseColor("#0284C7")
-            "material_dark" -> Color.parseColor("#80CBC4")
-            "material_light" -> Color.parseColor("#0F766E")
-            else -> Color.parseColor("#E5C158") // skeuo_dark
-        }
-    }
+    private fun getStatusAccentColor(): Int = Color.WHITE
 
-    private fun getStatusSuccessColor(): Int {
-        return when (currentThemeCombined) {
-            "skeuo_light", "glass_light", "material_light" -> Color.parseColor("#059669")
-            else -> Color.parseColor("#34D399")
-        }
-    }
+    private fun getStatusSuccessColor(): Int = Color.WHITE
 
     private fun applyWatchTheme() {
         val isRec = if (::recorderHelper.isInitialized) recorderHelper.isRecording else false
 
-        when (currentThemeCombined) {
-            "skeuo_light" -> {
-                // Skeuomorphism Light: Thép không gỉ chải xước viền đồng cổ
-                layoutRoot.setBackgroundColor(Color.parseColor("#E2E8F0"))
-                tvHeaderTitle.setTextColor(Color.parseColor("#92400E"))
-                tvStatus.setTextColor(Color.parseColor("#475569"))
-                containerResultCard.setBackgroundResource(R.drawable.bg_watch_plate_skeuo_light)
-                tvResult.setTextColor(Color.parseColor("#0F172A"))
-                if (!isRec) pttContainer.setBackgroundResource(R.drawable.bg_watch_ptt_skeuo_light)
-            }
-            "glass_dark" -> {
-                // Liquid Glass Dark: Kính mờ acrylic phát quang trên nền Cosmic Deep Sapphire
-                layoutRoot.setBackgroundColor(Color.parseColor("#070B18"))
-                tvHeaderTitle.setTextColor(Color.parseColor("#38BDF8"))
-                tvStatus.setTextColor(Color.parseColor("#7DD3FC"))
-                containerResultCard.setBackgroundResource(R.drawable.bg_watch_plate_glass_dark)
-                tvResult.setTextColor(Color.parseColor("#F8FAFC"))
-                if (!isRec) pttContainer.setBackgroundResource(R.drawable.bg_watch_ptt_glass_dark)
-            }
-            "glass_light" -> {
-                // Liquid Glass Light: Kính băng tuyết mờ acrylic trên nền Crystal Ice
-                layoutRoot.setBackgroundColor(Color.parseColor("#EDF5FC"))
-                tvHeaderTitle.setTextColor(Color.parseColor("#0284C7"))
-                tvStatus.setTextColor(Color.parseColor("#0369A1"))
-                containerResultCard.setBackgroundResource(R.drawable.bg_watch_plate_glass_light)
-                tvResult.setTextColor(Color.parseColor("#0C4A6E"))
-                if (!isRec) pttContainer.setBackgroundResource(R.drawable.bg_watch_ptt_glass_light)
-            }
-            "material_dark" -> {
-                // Material 3 Dark
-                layoutRoot.setBackgroundColor(Color.parseColor("#121418"))
-                tvHeaderTitle.setTextColor(Color.parseColor("#80CBC4"))
-                tvStatus.setTextColor(Color.parseColor("#A7F3D0"))
-                containerResultCard.setBackgroundResource(R.drawable.bg_watch_plate_m3)
-                tvResult.setTextColor(Color.parseColor("#E2E8F0"))
-                if (!isRec) pttContainer.setBackgroundResource(R.drawable.bg_watch_ptt_m3)
-            }
-            "material_light" -> {
-                // Material 3 Light: Ceramic trắng tinh tế
-                layoutRoot.setBackgroundColor(Color.parseColor("#F8FAFC"))
-                tvHeaderTitle.setTextColor(Color.parseColor("#0F766E"))
-                tvStatus.setTextColor(Color.parseColor("#334155"))
-                containerResultCard.setBackgroundResource(R.drawable.bg_watch_plate_light)
-                tvResult.setTextColor(Color.parseColor("#0F172A"))
-                if (!isRec) pttContainer.setBackgroundResource(R.drawable.bg_watch_ptt_light)
-            }
-            else -> {
-                // Skeuomorphism Dark: Cơ khí Obsidian Titanium sang trọng
-                layoutRoot.setBackgroundColor(Color.parseColor("#000000"))
-                tvHeaderTitle.setTextColor(Color.parseColor("#E5C158"))
-                tvStatus.setTextColor(Color.parseColor("#94A3B8"))
-                containerResultCard.setBackgroundResource(R.drawable.bg_watch_plate_dark)
-                tvResult.setTextColor(Color.parseColor("#F1F5F9"))
-                if (!isRec) pttContainer.setBackgroundResource(R.drawable.bg_watch_ptt_dark)
-            }
+        layoutRoot.setBackgroundColor(Color.BLACK)
+        tvResult.setTextColor(Color.WHITE)
+        tvStatus.setTextColor(Color.parseColor("#9E9E9E"))
+        tvAppVersion.setTextColor(Color.parseColor("#9E9E9E"))
+
+        if (isRec) {
+            pttContainer.setBackgroundResource(R.drawable.bg_watch_btn_square_active)
+            if (::ivMicIcon.isInitialized) ivMicIcon.setColorFilter(Color.BLACK)
+        } else {
+            pttContainer.setBackgroundResource(R.drawable.bg_watch_btn_square)
+            if (::ivMicIcon.isInitialized) ivMicIcon.setColorFilter(Color.WHITE)
         }
 
-        val isLight = when (currentThemeCombined) {
-            "skeuo_light", "glass_light", "material_light" -> true
-            else -> false
-        }
-        if (::tvHeaderVersion.isInitialized) {
-            tvHeaderVersion.setTextColor(if (isLight) Color.parseColor("#94A3B8") else Color.parseColor("#64748B"))
-        }
-        if (::tvAppVersion.isInitialized) {
-            tvAppVersion.setTextColor(if (isLight) Color.parseColor("#64748B") else Color.parseColor("#94A3B8"))
-        }
         if (::btnCancel.isInitialized) {
-            btnCancel.setBackgroundResource(
-                if (isLight) R.drawable.bg_watch_btn_cancel_light else R.drawable.bg_watch_btn_cancel
-            )
+            btnCancel.setBackgroundResource(R.drawable.bg_watch_btn_square)
+            if (::ivCancelIcon.isInitialized) ivCancelIcon.setColorFilter(Color.WHITE)
         }
+    }
+
+    /**
+     * Nút Hủy: Thoát ngay ứng dụng và tắt/khóa màn hình đồng hồ
+     */
+    private fun exitAppAndTurnOffScreen() {
+        Log.d("MainActivity", "Nút Hủy được bấm: Hủy tác vụ, tắt màn hình và thoát app.")
+        vibrateTick(80, 100)
+        isUserExplicitlyCancelled = true
+
+        cancelAutoDimTimer()
+
+        if (::recorderHelper.isInitialized && recorderHelper.isRecording) {
+            recorderHelper.cancelRecording()
+        }
+
+        if (isProcessingGemini) {
+            GeminiClient.cancelCurrentRequest()
+            isProcessingGemini = false
+        }
+
+        releaseWakeLock()
+
+        // 1. Khóa / tắt màn hình qua SwipeAccessibilityService nếu có
+        var screenTurnedOff = SwipeAccessibilityService.lockScreen()
+
+        // 2. Thử qua root lệnh tắt màn hình (Power key 26 hoặc Sleep 223)
+        if (!screenTurnedOff) {
+            try {
+                Runtime.getRuntime().exec(arrayOf("su", "-c", "input keyevent 26"))
+                screenTurnedOff = true
+            } catch (_: Exception) {}
+        }
+
+        // 3. Fallback lệnh shell bình thường
+        if (!screenTurnedOff) {
+            try {
+                Runtime.getRuntime().exec("input keyevent 26")
+            } catch (_: Exception) {}
+        }
+
+        // 4. Ép độ sáng về 0 để màn hình đen hoàn toàn
+        try {
+            val lp = window.attributes
+            lp.screenBrightness = 0.0f
+            window.attributes = lp
+        } catch (_: Exception) {}
+
+        // 5. Thoát hẳn ứng dụng và dọn sạch task
+        finishAffinity()
+        finishAndRemoveTask()
     }
 
     override fun onDestroy() {
@@ -346,6 +305,7 @@ class MainActivity : AppCompatActivity() {
             // Khi người dùng bật lại màn hình: TUYỆT ĐỐI KHÔNG TỰ ĐỘNG GHI ÂM
             if (!recorderHelper.isRecording && !isProcessingGemini) {
                 pttContainer.setBackgroundResource(getPttIdleDrawable())
+                if (::ivMicIcon.isInitialized) ivMicIcon.setColorFilter(Color.WHITE)
                 tvStatus.text = "NHẤN ĐỂ NÓI"
                 tvStatus.setTextColor(getStatusIdleColor())
             }
@@ -490,11 +450,14 @@ class MainActivity : AppCompatActivity() {
                     true
                 }
                 MotionEvent.ACTION_UP -> {
+                    val duration = System.currentTimeMillis() - touchDownTime
                     if (recorderHelper.isRecording) {
                         if (isUserExplicitlyCancelled) {
                             recorderHelper.cancelRecording()
-                        } else {
+                        } else if (duration >= 400L) {
                             finishVoiceRecording()
+                        } else {
+                            Log.d("MainActivity", "Chế độ chạm: tiếp tục ghi âm chờ im lặng 1.3s")
                         }
                     }
                     true
@@ -522,7 +485,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     /**
-     * Hủy bỏ toàn bộ quá trình thu âm / gọi Gemini (nhấn nút Cancel hoặc trượt ngón tay ra xa) - TUYỆT ĐỐI KHÔNG GỬI
+     * Hủy bỏ toàn bộ quá trình thu âm / gọi Gemini khi trượt ngón tay ra xa - TUYỆT ĐỐI KHÔNG GỬI
      */
     private fun cancelVoiceRecording() {
         cancelAutoDimTimer()
@@ -542,11 +505,12 @@ class MainActivity : AppCompatActivity() {
         }
 
         pttContainer.setBackgroundResource(getPttIdleDrawable())
+        if (::ivMicIcon.isInitialized) ivMicIcon.setColorFilter(Color.WHITE)
 
         if (wasActive) {
-            tvStatus.text = "ĐÃ HỦY (KHÔNG GỬI)"
-            tvStatus.setTextColor(Color.parseColor("#EF4444"))
-            tvResult.text = "Đã hủy bỏ câu lệnh.\nChạm biểu tượng micro bên dưới để nói lại."
+            tvStatus.text = "ĐÃ HỦY"
+            tvStatus.setTextColor(Color.parseColor("#9E9E9E"))
+            tvResult.text = "Đã hủy bỏ câu lệnh.\nChạm micro bên dưới để nói lại."
 
             mainHandler.postDelayed({
                 if (!recorderHelper.isRecording && !isProcessingGemini && !isFinishing) {
@@ -558,7 +522,7 @@ class MainActivity : AppCompatActivity() {
         } else {
             tvStatus.text = "NHẤN ĐỂ NÓI"
             tvStatus.setTextColor(getStatusIdleColor())
-            tvResult.text = "Chạm hoặc nhấn giữ biểu tượng micro bên dưới để hỏi..."
+            tvResult.text = "Chạm hoặc nhấn giữ micro bên dưới để hỏi..."
             isUserExplicitlyCancelled = false
         }
     }
@@ -568,16 +532,19 @@ class MainActivity : AppCompatActivity() {
         isUserExplicitlyCancelled = false
         isScreenOffPendingExit = false
         vibrateTick(80, 100)
-        pttContainer.setBackgroundResource(R.drawable.bg_watch_ptt_recording)
-        tvStatus.text = "🔴 ĐANG LẮNG NGHE..."
-        tvStatus.setTextColor(Color.parseColor("#EF4444"))
+        pttContainer.setBackgroundResource(R.drawable.bg_watch_btn_square_active)
+        if (::ivMicIcon.isInitialized) ivMicIcon.setColorFilter(Color.BLACK)
+        tvStatus.text = "● ĐANG LẮNG NGHE..."
+        tvStatus.setTextColor(Color.WHITE)
         tvResult.text = "Đang lắng nghe bạn nói...\n(Dừng nói 1.3s để tự động gửi)"
 
         val started = recorderHelper.startRecording()
         if (!started) {
-            tvStatus.text = "LỖI MICROPHONE"
+            tvStatus.text = "✕ LỖI MICRO"
+            tvStatus.setTextColor(Color.parseColor("#9E9E9E"))
             tvResult.text = "Không thể khởi động micro."
             pttContainer.setBackgroundResource(getPttIdleDrawable())
+            if (::ivMicIcon.isInitialized) ivMicIcon.setColorFilter(Color.WHITE)
         }
     }
 
@@ -586,15 +553,16 @@ class MainActivity : AppCompatActivity() {
 
         vibrateTick(120, 150)
         pttContainer.setBackgroundResource(getPttIdleDrawable())
-        tvStatus.text = "⚡ ĐANG GỌI GEMINI..."
-        tvStatus.setTextColor(getStatusAccentColor())
+        if (::ivMicIcon.isInitialized) ivMicIcon.setColorFilter(Color.WHITE)
+        tvStatus.text = "ĐANG XỬ LÝ..."
+        tvStatus.setTextColor(Color.parseColor("#9E9E9E"))
         tvResult.text = "Gemini đang xử lý câu trả lời..."
 
         val audioBase64 = recorderHelper.stopRecording()
         if (audioBase64.isNullOrEmpty()) {
             tvStatus.text = "NHẤN ĐỂ NÓI"
             tvStatus.setTextColor(getStatusIdleColor())
-            tvResult.text = "Chưa thu được âm thanh. Hãy nhấn giữ hoặc chạm để nói lại."
+            tvResult.text = "Chưa thu được âm thanh. Hãy chạm hoặc nhấn giữ micro để nói lại."
             if (isScreenOffPendingExit) {
                 finishAndRemoveTask()
             }
@@ -622,6 +590,7 @@ class MainActivity : AppCompatActivity() {
                     tvStatus.text = "NHẤN ĐỂ NÓI"
                     tvStatus.setTextColor(getStatusIdleColor())
                     pttContainer.setBackgroundResource(getPttIdleDrawable())
+                    if (::ivMicIcon.isInitialized) ivMicIcon.setColorFilter(Color.WHITE)
                     if (isScreenOffPendingExit) {
                         releaseWakeLock()
                         finishAndRemoveTask()
@@ -631,8 +600,8 @@ class MainActivity : AppCompatActivity() {
                     return@runOnUiThread
                 }
 
-                tvStatus.text = if (success) "✓ ĐÃ TRẢ LỜI" else "LỖI"
-                tvStatus.setTextColor(if (success) getStatusSuccessColor() else Color.parseColor("#EF4444"))
+                tvStatus.text = if (success) "✓ KẾT QUẢ" else "✕ LỖI"
+                tvStatus.setTextColor(if (success) Color.WHITE else Color.parseColor("#9E9E9E"))
                 tvResult.text = answer
                 scrollResult.smoothScrollTo(0, 0)
 

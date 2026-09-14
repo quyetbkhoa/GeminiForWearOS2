@@ -1,157 +1,133 @@
+<?xml version="1.0" encoding="utf-8"?>
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:background="#000000">
 
     <LinearLayout
         android:id="@+id/layout_root"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:orientation="vertical"
-        android:background="#000000"
-        android:paddingLeft="18dp"
-        android:paddingRight="18dp"
-        android:paddingTop="12dp"
-        android:paddingBottom="8dp">
+        android:weightSum="100"
+        android:background="#000000">
 
-    <!-- Top Header Plate (Safe from top bezel) -->
-    <LinearLayout
-        android:id="@+id/layout_header"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center_vertical"
-        android:layout_marginBottom="6dp">
-
-        <LinearLayout
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:orientation="horizontal"
-            android:gravity="center_vertical">
-
-            <TextView
-                android:id="@+id/tv_header_title"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="GEMINI AI"
-                android:textColor="#E5C158"
-                android:textSize="11sp"
-                android:textStyle="bold"
-                android:letterSpacing="0.08" />
-
-            <TextView
-                android:id="@+id/tv_header_version"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="v1.3.5"
-                android:textColor="#64748B"
-                android:textSize="8.5sp"
-                android:textStyle="bold"
-                android:layout_marginStart="4dp" />
-        </LinearLayout>
-
-        <TextView
-            android:id="@+id/tv_status"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="NHẤN ĐỂ NÓI"
-            android:textColor="#94A3B8"
-            android:textSize="10sp"
-            android:textStyle="bold" />
-    </LinearLayout>
-
-    <!-- Response Display Area: Contained inside flat screen area (Protected from 3D curved side glass) -->
-    <ScrollView
-        android:id="@+id/scroll_result"
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"
-        android:fillViewport="true"
-        android:scrollbars="none">
-
-        <LinearLayout
-            android:id="@+id/container_result_card"
+        <!-- Top Response Area (~80% screen space): Dedicated to clean, scrollable text -->
+        <ScrollView
+            android:id="@+id/scroll_result"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:background="@drawable/bg_watch_plate_dark"
-            android:padding="10dp">
+            android:layout_height="0dp"
+            android:layout_weight="80"
+            android:fillViewport="true"
+            android:scrollbars="none"
+            android:paddingLeft="16dp"
+            android:paddingRight="16dp"
+            android:paddingTop="12dp"
+            android:paddingBottom="4dp">
 
-            <TextView
-                android:id="@+id/tv_result"
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Chạm hoặc nhấn giữ biểu tượng micro bên dưới để hỏi..."
-                android:textColor="#F1F5F9"
-                android:textSize="12sp"
-                android:lineSpacingExtra="2.5dp" />
+                android:orientation="vertical">
+
+                <!-- Minimal Monochrome Status Indicator -->
+                <TextView
+                    android:id="@+id/tv_status"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="NHẤN ĐỂ NÓI"
+                    android:textColor="#9E9E9E"
+                    android:textSize="10.5sp"
+                    android:textStyle="bold"
+                    android:letterSpacing="0.06"
+                    android:layout_marginBottom="6dp" />
+
+                <!-- Text Content Display Area -->
+                <TextView
+                    android:id="@+id/tv_result"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Chạm hoặc nhấn giữ micro bên dưới để hỏi..."
+                    android:textColor="#FFFFFF"
+                    android:textSize="13.5sp"
+                    android:lineSpacingExtra="3.5dp" />
+
+            </LinearLayout>
+        </ScrollView>
+
+        <!-- Bottom Control Bar (~20% screen space): 3 square Material items in a horizontal row -->
+        <LinearLayout
+            android:id="@+id/layout_bottom_bar"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="20"
+            android:orientation="horizontal"
+            android:gravity="center"
+            android:paddingLeft="10dp"
+            android:paddingRight="10dp"
+            android:paddingBottom="6dp"
+            android:paddingTop="2dp">
+
+            <!-- 1. Square Record Button (Mic) -->
+            <FrameLayout
+                android:id="@+id/btn_ptt_container"
+                android:layout_width="46dp"
+                android:layout_height="46dp"
+                android:layout_marginEnd="12dp"
+                android:background="@drawable/bg_watch_btn_square"
+                android:clickable="true"
+                android:focusable="true">
+
+                <ImageView
+                    android:id="@+id/iv_mic_icon"
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:layout_gravity="center"
+                    android:src="@drawable/ic_mic" />
+            </FrameLayout>
+
+            <!-- 2. Square Cancel Button (Exit app & lock screen) -->
+            <FrameLayout
+                android:id="@+id/btn_cancel"
+                android:layout_width="46dp"
+                android:layout_height="46dp"
+                android:layout_marginEnd="12dp"
+                android:background="@drawable/bg_watch_btn_square"
+                android:clickable="true"
+                android:focusable="true">
+
+                <ImageView
+                    android:id="@+id/iv_cancel_icon"
+                    android:layout_width="18dp"
+                    android:layout_height="18dp"
+                    android:layout_gravity="center"
+                    android:src="@drawable/ic_cancel" />
+            </FrameLayout>
+
+            <!-- 3. Square App Version Badge -->
+            <FrameLayout
+                android:id="@+id/layout_version_container"
+                android:layout_width="46dp"
+                android:layout_height="46dp"
+                android:background="@drawable/bg_watch_btn_square_badge">
+
+                <TextView
+                    android:id="@+id/tv_app_version"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:gravity="center"
+                    android:text="v1.3.6"
+                    android:textColor="#9E9E9E"
+                    android:textSize="9.5sp"
+                    android:textStyle="bold"
+                    android:letterSpacing="0.04" />
+            </FrameLayout>
+
         </LinearLayout>
-    </ScrollView>
-
-    <!-- Bottom Control Bar: Version on left corner, PTT Mic in center, Cancel on right corner -->
-    <RelativeLayout
-        android:id="@+id/layout_bottom_bar"
-        android:layout_width="match_parent"
-        android:layout_height="56dp"
-        android:layout_marginTop="6dp"
-        android:layout_marginBottom="2dp">
-
-        <!-- Bottom-Left Corner: App Version Badge -->
-        <TextView
-            android:id="@+id/tv_app_version"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_alignParentStart="true"
-            android:layout_centerVertical="true"
-            android:text="v1.3.5"
-            android:textColor="#64748B"
-            android:textSize="9.5sp"
-            android:textStyle="bold"
-            android:letterSpacing="0.04"
-            android:padding="4dp" />
-
-        <!-- Center: Circular Push-To-Talk Button (56x56dp) -->
-        <FrameLayout
-            android:id="@+id/btn_ptt_container"
-            android:layout_width="56dp"
-            android:layout_height="56dp"
-            android:layout_centerInParent="true"
-            android:background="@drawable/bg_watch_ptt_dark"
-            android:clickable="true"
-            android:focusable="true">
-
-            <ImageView
-                android:id="@+id/iv_mic_icon"
-                android:layout_width="24dp"
-                android:layout_height="24dp"
-                android:layout_gravity="center"
-                android:src="@drawable/ic_mic" />
-        </FrameLayout>
-
-        <!-- Bottom-Right Corner: Cancel Button (Press to NOT send) -->
-        <FrameLayout
-            android:id="@+id/btn_cancel"
-            android:layout_width="42dp"
-            android:layout_height="42dp"
-            android:layout_alignParentEnd="true"
-            android:layout_centerVertical="true"
-            android:background="@drawable/bg_watch_btn_cancel"
-            android:clickable="true"
-            android:focusable="true">
-
-            <ImageView
-                android:id="@+id/iv_cancel_icon"
-                android:layout_width="16dp"
-                android:layout_height="16dp"
-                android:layout_gravity="center"
-                android:src="@drawable/ic_cancel" />
-        </FrameLayout>
-
-    </RelativeLayout>
 
     </LinearLayout>
 
-    <!-- Overlay làm tối dần sau 10s rồi đen hẳn sau 3s -->
+    <!-- Blackout Overlay for smooth dimming & exit -->
     <View
         android:id="@+id/view_dim_overlay"
         android:layout_width="match_parent"

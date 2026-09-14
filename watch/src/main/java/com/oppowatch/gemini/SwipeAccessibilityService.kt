@@ -4,7 +4,41 @@ import android.accessibilityservice.AccessibilityService
 import android.content.Intent
 import android.view.accessibility.AccessibilityEvent
 
+import android.os.Build
+
 class SwipeAccessibilityService : AccessibilityService() {
+
+    companion object {
+        @Volatile
+        var instance: SwipeAccessibilityService? = null
+
+        fun lockScreen(): Boolean {
+            val service = instance ?: return false
+            return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                try {
+                    service.performGlobalAction(GLOBAL_ACTION_LOCK_SCREEN)
+                } catch (e: Exception) {
+                    android.util.Log.e("SwipeAccessibility", "Lỗi lockScreen: ${e.message}")
+                    false
+                }
+            } else {
+                false
+            }
+        }
+    }
+
+    override fun onServiceConnected() {
+        super.onServiceConnected()
+        instance = this
+        android.util.Log.d("SwipeAccessibility", "onServiceConnected")
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        if (instance === this) {
+            instance = null
+        }
+    }
 
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
         if (event == null) return
