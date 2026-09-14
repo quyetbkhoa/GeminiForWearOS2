@@ -45,6 +45,7 @@ class MainActivity : AppCompatActivity() {
     private val autoDimHandler = Handler(Looper.getMainLooper())
     private var isScreenDimmed = false
     private var touchDownTime = 0L
+    private var wasRecordingWhenTouchDown = false
 
     // Chỉ tự động kích hoạt thu âm khi người dùng chủ động mở app (từ launcher, shortcut, tile...)
     private var isAppActivelyLaunched = false
@@ -435,6 +436,8 @@ class MainActivity : AppCompatActivity() {
             when (event.action) {
                 MotionEvent.ACTION_DOWN -> {
                     touchDownTime = System.currentTimeMillis()
+                    wasRecordingWhenTouchDown = if (::recorderHelper.isInitialized) recorderHelper.isRecording else false
+
                     if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO)
                         != PackageManager.PERMISSION_GRANTED) {
                         ActivityCompat.requestPermissions(
@@ -444,7 +447,12 @@ class MainActivity : AppCompatActivity() {
                         )
                         return@setOnTouchListener true
                     }
-                    if (!recorderHelper.isRecording) {
+
+                    if (wasRecordingWhenTouchDown) {
+                        // Đang ghi âm mà chạm vào nút đỏ -> rung nhẹ phản hồi nhận diện thao tác bấm dừng
+                        vibrateTick(40, 50)
+                    } else if (!isProcessingGemini) {
+                        // Đang ở nút xanh (chưa ghi âm) -> bắt đầu thu âm ngay
                         startVoiceRecording()
                     }
                     true
@@ -454,10 +462,17 @@ class MainActivity : AppCompatActivity() {
                     if (recorderHelper.isRecording) {
                         if (isUserExplicitlyCancelled) {
                             recorderHelper.cancelRecording()
-                        } else if (duration >= 400L) {
+                        } else if (wasRecordingWhenTouchDown) {
+                            // Kịch bản 1 & 3: Bấm vào nút đỏ khi đang ghi âm -> ngắt ghi âm và gửi server ngay!
+                            Log.d("MainActivity", "Bấm nút đỏ: Dừng ghi âm và gửi server ngay.")
+                            finishVoiceRecording()
+                        } else if (duration >= 500L) {
+                            // Kịch bản 2: Nhấn giữ nút xanh (PTT) rồi nhả tay -> ngắt ghi âm và gửi server ngay!
+                            Log.d("MainActivity", "Nhả tay sau khi nhấn giữ PTT: Dừng ghi âm và gửi server.")
                             finishVoiceRecording()
                         } else {
-                            Log.d("MainActivity", "Chế độ chạm: tiếp tục ghi âm chờ im lặng 1.3s")
+                            // Kịch bản 3 (bước 1): Chạm nhanh nút xanh -> tiếp tục thu âm chờ bấm lại nút đỏ hoặc im lặng 1.3s
+                            Log.d("MainActivity", "Chạm nhanh nút xanh: Tiếp tục ghi âm (chờ bấm lại nút đỏ hoặc im lặng 1.3s).")
                         }
                     }
                     true

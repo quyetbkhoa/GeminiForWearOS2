@@ -366,6 +366,7 @@ class PhoneMainActivity : AppCompatActivity() {
         pageQaHistory = findViewById(R.id.page_qa_history)
         pageErrorLogs = findViewById(R.id.page_error_logs)
         pageVoiceGuide = findViewById(R.id.page_voice_guide)
+        pageTasks = findViewById(R.id.page_tasks)
 
         // Hub Views
         cardTitlePlate = findViewById(R.id.card_title_plate)
