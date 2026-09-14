@@ -178,7 +178,7 @@ class MainActivity : AppCompatActivity() {
         PhoneCommunicator.sendWatchAdbInfoToPhone(this)
     }
 
-    private fun getPttIdleDrawable(): Int = R.drawable.bg_watch_btn_square
+    private fun getPttIdleDrawable(): Int = R.drawable.bg_watch_btn_mic_idle
 
     private fun getStatusIdleColor(): Int = Color.parseColor("#9E9E9E")
 
@@ -192,18 +192,18 @@ class MainActivity : AppCompatActivity() {
         layoutRoot.setBackgroundColor(Color.BLACK)
         tvResult.setTextColor(Color.WHITE)
         tvStatus.setTextColor(Color.parseColor("#9E9E9E"))
-        tvAppVersion.setTextColor(Color.parseColor("#9E9E9E"))
+        tvAppVersion.setTextColor(Color.parseColor("#94A3B8"))
 
         if (isRec) {
-            pttContainer.setBackgroundResource(R.drawable.bg_watch_btn_square_active)
-            if (::ivMicIcon.isInitialized) ivMicIcon.setColorFilter(Color.BLACK)
+            pttContainer.setBackgroundResource(R.drawable.bg_watch_btn_mic_recording)
+            if (::ivMicIcon.isInitialized) ivMicIcon.setColorFilter(Color.WHITE)
         } else {
-            pttContainer.setBackgroundResource(R.drawable.bg_watch_btn_square)
+            pttContainer.setBackgroundResource(R.drawable.bg_watch_btn_mic_idle)
             if (::ivMicIcon.isInitialized) ivMicIcon.setColorFilter(Color.WHITE)
         }
 
         if (::btnCancel.isInitialized) {
-            btnCancel.setBackgroundResource(R.drawable.bg_watch_btn_square)
+            btnCancel.setBackgroundResource(R.drawable.bg_watch_btn_cancel_red)
             if (::ivCancelIcon.isInitialized) ivCancelIcon.setColorFilter(Color.WHITE)
         }
     }
@@ -532,8 +532,8 @@ class MainActivity : AppCompatActivity() {
         isUserExplicitlyCancelled = false
         isScreenOffPendingExit = false
         vibrateTick(80, 100)
-        pttContainer.setBackgroundResource(R.drawable.bg_watch_btn_square_active)
-        if (::ivMicIcon.isInitialized) ivMicIcon.setColorFilter(Color.BLACK)
+        pttContainer.setBackgroundResource(R.drawable.bg_watch_btn_mic_recording)
+        if (::ivMicIcon.isInitialized) ivMicIcon.setColorFilter(Color.WHITE)
         tvStatus.text = "● ĐANG LẮNG NGHE..."
         tvStatus.setTextColor(Color.WHITE)
         tvResult.text = "Đang lắng nghe bạn nói...\n(Dừng nói 1.3s để tự động gửi)"

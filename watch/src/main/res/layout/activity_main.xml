@@ -9,35 +9,34 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:orientation="vertical"
-        android:weightSum="100"
         android:background="#000000">
 
-        <!-- Top Response Area (~80% screen space): Dedicated to clean, scrollable text -->
+        <!-- Top Response Area (~80% screen space): Scrollable Text -->
         <ScrollView
             android:id="@+id/scroll_result"
             android:layout_width="match_parent"
             android:layout_height="0dp"
-            android:layout_weight="80"
+            android:layout_weight="1"
             android:fillViewport="true"
             android:scrollbars="none"
-            android:paddingLeft="16dp"
-            android:paddingRight="16dp"
-            android:paddingTop="12dp"
-            android:paddingBottom="4dp">
+            android:paddingLeft="18dp"
+            android:paddingRight="18dp"
+            android:paddingTop="16dp"
+            android:paddingBottom="6dp">
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical">
 
-                <!-- Minimal Monochrome Status Indicator -->
+                <!-- Minimal Status Indicator -->
                 <TextView
                     android:id="@+id/tv_status"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="NHẤN ĐỂ NÓI"
                     android:textColor="#9E9E9E"
-                    android:textSize="10.5sp"
+                    android:textSize="11sp"
                     android:textStyle="bold"
                     android:letterSpacing="0.06"
                     android:layout_marginBottom="6dp" />
@@ -55,73 +54,66 @@
             </LinearLayout>
         </ScrollView>
 
-        <!-- Bottom Control Bar (~20% screen space): 3 square Material items in a horizontal row -->
+        <!-- Bottom Control Bar: Mic (Color), Cancel (Red), Version (plain text) -->
+        <!-- Safe bottom margin 18dp to avoid screen chin cutting buttons -->
         <LinearLayout
             android:id="@+id/layout_bottom_bar"
             android:layout_width="match_parent"
-            android:layout_height="0dp"
-            android:layout_weight="20"
+            android:layout_height="wrap_content"
             android:orientation="horizontal"
             android:gravity="center"
-            android:paddingLeft="10dp"
-            android:paddingRight="10dp"
-            android:paddingBottom="6dp"
-            android:paddingTop="2dp">
+            android:paddingLeft="16dp"
+            android:paddingRight="16dp"
+            android:paddingTop="4dp"
+            android:paddingBottom="4dp"
+            android:layout_marginBottom="16dp">
 
-            <!-- 1. Square Record Button (Mic) -->
+            <!-- 1. Colored Record Button (Google Blue 48x48dp) -->
             <FrameLayout
                 android:id="@+id/btn_ptt_container"
-                android:layout_width="46dp"
-                android:layout_height="46dp"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
                 android:layout_marginEnd="12dp"
-                android:background="@drawable/bg_watch_btn_square"
+                android:background="@drawable/bg_watch_btn_mic_idle"
                 android:clickable="true"
                 android:focusable="true">
 
                 <ImageView
                     android:id="@+id/iv_mic_icon"
-                    android:layout_width="24dp"
-                    android:layout_height="24dp"
+                    android:layout_width="26dp"
+                    android:layout_height="26dp"
                     android:layout_gravity="center"
                     android:src="@drawable/ic_mic" />
             </FrameLayout>
 
-            <!-- 2. Square Cancel Button (Exit app & lock screen) -->
+            <!-- 2. Red Cancel Button (Crimson Red 48x48dp) -->
             <FrameLayout
                 android:id="@+id/btn_cancel"
-                android:layout_width="46dp"
-                android:layout_height="46dp"
-                android:layout_marginEnd="12dp"
-                android:background="@drawable/bg_watch_btn_square"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:layout_marginEnd="14dp"
+                android:background="@drawable/bg_watch_btn_cancel_red"
                 android:clickable="true"
                 android:focusable="true">
 
                 <ImageView
                     android:id="@+id/iv_cancel_icon"
-                    android:layout_width="18dp"
-                    android:layout_height="18dp"
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
                     android:layout_gravity="center"
                     android:src="@drawable/ic_cancel" />
             </FrameLayout>
 
-            <!-- 3. Square App Version Badge -->
-            <FrameLayout
-                android:id="@+id/layout_version_container"
-                android:layout_width="46dp"
-                android:layout_height="46dp"
-                android:background="@drawable/bg_watch_btn_square_badge">
-
-                <TextView
-                    android:id="@+id/tv_app_version"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:gravity="center"
-                    android:text="v1.3.6"
-                    android:textColor="#9E9E9E"
-                    android:textSize="9.5sp"
-                    android:textStyle="bold"
-                    android:letterSpacing="0.04" />
-            </FrameLayout>
+            <!-- 3. App Version: Clean Plain Text (Không đóng khung button) -->
+            <TextView
+                android:id="@+id/tv_app_version"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="v1.3.6"
+                android:textColor="#94A3B8"
+                android:textSize="11sp"
+                android:textStyle="bold"
+                android:letterSpacing="0.04" />
 
         </LinearLayout>
 
