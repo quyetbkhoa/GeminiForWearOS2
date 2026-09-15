@@ -42,7 +42,7 @@
             android:layout_height="wrap_content"
             android:text="AA:BB:CC:DD:EE:FF"
             android:textColor="#F59E0B"
-            android:textSize="11sp"
+            android:textSize="13sp"
             android:fontFamily="monospace"
             android:layout_marginTop="2dp" />
     </LinearLayout>
@@ -50,15 +50,16 @@
     <!-- Skeuomorphic 3D Tactile Switch Checkbox -->
     <TextView
         android:id="@+id/tv_switch_status"
-        android:layout_width="wrap_content"
-        android:layout_height="28dp"
+        android:layout_width="64dp"
+        android:layout_height="32dp"
         android:gravity="center"
         android:text="TẮT"
-        android:textSize="11sp"
+        android:textSize="13sp"
         android:textStyle="bold"
         android:textColor="#94A3B8"
         android:background="@drawable/bg_switch_off"
-        android:paddingLeft="12dp"
-        android:paddingRight="12dp" />
+        android:paddingLeft="8dp"
+        android:paddingRight="8dp"
+        android:importantForAccessibility="no" />
 
 </LinearLayout>

@@ -20,7 +20,7 @@
             android:layout_height="wrap_content"
             android:text="🔴 HTTP 403"
             android:textColor="#EF4444"
-            android:textSize="11sp"
+            android:textSize="13sp"
             android:textStyle="bold"
             android:paddingHorizontal="6dp"
             android:paddingVertical="2dp"
@@ -32,7 +32,7 @@
             android:layout_height="wrap_content"
             android:text="⌚ ĐỒNG HỒ"
             android:textColor="#38BDF8"
-            android:textSize="10sp"
+            android:textSize="12sp"
             android:textStyle="bold"
             android:layout_marginStart="6dp"
             android:paddingHorizontal="5dp"
@@ -46,7 +46,7 @@
             android:layout_weight="1"
             android:text="11:40:55 - 07/09"
             android:textColor="#94A3B8"
-            android:textSize="10sp"
+            android:textSize="12sp"
             android:gravity="end" />
     </LinearLayout>
 
@@ -57,7 +57,7 @@
         android:layout_height="wrap_content"
         android:text="Mô hình: gemini-3.8-flash | Key: AQ.Ab8...VoMg"
         android:textColor="#CBD5E1"
-        android:textSize="10.5sp"
+        android:textSize="13sp"
         android:fontFamily="monospace"
         android:layout_marginTop="6dp" />
 
@@ -68,7 +68,7 @@
         android:layout_height="wrap_content"
         android:text="Nguyên nhân: Method doesn't allow unregistered callers."
         android:textColor="#FCA5A5"
-        android:textSize="11sp"
+        android:textSize="13sp"
         android:textStyle="bold"
         android:layout_marginTop="4dp" />
 
@@ -88,7 +88,7 @@
             android:layout_height="wrap_content"
             android:text="👉 Hướng dẫn: Mở app Gemini trên điện thoại, nhập API Key và bấm 'LƯU &amp; ĐỒNG BỘ SANG ĐỒNG HỒ'."
             android:textColor="#6EE7B7"
-            android:textSize="10.5sp"
+            android:textSize="13sp"
             android:lineSpacingExtra="2dp" />
     </LinearLayout>
 
@@ -107,7 +107,7 @@
             android:layout_weight="1"
             android:text="▶ Xem chi tiết phản hồi JSON từ Google"
             android:textColor="#A78BFA"
-            android:textSize="10sp"
+            android:textSize="12sp"
             android:textStyle="bold"
             android:paddingVertical="4dp" />
 
@@ -117,7 +117,7 @@
             android:layout_height="28dp"
             android:text="📋 SAO CHÉP"
             android:textColor="#FFFFFF"
-            android:textSize="9.5sp"
+            android:textSize="12sp"
             android:textStyle="bold"
             android:background="@drawable/bg_btn_metallic"
             android:backgroundTint="@null"
@@ -138,7 +138,7 @@
             android:layout_height="wrap_content"
             android:fontFamily="monospace"
             android:textColor="#E2E8F0"
-            android:textSize="9.5sp"
+            android:textSize="12sp"
             android:background="#20000000"
             android:padding="6dp"
             android:text="{}" />

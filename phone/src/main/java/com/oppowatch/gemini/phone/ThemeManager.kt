@@ -35,8 +35,8 @@ object ThemeManager {
     fun getStyle(context: Context): ThemeStyle {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         val saved = prefs.getString(KEY_THEME_STYLE, null)
-            ?: prefs.getString(KEY_THEME_LEGACY, ThemeStyle.SKEUOMORPHISM.id)
-        return ThemeStyle.values().firstOrNull { it.id == saved } ?: ThemeStyle.SKEUOMORPHISM
+            ?: prefs.getString(KEY_THEME_LEGACY, ThemeStyle.MATERIAL.id)
+        return ThemeStyle.values().firstOrNull { it.id == saved } ?: ThemeStyle.MATERIAL
     }
 
     fun setStyle(context: Context, style: ThemeStyle) {

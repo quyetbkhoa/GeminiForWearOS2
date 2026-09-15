@@ -36,7 +36,7 @@
                     android:layout_height="wrap_content"
                     android:text="NHẤN ĐỂ NÓI"
                     android:textColor="#9E9E9E"
-                    android:textSize="11sp"
+                    android:textSize="12sp"
                     android:textStyle="bold"
                     android:letterSpacing="0.06"
                     android:layout_marginBottom="6dp" />
@@ -48,8 +48,8 @@
                     android:layout_height="wrap_content"
                     android:text="Chạm hoặc nhấn giữ micro bên dưới để hỏi..."
                     android:textColor="#FFFFFF"
-                    android:textSize="13.5sp"
-                    android:lineSpacingExtra="3.5dp" />
+                    android:textSize="15sp"
+                    android:lineSpacingExtra="4dp" />
 
             </LinearLayout>
         </ScrollView>
@@ -76,27 +76,29 @@
 
                 <View
                     android:id="@+id/view_mic_pulse_ring"
-                    android:layout_width="48dp"
-                    android:layout_height="48dp"
+                    android:layout_width="72dp"
+                    android:layout_height="72dp"
                     android:layout_gravity="center"
                     android:background="@drawable/bg_watch_mic_pulse_ring"
                     android:alpha="0" />
 
                 <FrameLayout
                     android:id="@+id/btn_ptt_container"
-                    android:layout_width="48dp"
-                    android:layout_height="48dp"
+                    android:layout_width="72dp"
+                    android:layout_height="72dp"
                     android:layout_gravity="center"
                     android:background="@drawable/bg_watch_btn_mic_idle"
                     android:clickable="true"
-                    android:focusable="true">
+                    android:focusable="true"
+                    android:contentDescription="Nhấn để nói với Gemini">
 
                     <ImageView
                         android:id="@+id/iv_mic_icon"
-                        android:layout_width="26dp"
-                        android:layout_height="26dp"
+                        android:layout_width="32dp"
+                        android:layout_height="32dp"
                         android:layout_gravity="center"
-                        android:src="@drawable/ic_mic" />
+                        android:src="@drawable/ic_mic"
+                        android:contentDescription="@null" />
                 </FrameLayout>
             </FrameLayout>
 
@@ -108,14 +110,16 @@
                 android:layout_marginEnd="14dp"
                 android:background="@drawable/bg_watch_btn_cancel_red"
                 android:clickable="true"
-                android:focusable="true">
+                android:focusable="true"
+                android:contentDescription="Hủy lệnh hiện tại">
 
                 <ImageView
                     android:id="@+id/iv_cancel_icon"
                     android:layout_width="20dp"
                     android:layout_height="20dp"
                     android:layout_gravity="center"
-                    android:src="@drawable/ic_cancel" />
+                    android:src="@drawable/ic_cancel"
+                    android:contentDescription="@null" />
             </FrameLayout>
 
             <!-- 3. App Version: Clean Plain Text (Không đóng khung button) -->
