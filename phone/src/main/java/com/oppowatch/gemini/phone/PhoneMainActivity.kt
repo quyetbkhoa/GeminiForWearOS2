@@ -668,8 +668,8 @@ class PhoneMainActivity : AppCompatActivity() {
 
         // 3. Kiwi Manager & Update
         val currentVersion = try {
-            packageManager.getPackageInfo(packageName, 0).versionName ?: "1.3.6"
-        } catch (_: Exception) { "1.3.6" }
+            packageManager.getPackageInfo(packageName, 0).versionName ?: "1.4.0"
+        } catch (_: Exception) { "1.4.0" }
         tvHubAdbBadge.text = "v$currentVersion"
         tvHubAdbSummary.text = "Quản lý cập nhật qua Kiwi Manager • v$currentVersion"
 

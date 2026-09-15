@@ -123,7 +123,7 @@
                 android:id="@+id/tv_app_version"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="v1.3.6"
+                android:text="v1.4.0"
                 android:textColor="#94A3B8"
                 android:textSize="11sp"
                 android:textStyle="bold"

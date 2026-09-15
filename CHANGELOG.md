@@ -5,6 +5,29 @@ Tất cả các thay đổi đáng chú ý của dự án **Gemini Voice Assista
 Định dạng dựa theo [Keep a Changelog](https://keepachangelog.com/vi/1.1.0/),
 phiên bản tuân theo [Semantic Versioning](https://semver.org/lang/vi/).
 
+## [v1.4.0] - 2026-09-15
+
+### 🎙️ Tự Động Thu Âm Từ Tile & Complication, Google Tasks Nâng Cao & Google Search Grounding
+- **Tự động kích hoạt micro khi mở app từ Thẻ thông tin (Tile) & Complication:**
+  - Vào app từ Tile hoặc Complication mặt đồng hồ sẽ lập tức bật chế độ ghi âm, loại bỏ thao tác bấm nút micro thủ công.
+- **Tích hợp Complication mặt đồng hồ (Wear OS Watch Face Complication):**
+  - Cung cấp dịch vụ `GeminiComplicationService` hỗ trợ `SHORT_TEXT`, `MONOCHROMATIC_IMAGE`, `SMALL_IMAGE`, `LONG_TEXT` cho các mặt đồng hồ Wear OS.
+  - 1 chạm trên mặt đồng hồ để vào ngay Gemini AI và ghi âm tức thì.
+- **Nâng cấp quản lý Google Tasks toàn diện bằng giọng nói:**
+  - **1.1 Đọc việc cần làm (`READ_TASKS`):** Đọc danh sách nhiệm vụ chưa hoàn thành hôm nay qua giọng nói TTS (*"Hôm nay tôi có những việc gì cần làm?"*).
+  - **1.2 Hoàn thành công việc (`COMPLETE_TASK`):** Nhận diện lệnh hoàn thành việc (*"Đã làm xong việc mua bánh mì"*), tự động đồng bộ Webhook và đánh dấu đã xong.
+  - **1.3 Tự động trích xuất hạn chót (`due`):** Bóc tách thời gian/ngày tháng (*"Thêm việc nộp báo cáo lúc 5 giờ chiều"*), gắn tag hạn chót cam `⏰ Hạn: ...` và gửi lên Google Tasks.
+- **Google Search Grounding (Dữ liệu thời gian thực):**
+  - Tích hợp `google_search` tool vào REST API Gemini `v1beta`.
+  - Cung cấp câu trả lời có căn cứ cho thời tiết, giá vàng, tỷ giá, thể thao, tin tức mới nhất.
+- **Hiệu ứng sóng âm giọng nói (Audio Waveform Halo):**
+  - Vòng hào quang phát sáng xung quanh nút micro co giãn và thay đổi độ mờ theo cường độ âm thanh thực tế khi người dùng đang nói.
+- **Cầu nối Bluetooth ADB (`AdbBtBridge`):**
+  - Cho phép kết nối và chuyển tiếp cổng ADB qua Bluetooth RFCOMM cho hệ sinh thái Kiwi Manager.
+- **Nâng cấp phiên bản hệ thống:**
+  - Đồng bộ `versionCode = 10400` và `versionName = "1.4.0"` cho cả hai module `watch` và `phone`.
+  - Cập nhật User-Agent kết nối Tasks Webhook thành `GeminiOppoWatch/1.4.0`.
+
 ---
 
 ## [v1.3.6] - 2026-09-14

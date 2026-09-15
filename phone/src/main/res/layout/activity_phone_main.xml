@@ -513,7 +513,7 @@
                         android:id="@+id/tv_hub_adb_badge"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="v1.3.6"
+                        android:text="v1.4.0"
                         android:textSize="10sp"
                         android:textStyle="bold"
                         android:textColor="#38BDF8"
