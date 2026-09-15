@@ -16,6 +16,8 @@ object PhoneCommunicator {
     const val PATH_ERROR_LOG = "/gemini_error_log"
     const val PATH_REPLY_MESSAGE = "/gemini_reply_message"
     const val PATH_TASK = "/gemini_task"
+    const val PATH_READ_TASKS = "/gemini_read_tasks"
+    const val PATH_COMPLETE_TASK = "/gemini_complete_task"
     const val PATH_REMINDER = "/gemini_reminder"
     const val PATH_CLIPBOARD = "/gemini_clipboard"
     const val PATH_WATCH_ADB_INFO = "/watch_adb_info"
@@ -99,7 +101,7 @@ object PhoneCommunicator {
         }
     }
 
-    fun sendTaskToPhone(context: Context, title: String, notes: String) {
+    fun sendTaskToPhone(context: Context, title: String, notes: String, due: String = "") {
         val nodeClient = Wearable.getNodeClient(context)
         val messageClient = Wearable.getMessageClient(context)
 
@@ -108,11 +110,45 @@ object PhoneCommunicator {
             val payload = org.json.JSONObject().apply {
                 put("title", title)
                 put("notes", notes)
+                put("due", due)
                 put("timestamp", System.currentTimeMillis())
             }.toString()
             val bytes = payload.toByteArray(Charsets.UTF_8)
             for (node in nodes) {
                 messageClient.sendMessage(node.id, PATH_TASK, bytes)
+            }
+        }
+    }
+
+    fun sendReadTasksToPhone(context: Context) {
+        val nodeClient = Wearable.getNodeClient(context)
+        val messageClient = Wearable.getMessageClient(context)
+
+        nodeClient.connectedNodes.addOnSuccessListener { nodes ->
+            if (nodes.isEmpty()) return@addOnSuccessListener
+            val payload = org.json.JSONObject().apply {
+                put("timestamp", System.currentTimeMillis())
+            }.toString()
+            val bytes = payload.toByteArray(Charsets.UTF_8)
+            for (node in nodes) {
+                messageClient.sendMessage(node.id, PATH_READ_TASKS, bytes)
+            }
+        }
+    }
+
+    fun sendCompleteTaskToPhone(context: Context, title: String) {
+        val nodeClient = Wearable.getNodeClient(context)
+        val messageClient = Wearable.getMessageClient(context)
+
+        nodeClient.connectedNodes.addOnSuccessListener { nodes ->
+            if (nodes.isEmpty()) return@addOnSuccessListener
+            val payload = org.json.JSONObject().apply {
+                put("title", title)
+                put("timestamp", System.currentTimeMillis())
+            }.toString()
+            val bytes = payload.toByteArray(Charsets.UTF_8)
+            for (node in nodes) {
+                messageClient.sendMessage(node.id, PATH_COMPLETE_TASK, bytes)
             }
         }
     }

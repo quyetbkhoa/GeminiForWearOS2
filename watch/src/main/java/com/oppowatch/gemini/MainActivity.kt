@@ -40,6 +40,25 @@ class MainActivity : AppCompatActivity() {
     private lateinit var btnCancel: FrameLayout
     private lateinit var ivCancelIcon: ImageView
     private lateinit var viewDimOverlay: View
+    private lateinit var viewMicPulseRing: View
+
+    private val taskResultReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            val status = intent?.getStringExtra("status") ?: "✓ KẾT QUẢ"
+            val result = intent?.getStringExtra("result") ?: ""
+            runOnUiThread {
+                if (!isFinishing && !isDestroyed) {
+                    tvStatus.text = status
+                    tvStatus.setTextColor(Color.WHITE)
+                    if (result.isNotEmpty()) {
+                        tvResult.text = result
+                        scrollResult.smoothScrollTo(0, 0)
+                    }
+                    startAutoDimTimer()
+                }
+            }
+        }
+    }
 
     private val mainHandler = Handler(Looper.getMainLooper())
     private val autoDimHandler = Handler(Looper.getMainLooper())
@@ -109,9 +128,14 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        // Khi khởi tạo app lần đầu: nếu mở từ thẻ thông tin thì KHÔNG tự động ghi âm
+        // Đảm bảo cầu nối Bluetooth ADB luôn sẵn sàng
+        try {
+            AdbBtBridge.start()
+        } catch (_: Exception) {}
+
+        // Khi khởi tạo app lần đầu: mở từ thẻ thông tin (Tile), launcher hay phím tắt đều tự động ghi âm ngay
         val fromTile = intent?.getBooleanExtra("FROM_TILE", false) == true
-        if (savedInstanceState == null && !fromTile) {
+        if (savedInstanceState == null || fromTile) {
             isAppActivelyLaunched = true
         } else {
             isAppActivelyLaunched = false
@@ -127,6 +151,7 @@ class MainActivity : AppCompatActivity() {
         ivCancelIcon = findViewById(R.id.iv_cancel_icon)
         tvAppVersion = findViewById(R.id.tv_app_version)
         viewDimOverlay = findViewById(R.id.view_dim_overlay)
+        viewMicPulseRing = findViewById(R.id.view_mic_pulse_ring)
 
         // Hiển thị số phiên bản ứng dụng động ở góc màn hình
         val versionName = try {
@@ -146,6 +171,13 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         }
+        recorderHelper.onAmplitudeChanged = { normalizedAmp ->
+            runOnUiThread {
+                if (recorderHelper.isRecording && !isUserExplicitlyCancelled && !isFinishing) {
+                    updateVoiceWaveform(normalizedAmp)
+                }
+            }
+        }
 
         // Đọc giao diện đã lưu (Style + Mode)
         val prefs = getSharedPreferences("gemini_prefs", Context.MODE_PRIVATE)
@@ -162,6 +194,13 @@ class MainActivity : AppCompatActivity() {
             registerReceiver(themeReceiver, filter, Context.RECEIVER_NOT_EXPORTED)
         } else {
             registerReceiver(themeReceiver, filter)
+        }
+
+        val taskFilter = IntentFilter("com.oppowatch.gemini.TASK_RESULT_UPDATE")
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            registerReceiver(taskResultReceiver, taskFilter, Context.RECEIVER_NOT_EXPORTED)
+        } else {
+            registerReceiver(taskResultReceiver, taskFilter)
         }
 
         registerReceiver(screenOffReceiver, IntentFilter(Intent.ACTION_SCREEN_OFF))
@@ -267,6 +306,9 @@ class MainActivity : AppCompatActivity() {
             unregisterReceiver(themeReceiver)
         } catch (_: Exception) {}
         try {
+            unregisterReceiver(taskResultReceiver)
+        } catch (_: Exception) {}
+        try {
             unregisterReceiver(screenOffReceiver)
         } catch (_: Exception) {}
     }
@@ -274,13 +316,22 @@ class MainActivity : AppCompatActivity() {
     override fun onNewIntent(intent: Intent?) {
         super.onNewIntent(intent)
         setIntent(intent)
-        val fromTile = intent?.getBooleanExtra("FROM_TILE", false) == true
-        if (fromTile) {
-            isAppActivelyLaunched = false // Tuyệt đối KHÔNG tự động ghi âm khi mở qua thẻ thông tin
-        } else {
-            isAppActivelyLaunched = true // Bật từ launcher icon hoặc shortcut phím tắt
-        }
+        isAppActivelyLaunched = true // Bật từ Tile, launcher icon hoặc shortcut phím tắt đều tự động thu âm
         isUserExplicitlyCancelled = false
+        isScreenOffPendingExit = false
+
+        if (isProcessingGemini) {
+            GeminiClient.cancelCurrentRequest()
+            isProcessingGemini = false
+        }
+
+        if (lifecycle.currentState.isAtLeast(androidx.lifecycle.Lifecycle.State.RESUMED)) {
+            isAppActivelyLaunched = false
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO)
+                == PackageManager.PERMISSION_GRANTED && !recorderHelper.isRecording) {
+                startVoiceRecording()
+            }
+        }
     }
 
     override fun onResume() {
@@ -519,6 +570,7 @@ class MainActivity : AppCompatActivity() {
             releaseWakeLock()
         }
 
+        resetVoiceWaveform()
         pttContainer.setBackgroundResource(getPttIdleDrawable())
         if (::ivMicIcon.isInitialized) ivMicIcon.setColorFilter(Color.WHITE)
 
@@ -542,10 +594,56 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    /**
+     * 4.1: Hiệu ứng sóng âm thanh thời gian thực (Audio Waveform & Halo Pulse Animation)
+     */
+    private fun updateVoiceWaveform(normalizedAmp: Float) {
+        val targetScale = 1.0f + (normalizedAmp * 0.18f)
+        val ringScale = 1.0f + (normalizedAmp * 0.38f)
+        val ringAlpha = (0.25f + normalizedAmp * 0.75f).coerceIn(0f, 1f)
+
+        pttContainer.animate()
+            .scaleX(targetScale)
+            .scaleY(targetScale)
+            .setDuration(90L)
+            .setInterpolator(android.view.animation.DecelerateInterpolator())
+            .start()
+
+        if (::viewMicPulseRing.isInitialized) {
+            viewMicPulseRing.visibility = View.VISIBLE
+            viewMicPulseRing.animate()
+                .scaleX(ringScale)
+                .scaleY(ringScale)
+                .alpha(ringAlpha)
+                .setDuration(90L)
+                .setInterpolator(android.view.animation.DecelerateInterpolator())
+                .start()
+        }
+    }
+
+    private fun resetVoiceWaveform() {
+        pttContainer.animate()
+            .scaleX(1.0f)
+            .scaleY(1.0f)
+            .setDuration(150L)
+            .start()
+
+        if (::viewMicPulseRing.isInitialized) {
+            viewMicPulseRing.animate()
+                .scaleX(1.0f)
+                .scaleY(1.0f)
+                .alpha(0f)
+                .setDuration(150L)
+                .withEndAction { viewMicPulseRing.visibility = View.GONE }
+                .start()
+        }
+    }
+
     private fun startVoiceRecording() {
         cancelAutoDimTimer()
         isUserExplicitlyCancelled = false
         isScreenOffPendingExit = false
+        resetVoiceWaveform()
         vibrateTick(80, 100)
         pttContainer.setBackgroundResource(R.drawable.bg_watch_btn_mic_recording)
         if (::ivMicIcon.isInitialized) ivMicIcon.setColorFilter(Color.WHITE)
@@ -558,6 +656,7 @@ class MainActivity : AppCompatActivity() {
             tvStatus.text = "✕ LỖI MICRO"
             tvStatus.setTextColor(Color.parseColor("#9E9E9E"))
             tvResult.text = "Không thể khởi động micro."
+            resetVoiceWaveform()
             pttContainer.setBackgroundResource(getPttIdleDrawable())
             if (::ivMicIcon.isInitialized) ivMicIcon.setColorFilter(Color.WHITE)
         }
@@ -566,6 +665,7 @@ class MainActivity : AppCompatActivity() {
     private fun finishVoiceRecording() {
         if (!recorderHelper.isRecording || isUserExplicitlyCancelled || isFinishing) return
 
+        resetVoiceWaveform()
         vibrateTick(120, 150)
         pttContainer.setBackgroundResource(getPttIdleDrawable())
         if (::ivMicIcon.isInitialized) ivMicIcon.setColorFilter(Color.WHITE)
@@ -643,7 +743,15 @@ class MainActivity : AppCompatActivity() {
                                         "💬 Đã gửi trả lời tin nhắn: \"${voiceAction.message}\""
                                     }
                                 }
-                                "CREATE_TASK" -> "📝 Đã thêm Google Task: \"${voiceAction.message}\""
+                                "CREATE_TASK" -> {
+                                    if (voiceAction.due.isNotEmpty()) {
+                                        "📝 Đã thêm Google Task (Hạn: ${voiceAction.due}): \"${voiceAction.message}\""
+                                    } else {
+                                        "📝 Đã thêm Google Task: \"${voiceAction.message}\""
+                                    }
+                                }
+                                "READ_TASKS" -> "📋 Đang lấy danh sách việc cần làm từ điện thoại..."
+                                "COMPLETE_TASK" -> "✅ Đang đánh dấu hoàn thành: \"${voiceAction.message}\"..."
                                 "SET_REMINDER" -> {
                                     val m = voiceAction.delaySeconds / 60
                                     if (m > 0) "⏰ Đã hẹn nhắc nhở sau $m phút: \"${voiceAction.message}\""
@@ -659,6 +767,8 @@ class MainActivity : AppCompatActivity() {
                                 "REPLY_MESSAGE" -> "✓ ĐÃ GỬI TIN"
                                 "COPY_CLIPBOARD" -> "✓ ĐÃ SAO CHÉP"
                                 "CREATE_TASK" -> "✓ ĐÃ THÊM TASK"
+                                "READ_TASKS" -> "⏳ ĐANG LẤY TASK"
+                                "COMPLETE_TASK" -> "✓ HOÀN THÀNH"
                                 "SET_REMINDER" -> "✓ ĐÃ HẸN NHẮC"
                                 "MEDIA_CONTROL" -> when (voiceAction.command) {
                                     "OPEN_VIDEO" -> "✓ ĐANG MỞ VIDEO"
@@ -672,10 +782,10 @@ class MainActivity : AppCompatActivity() {
                             }
 
                             // Xây dựng câu xác nhận TTS cho báo thức / hẹn giờ
-                            // Các tác vụ qua điện thoại (REPLY_MESSAGE, CREATE_TASK, SET_REMINDER, COPY_CLIPBOARD, MEDIA_CONTROL)
+                            // Các tác vụ qua điện thoại (REPLY_MESSAGE, CREATE_TASK, READ_TASKS, COMPLETE_TASK, SET_REMINDER, COPY_CLIPBOARD, MEDIA_CONTROL)
                             // sẽ do Phone Companion tự phát TTS sau khi xử lý thành công để tránh phát lặp
                             val handledByPhoneDirectly = voiceAction.type in listOf(
-                                "REPLY_MESSAGE", "CREATE_TASK", "SET_REMINDER", "COPY_CLIPBOARD", "MEDIA_CONTROL"
+                                "REPLY_MESSAGE", "CREATE_TASK", "READ_TASKS", "COMPLETE_TASK", "SET_REMINDER", "COPY_CLIPBOARD", "MEDIA_CONTROL"
                             )
                             if (!handledByPhoneDirectly) {
                                 val ttsConfirm = when (voiceAction.type) {

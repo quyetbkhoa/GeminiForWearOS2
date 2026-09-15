@@ -18,6 +18,8 @@ class AudioRecorderHelper(private val context: Context) {
 
     // Tự động dừng ghi âm khi người dùng ngừng nói (VAD - Voice Activity Detection)
     var onSilenceDetected: (() -> Unit)? = null
+    // 4.1: Callback biên độ âm thanh thời gian thực (chuẩn hóa 0.0f .. 1.0f) cho hiệu ứng sóng âm
+    var onAmplitudeChanged: ((Float) -> Unit)? = null
     private val handler = Handler(Looper.getMainLooper())
     private var silenceRunnable: Runnable? = null
     private var hasSpoken = false
@@ -76,6 +78,10 @@ class AudioRecorderHelper(private val context: Context) {
                 try {
                     val amplitude = currentRecorder.maxAmplitude
                     val elapsed = System.currentTimeMillis() - recordingStartTime
+
+                    // Chuẩn hóa amplitude từ 0..20000 thành 0.0f..1.0f với ngưỡng nhạy
+                    val normalizedAmp = (amplitude.toFloat() / 15000f).coerceIn(0.0f, 1.0f)
+                    onAmplitudeChanged?.invoke(normalizedAmp)
 
                     if (amplitude >= SPEECH_AMPLITUDE_THRESHOLD) {
                         hasSpoken = true

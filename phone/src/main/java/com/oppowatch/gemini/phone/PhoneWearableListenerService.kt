@@ -129,17 +129,19 @@ class PhoneWearableListenerService : WearableListenerService() {
 
             var title = ""
             var notes = ""
+            var due = ""
             try {
                 val json = org.json.JSONObject(rawPayload)
                 title = json.optString("title", "").trim()
                 notes = json.optString("notes", "").trim()
+                due = json.optString("due", "").trim()
             } catch (_: Exception) {
                 title = rawPayload
             }
 
             if (title.isNotEmpty()) {
                 val mode = GoogleTasksManager.getSyncMode(this)
-                GoogleTasksManager.addTask(this, title, notes)
+                GoogleTasksManager.addTask(this, title, notes, due)
 
                 val modeDesc = when (mode) {
                     SyncMode.LOCAL_ONLY -> "việc cần làm"
@@ -147,11 +149,12 @@ class PhoneWearableListenerService : WearableListenerService() {
                     SyncMode.BOTH -> "việc cần làm và Google Tasks"
                     SyncMode.SHARE_DIALOG -> "Google Tasks"
                 }
-                val ttsResponse = "Đã thêm vào $modeDesc: $title"
+                val dueSpeech = if (due.isNotEmpty()) ", hạn lúc $due" else ""
+                val ttsResponse = "Đã thêm vào $modeDesc: $title$dueSpeech"
 
                 historyManager.addEntry(
                     "📝 Việc cần làm",
-                    title,
+                    if (due.isNotEmpty()) "$title (Hạn: $due)" else title,
                     System.currentTimeMillis()
                 )
 
@@ -160,7 +163,58 @@ class PhoneWearableListenerService : WearableListenerService() {
                         TtsSpeaker.speak(this, ttsResponse)
                     }
                 }
+
+                sendTaskResultToWatch(
+                    messageEvent.sourceNodeId,
+                    "✓ ĐÃ THÊM TASK",
+                    "📝 Đã thêm vào $modeDesc:\n\"$title\"${if (due.isNotEmpty()) "\n⏰ Hạn: $due" else ""}"
+                )
             }
+        } else if (messageEvent.path == "/gemini_read_tasks") {
+            Log.d("PhoneListener", "Received read tasks request from watch")
+            val (ttsText, displayText) = GoogleTasksManager.formatActiveTasksForSpeech(this)
+
+            historyManager.addEntry(
+                "📋 Đọc việc cần làm",
+                ttsText,
+                System.currentTimeMillis()
+            )
+
+            filterManager.checkAndPlayTtsIfAllowed(ttsText) { allowed, _ ->
+                if (allowed) {
+                    TtsSpeaker.speak(this, ttsText)
+                }
+            }
+
+            sendTaskResultToWatch(messageEvent.sourceNodeId, "✓ VIỆC CẦN LÀM", displayText)
+        } else if (messageEvent.path == "/gemini_complete_task") {
+            val rawPayload = String(messageEvent.data, Charsets.UTF_8)
+            Log.d("PhoneListener", "Received complete task request from watch: $rawPayload")
+
+            var title = ""
+            try {
+                title = org.json.JSONObject(rawPayload).optString("title", "")
+            } catch (_: Exception) {
+                title = rawPayload
+            }
+
+            val (found, completedTitle) = GoogleTasksManager.completeTaskByTitle(this, title)
+            val ttsText = if (found) "Đã đánh dấu hoàn thành việc: $completedTitle" else "Không tìm thấy việc $title trong danh sách cần làm."
+            val displayText = if (found) "✓ Đã hoàn thành:\n\"$completedTitle\"" else "✕ Không tìm thấy việc:\n\"$title\""
+
+            historyManager.addEntry(
+                "✅ Hoàn thành việc",
+                ttsText,
+                System.currentTimeMillis()
+            )
+
+            filterManager.checkAndPlayTtsIfAllowed(ttsText) { allowed, _ ->
+                if (allowed) {
+                    TtsSpeaker.speak(this, ttsText)
+                }
+            }
+
+            sendTaskResultToWatch(messageEvent.sourceNodeId, if (found) "✓ ĐÃ HOÀN THÀNH" else "✕ KHÔNG TÌM THẤY", displayText)
         } else if (messageEvent.path == "/gemini_reminder") {
             val rawPayload = String(messageEvent.data, Charsets.UTF_8)
             Log.d("PhoneListener", "Received reminder command from watch: $rawPayload")
@@ -290,6 +344,26 @@ class PhoneWearableListenerService : WearableListenerService() {
                 }
             } catch (e: Exception) {
                 Log.e("PhoneListener", "Error processing watch ADB info: ${e.message}")
+            }
+        }
+    }
+
+    private fun sendTaskResultToWatch(nodeId: String?, status: String, result: String) {
+        val messageClient = com.google.android.gms.wearable.Wearable.getMessageClient(this)
+        val payload = org.json.JSONObject().apply {
+            put("status", status)
+            put("result", result)
+            put("timestamp", System.currentTimeMillis())
+        }.toString().toByteArray(Charsets.UTF_8)
+
+        if (!nodeId.isNullOrEmpty()) {
+            messageClient.sendMessage(nodeId, "/gemini_task_result", payload)
+        } else {
+            val nodeClient = com.google.android.gms.wearable.Wearable.getNodeClient(this)
+            nodeClient.connectedNodes.addOnSuccessListener { nodes ->
+                for (n in nodes) {
+                    messageClient.sendMessage(n.id, "/gemini_task_result", payload)
+                }
             }
         }
     }

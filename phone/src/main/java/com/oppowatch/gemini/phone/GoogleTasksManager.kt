@@ -20,6 +20,7 @@ data class GoogleTaskItem(
     val id: String = UUID.randomUUID().toString(),
     val title: String,
     val notes: String = "",
+    val due: String = "",
     val timestamp: Long = System.currentTimeMillis(),
     val completed: Boolean = false
 )
@@ -51,7 +52,9 @@ object GoogleTasksManager {
 
     const val APPS_SCRIPT_SAMPLE_CODE = """function doPost(e) {
   var data = JSON.parse(e.postData.contents);
-  Tasks.Tasks.insert({title: data.title, notes: data.notes || ""}, '@default');
+  var noteStr = data.notes || "";
+  if (data.due) noteStr = (noteStr ? noteStr + "\n" : "") + "Hạn chót: " + data.due;
+  Tasks.Tasks.insert({title: data.title, notes: noteStr}, '@default');
   return ContentService.createTextOutput("OK");
 }"""
 
@@ -80,29 +83,36 @@ object GoogleTasksManager {
     }
 
     /**
-     * Thêm task mới theo chế độ đã chọn
+     * Thêm task mới theo chế độ đã chọn (hỗ trợ hạn chót due)
      */
     fun addTask(
         context: Context,
         title: String,
         notes: String = "",
+        due: String = "",
         onCompleted: ((Boolean, String) -> Unit)? = null
     ): GoogleTaskItem {
         val item = GoogleTaskItem(
             title = title.trim(),
             notes = notes.trim(),
+            due = due.trim(),
             timestamp = System.currentTimeMillis()
         )
         val mode = getSyncMode(context)
         val webhookUrl = getWebhookUrl(context)
-        val fullText = if (item.notes.isNotEmpty()) "${item.title}\n${item.notes}" else item.title
+        val noteWithDue = when {
+            item.due.isNotEmpty() && item.notes.isNotEmpty() -> "Hạn chót: ${item.due}\n${item.notes}"
+            item.due.isNotEmpty() -> "Hạn chót: ${item.due}"
+            else -> item.notes
+        }
+        val fullText = if (noteWithDue.isNotEmpty()) "${item.title}\n$noteWithDue" else item.title
 
-        Log.i(TAG, "Thêm task: '${item.title}' với chế độ $mode")
+        Log.i(TAG, "Thêm task: '${item.title}' (Hạn: '${item.due}') với chế độ $mode")
 
         when (mode) {
             SyncMode.LOCAL_ONLY -> {
                 saveTaskLocally(context, item)
-                showTaskNotification(context, item, fullText, "Đã lưu việc cần làm vào máy")
+                showTaskNotification(context, item, fullText, if (item.due.isNotEmpty()) "Hạn: ${item.due}" else "Đã lưu việc cần làm vào máy")
                 notifyUiUpdated(context, item)
                 onCompleted?.invoke(true, "Đã lưu vào danh mục việc cần làm")
             }
@@ -114,9 +124,9 @@ object GoogleTasksManager {
                     notifyUiUpdated(context, item)
                     onCompleted?.invoke(false, "Chưa cấu hình URL Webhook, đã lưu cục bộ")
                 } else {
-                    sendTaskToWebhook(webhookUrl, item.title, item.notes) { success, msg ->
+                    sendTaskToWebhook(webhookUrl, item.title, item.notes, item.due) { success, msg ->
                         if (success) {
-                            showTaskNotification(context, item, fullText, "Đã đồng bộ lên Google Tasks")
+                            showTaskNotification(context, item, fullText, if (item.due.isNotEmpty()) "Đã lưu Google Tasks (Hạn: ${item.due})" else "Đã đồng bộ lên Google Tasks")
                         } else {
                             // Nếu webhook lỗi, lưu dự phòng vào máy
                             saveTaskLocally(context, item)
@@ -131,13 +141,17 @@ object GoogleTasksManager {
                 saveTaskLocally(context, item)
                 notifyUiUpdated(context, item)
                 if (webhookUrl.isNotBlank()) {
-                    sendTaskToWebhook(webhookUrl, item.title, item.notes) { success, msg ->
-                        val sub = if (success) "Đã lưu máy & đồng bộ Google Tasks" else "Đã lưu máy (Lỗi Webhook: $msg)"
+                    sendTaskToWebhook(webhookUrl, item.title, item.notes, item.due) { success, msg ->
+                        val sub = if (success) {
+                            if (item.due.isNotEmpty()) "Đã lưu máy & Google Tasks (Hạn: ${item.due})" else "Đã lưu máy & đồng bộ Google Tasks"
+                        } else {
+                            "Đã lưu máy (Lỗi Webhook: $msg)"
+                        }
                         showTaskNotification(context, item, fullText, sub)
                         onCompleted?.invoke(success, msg)
                     }
                 } else {
-                    showTaskNotification(context, item, fullText, "Đã lưu vào máy (Chưa cài Webhook)")
+                    showTaskNotification(context, item, fullText, if (item.due.isNotEmpty()) "Hạn: ${item.due}" else "Đã lưu vào máy")
                     onCompleted?.invoke(true, "Đã lưu vào máy")
                 }
             }
@@ -171,6 +185,7 @@ object GoogleTasksManager {
         webhookUrl: String,
         title: String,
         notes: String,
+        due: String = "",
         callback: (Boolean, String) -> Unit
     ) {
         thread(name = "GoogleTasksWebhookThread") {
@@ -178,6 +193,7 @@ object GoogleTasksManager {
                 val payload = JSONObject().apply {
                     put("title", title)
                     put("notes", notes)
+                    put("due", due)
                     put("timestamp", System.currentTimeMillis())
                 }.toString()
 
@@ -266,6 +282,7 @@ object GoogleTasksManager {
                 put("id", item.id)
                 put("title", item.title)
                 put("notes", item.notes)
+                put("due", item.due)
                 put("timestamp", item.timestamp)
                 put("completed", item.completed)
             }
@@ -291,6 +308,7 @@ object GoogleTasksManager {
                         id = obj.optString("id", UUID.randomUUID().toString()),
                         title = obj.optString("title", ""),
                         notes = obj.optString("notes", ""),
+                        due = obj.optString("due", ""),
                         timestamp = obj.optLong("timestamp", System.currentTimeMillis()),
                         completed = obj.optBoolean("completed", false)
                     )
@@ -302,6 +320,69 @@ object GoogleTasksManager {
             Log.e(TAG, "Lỗi khi đọc danh sách task: ${e.message}")
         }
         return result
+    }
+
+    /**
+     * 1.1: Định dạng danh sách việc cần làm chưa hoàn thành để đọc TTS và hiển thị
+     */
+    fun formatActiveTasksForSpeech(context: Context): Pair<String, String> {
+        val tasks = getTasks(context).filter { !it.completed }
+        if (tasks.isEmpty()) {
+            val msg = "Hôm nay bạn không có việc cần làm nào chưa hoàn thành."
+            return Pair(msg, "✓ VIỆC CẦN LÀM\n\nKhông có việc cần làm nào chưa hoàn thành.")
+        }
+
+        val speechSb = StringBuilder("Hôm nay bạn có ${tasks.size} việc cần làm: ")
+        val displaySb = StringBuilder("📝 VIỆC CẦN LÀM (${tasks.size}):\n\n")
+
+        tasks.forEachIndexed { index, item ->
+            val num = index + 1
+            val dueInfo = if (item.due.isNotEmpty()) " (hạn: ${item.due})" else ""
+            speechSb.append("$num. ${item.title}$dueInfo. ")
+            displaySb.append("$num. ${item.title}$dueInfo\n")
+        }
+
+        return Pair(speechSb.toString().trim(), displaySb.toString().trim())
+    }
+
+    /**
+     * 1.2: Đánh dấu hoàn thành việc cần làm theo từ khóa/tiêu đề tìm kiếm qua giọng nói
+     */
+    fun completeTaskByTitle(context: Context, query: String): Pair<Boolean, String> {
+        try {
+            val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            val currentJson = prefs.getString(KEY_TASKS_JSON, "[]") ?: "[]"
+            val array = JSONArray(currentJson)
+            val cleanQuery = query.lowercase().trim()
+
+            var foundObj: JSONObject? = null
+            var matchedTitle = ""
+
+            for (i in 0 until array.length()) {
+                val obj = array.getJSONObject(i)
+                val isDone = obj.optBoolean("completed", false)
+                if (!isDone) {
+                    val title = obj.optString("title", "").trim()
+                    val lowerTitle = title.lowercase()
+                    if (lowerTitle == cleanQuery || lowerTitle.contains(cleanQuery) || cleanQuery.contains(lowerTitle)) {
+                        foundObj = obj
+                        matchedTitle = title
+                        break
+                    }
+                }
+            }
+
+            if (foundObj != null) {
+                foundObj.put("completed", true)
+                prefs.edit().putString(KEY_TASKS_JSON, array.toString()).apply()
+                notifyUiUpdated(context, null)
+                Log.i(TAG, "Đã đánh dấu hoàn thành task bằng giọng nói: $matchedTitle")
+                return Pair(true, matchedTitle)
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Lỗi hoàn thành task theo tiêu đề: ${e.message}")
+        }
+        return Pair(false, query)
     }
 
     fun toggleTaskComplete(context: Context, id: String): Boolean {

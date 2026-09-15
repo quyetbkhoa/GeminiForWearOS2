@@ -8,7 +8,7 @@ import org.json.JSONObject
 import java.util.regex.Pattern
 
 data class VoiceAction(
-    val type: String, // "SET_ALARM", "SET_TIMER", "REPLY_MESSAGE", "CREATE_TASK", "SET_REMINDER", "COPY_CLIPBOARD", "MEDIA_CONTROL"
+    val type: String, // "SET_ALARM", "SET_TIMER", "REPLY_MESSAGE", "CREATE_TASK", "SET_REMINDER", "COPY_CLIPBOARD", "MEDIA_CONTROL", "READ_TASKS", "COMPLETE_TASK"
     val hour: Int = 0,
     val minute: Int = 0,
     val seconds: Int = 0,
@@ -17,7 +17,8 @@ data class VoiceAction(
     val text: String = "",       // Văn bản chi tiết / ghi chú / clipboard
     val delaySeconds: Int = 0,  // Số giây delay cho reminder
     val command: String = "",   // "PAUSE", "PLAY", "NEXT", "PREV", "OPEN_VIDEO"
-    val query: String = ""      // Tên video / bài hát cho OPEN_VIDEO
+    val query: String = "",     // Tên video / bài hát cho OPEN_VIDEO
+    val due: String = ""        // Hạn chót nếu có (vd: "17:00 hôm nay", "ngày mai")
 )
 
 object VoiceActionHelper {
@@ -58,8 +59,18 @@ object VoiceActionHelper {
                 "CREATE_TASK" -> {
                     val title = actObj.optString("title", "").ifEmpty { actObj.optString("message", "") }.trim()
                     val notes = actObj.optString("notes", "").trim()
+                    val due = actObj.optString("due", "").trim()
                     if (title.isNotEmpty()) {
-                        VoiceAction(type = "CREATE_TASK", message = title, text = notes)
+                        VoiceAction(type = "CREATE_TASK", message = title, text = notes, due = due)
+                    } else null
+                }
+                "READ_TASKS" -> {
+                    VoiceAction(type = "READ_TASKS", message = "Đọc danh sách việc cần làm")
+                }
+                "COMPLETE_TASK" -> {
+                    val title = actObj.optString("title", "").ifEmpty { actObj.optString("message", "") }.trim()
+                    if (title.isNotEmpty()) {
+                        VoiceAction(type = "COMPLETE_TASK", message = title)
                     } else null
                 }
                 "SET_REMINDER" -> {
@@ -169,16 +180,49 @@ object VoiceActionHelper {
         }
 
         // 6. Nhận diện THÊM VIỆC CẦN LÀM / GOOGLE TASK / OPPO TASK
+        // 6.1 Đọc việc cần làm
+        if (lower.contains("việc cần làm hôm nay") || lower.contains("task hôm nay") ||
+            lower.contains("hôm nay có việc gì") || lower.contains("đọc việc cần làm") ||
+            lower.contains("đọc task") || lower.contains("danh sách việc") ||
+            lower.contains("danh sách task") || lower == "việc cần làm" || lower == "task") {
+            return VoiceAction(type = "READ_TASKS", message = "Đọc danh sách việc cần làm")
+        }
+
+        // 6.2 Đánh dấu hoàn thành việc cần làm
+        if (lower.startsWith("đã làm xong") || lower.startsWith("xong việc") ||
+            lower.startsWith("hoàn thành việc") || lower.startsWith("xong task") ||
+            lower.startsWith("hoàn thành task") || lower.startsWith("đã xong việc") ||
+            lower.startsWith("đã xong task")) {
+            val cleanTask = text.replace(
+                Regex("^(?:đã làm xong việc|đã làm xong task|đã làm xong|xong việc|hoàn thành việc|xong task|hoàn thành task|đã xong việc|đã xong task)(?:\\s*[:là-]?\\s*)", RegexOption.IGNORE_CASE),
+                ""
+            ).trim()
+            if (cleanTask.isNotEmpty()) {
+                return VoiceAction(type = "COMPLETE_TASK", message = cleanTask)
+            }
+        }
+
+        // 6.3 Thêm việc cần làm (kèm bóc tách hạn chót)
         if (lower.startsWith("thêm việc") || lower.startsWith("tạo việc") || lower.startsWith("ghi việc") ||
             lower.startsWith("lưu task") || lower.startsWith("thêm task") || lower.startsWith("tạo task") ||
             lower.startsWith("việc cần làm") || lower.startsWith("thêm vào google task") || lower.startsWith("thêm vào task") ||
             lower.startsWith("thêm vào việc cần làm") || lower.startsWith("lưu vào google task") || lower.startsWith("lưu việc")) {
-            val cleanTask = text.replace(
+            val rawContent = text.replace(
                 Regex("^(?:thêm vào google tasks?|lưu vào google tasks?|thêm vào tasks?|thêm vào việc cần làm|lưu vào việc cần làm|thêm việc(?: cần làm)?|tạo việc(?: cần làm)?|lưu việc(?: cần làm)?|ghi việc(?: cần làm)?|lưu task|thêm task|tạo task|việc cần làm)(?:\\s*[:là-]?\\s*)", RegexOption.IGNORE_CASE),
                 ""
             ).trim()
-            if (cleanTask.isNotEmpty()) {
-                return VoiceAction(type = "CREATE_TASK", message = cleanTask)
+
+            var dueStr = ""
+            var cleanTitle = rawContent
+            val dueMatcher = Pattern.compile("(?:lúc|trước|vào|hạn|hạn chót)\\s+((?:\\d{1,2}(?:h|:| giờ)(?:\\d{1,2})?(?:\\s*(?:sáng|chiều|tối|đêm))?|hôm nay|ngày mai|mai|ngày\\s+\\d{1,2}(?:\\/|-|\\s+tháng\\s+)\\d{1,2}).*)$", Pattern.CASE_INSENSITIVE).matcher(rawContent)
+            if (dueMatcher.find()) {
+                dueStr = dueMatcher.group(1)?.trim() ?: ""
+                val prefix = rawContent.substring(0, dueMatcher.start()).trim()
+                if (prefix.isNotEmpty()) cleanTitle = prefix
+            }
+
+            if (cleanTitle.isNotEmpty()) {
+                return VoiceAction(type = "CREATE_TASK", message = cleanTitle, due = dueStr)
             }
         }
 
@@ -404,8 +448,18 @@ object VoiceActionHelper {
                     true
                 }
                 "CREATE_TASK" -> {
-                    PhoneCommunicator.sendTaskToPhone(context, action.message, action.text)
-                    Log.i(TAG, "CREATE_TASK: title='${action.message}'")
+                    PhoneCommunicator.sendTaskToPhone(context, action.message, action.text, action.due)
+                    Log.i(TAG, "CREATE_TASK: title='${action.message}', due='${action.due}'")
+                    true
+                }
+                "READ_TASKS" -> {
+                    PhoneCommunicator.sendReadTasksToPhone(context)
+                    Log.i(TAG, "READ_TASKS requested")
+                    true
+                }
+                "COMPLETE_TASK" -> {
+                    PhoneCommunicator.sendCompleteTaskToPhone(context, action.message)
+                    Log.i(TAG, "COMPLETE_TASK: title='${action.message}'")
                     true
                 }
                 "SET_REMINDER" -> {

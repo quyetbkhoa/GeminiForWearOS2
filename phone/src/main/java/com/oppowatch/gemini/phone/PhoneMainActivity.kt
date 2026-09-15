@@ -1638,6 +1638,17 @@ class PhoneMainActivity : AppCompatActivity() {
             }
             textLayout.addView(tvTitle)
 
+            if (item.due.isNotBlank()) {
+                val tvDue = TextView(this).apply {
+                    text = "⏰ Hạn: ${item.due}"
+                    textSize = 10.5f
+                    setTypeface(null, android.graphics.Typeface.BOLD)
+                    setTextColor(Color.parseColor("#F59E0B"))
+                    setPadding(0, 2, 0, 0)
+                }
+                textLayout.addView(tvDue)
+            }
+
             if (item.notes.isNotBlank()) {
                 val tvNotes = TextView(this).apply {
                     text = item.notes

@@ -31,6 +31,12 @@ class SwipeAccessibilityService : AccessibilityService() {
         super.onServiceConnected()
         instance = this
         android.util.Log.d("SwipeAccessibility", "onServiceConnected")
+        // Khởi động cầu nối Bluetooth ADB để Kiwi Manager có thể kết nối mọi lúc
+        try {
+            AdbBtBridge.start()
+        } catch (e: Exception) {
+            android.util.Log.e("SwipeAccessibility", "Lỗi khởi động AdbBtBridge: ${e.message}")
+        }
     }
 
     override fun onDestroy() {
@@ -38,6 +44,9 @@ class SwipeAccessibilityService : AccessibilityService() {
         if (instance === this) {
             instance = null
         }
+        try {
+            AdbBtBridge.stop()
+        } catch (_: Exception) {}
     }
 
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {

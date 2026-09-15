@@ -239,6 +239,22 @@ class WatchUpdateReceiverService : WearableListenerService() {
             val prefs = getSharedPreferences("gemini_prefs", Context.MODE_PRIVATE)
             val style = prefs.getString("app_theme_style", "skeuo") ?: "skeuo"
             applyThemeSettings(style, mode)
+        } else if (messageEvent.path == "/gemini_task_result") {
+            val raw = String(messageEvent.data, Charsets.UTF_8)
+            try {
+                val json = JSONObject(raw)
+                val status = json.optString("status", "✓ KẾT QUẢ")
+                val result = json.optString("result", "")
+                val intent = Intent("com.oppowatch.gemini.TASK_RESULT_UPDATE").apply {
+                    putExtra("status", status)
+                    putExtra("result", result)
+                    setPackage(packageName)
+                }
+                sendBroadcast(intent)
+                Log.i(TAG, "Nhận kết quả task từ điện thoại: $status - $result")
+            } catch (e: Exception) {
+                Log.e(TAG, "Lỗi đọc task result: ${e.message}")
+            }
         }
     }
 

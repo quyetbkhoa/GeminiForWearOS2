@@ -68,22 +68,36 @@
             android:paddingBottom="4dp"
             android:layout_marginBottom="16dp">
 
-            <!-- 1. Colored Record Button (Google Blue 48x48dp) -->
+            <!-- 1. Colored Record Button with Pulse Glow Ring -->
             <FrameLayout
-                android:id="@+id/btn_ptt_container"
-                android:layout_width="48dp"
-                android:layout_height="48dp"
-                android:layout_marginEnd="12dp"
-                android:background="@drawable/bg_watch_btn_mic_idle"
-                android:clickable="true"
-                android:focusable="true">
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="12dp">
 
-                <ImageView
-                    android:id="@+id/iv_mic_icon"
-                    android:layout_width="26dp"
-                    android:layout_height="26dp"
+                <View
+                    android:id="@+id/view_mic_pulse_ring"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
                     android:layout_gravity="center"
-                    android:src="@drawable/ic_mic" />
+                    android:background="@drawable/bg_watch_mic_pulse_ring"
+                    android:alpha="0" />
+
+                <FrameLayout
+                    android:id="@+id/btn_ptt_container"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:layout_gravity="center"
+                    android:background="@drawable/bg_watch_btn_mic_idle"
+                    android:clickable="true"
+                    android:focusable="true">
+
+                    <ImageView
+                        android:id="@+id/iv_mic_icon"
+                        android:layout_width="26dp"
+                        android:layout_height="26dp"
+                        android:layout_gravity="center"
+                        android:src="@drawable/ic_mic" />
+                </FrameLayout>
             </FrameLayout>
 
             <!-- 2. Red Cancel Button (Crimson Red 48x48dp) -->
