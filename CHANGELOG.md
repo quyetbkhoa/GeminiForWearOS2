@@ -5,6 +5,22 @@ Tất cả các thay đổi đáng chú ý của dự án **Gemini Voice Assista
 Định dạng dựa theo [Keep a Changelog](https://keepachangelog.com/vi/1.1.0/),
 phiên bản tuân theo [Semantic Versioning](https://semver.org/lang/vi/).
 
+## [v1.4.1] - 2026-09-16
+
+### 🎨 Hoàn thiện UI/UX và phát hành an toàn
+- Hoàn thiện giao diện Companion và Watch theo thiết kế mới, tăng vùng chạm và cải thiện khả năng đọc trên màn hình nhỏ.
+- Khôi phục hai tệp nguồn Companion bị đóng gói nhầm thành dữ liệu nhị phân để mã nguồn có thể kiểm tra và biên dịch ổn định.
+- Đồng bộ `versionCode = 10401` và `versionName = "1.4.1"` cho cả hai module `phone` và `watch`.
+- Cập nhật chuỗi phiên bản hiển thị và User-Agent Tasks Webhook thành `GeminiOppoWatch/1.4.1`.
+
+### 🔐 Gia cố quy trình ký APK
+- Loại keystore khỏi Git và chặn theo dõi `keystore/`, `*.jks`, `*.keystore`.
+- Gradle chỉ đọc thông tin ký từ `KEYSTORE_FILE`, `KEYSTORE_PASSWORD`, `KEY_ALIAS`, `KEY_PASSWORD` trong environment variables.
+- GitHub Actions giải mã keystore từ `KEYSTORE_BASE64` vào thư mục tạm, ký APK rồi xóa tệp khóa kể cả khi build thất bại.
+- Loại bỏ API key dự phòng đã mã hóa Base64 khỏi workflow; CI yêu cầu `GEMINI_API_KEY` từ GitHub Actions Secrets.
+
+---
+
 ## [v1.4.0] - 2026-09-15
 
 ### 🎙️ Tự Động Thu Âm Từ Tile & Complication, Google Tasks Nâng Cao & Google Search Grounding

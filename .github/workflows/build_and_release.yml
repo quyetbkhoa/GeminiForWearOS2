@@ -34,22 +34,44 @@ jobs:
         run: chmod +x gradlew
 
       - name: Generate GeminiConfig for CI
+        shell: bash
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: |
+          set -euo pipefail
+          test -n "$GEMINI_API_KEY"
           mkdir -p watch/src/main/java/com/oppowatch/gemini
-          API_KEY="${{ secrets.GEMINI_API_KEY }}"
-          if [ -z "$API_KEY" ]; then
-            API_KEY=$(echo "QVEuQWI4Uk42SWp2LTRNSkRvNmY1T3Y1QmJnVVNRczFodXByUXRJVXdTY3JZVEZWalZvTWc=" | base64 -d)
-          fi
           cat << EOF > watch/src/main/java/com/oppowatch/gemini/GeminiConfig.kt
           package com.oppowatch.gemini
 
           object GeminiConfig {
-              const val GEMINI_API_KEY = "$API_KEY"
+              const val GEMINI_API_KEY = "$GEMINI_API_KEY"
           }
           EOF
 
+      - name: Decode release keystore
+        shell: bash
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+        run: |
+          set -euo pipefail
+          test -n "$KEYSTORE_BASE64"
+          mkdir -p "$RUNNER_TEMP/signing"
+          printf '%s' "$KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/signing/release.jks"
+          chmod 600 "$RUNNER_TEMP/signing/release.jks"
+
       - name: Build APKs with Gradle
+        env:
+          KEYSTORE_FILE: ${{ runner.temp }}/signing/release.jks
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
         run: ./gradlew assembleRelease -Dorg.gradle.jvmargs="-Xmx4096m"
+
+      - name: Remove temporary keystore
+        if: always()
+        shell: bash
+        run: rm -f "$RUNNER_TEMP/signing/release.jks"
 
       - name: Organize Release Artifacts
         run: |

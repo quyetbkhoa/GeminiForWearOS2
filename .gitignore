@@ -13,3 +13,6 @@ local.properties
 .idea/caches
 .idea/libraries
 watch/src/main/java/com/oppowatch/gemini/GeminiConfig.kt
+/keystore/
+*.jks
+*.keystore

@@ -200,7 +200,7 @@ object GoogleTasksManager {
                 val conn = (URL(webhookUrl).openConnection() as HttpURLConnection).apply {
                     requestMethod = "POST"
                     setRequestProperty("Content-Type", "application/json; charset=UTF-8")
-                    setRequestProperty("User-Agent", "GeminiOppoWatch/1.4.0")
+                    setRequestProperty("User-Agent", "GeminiOppoWatch/1.4.1")
                     doOutput = true
                     instanceFollowRedirects = false // Xử lý redirect 302 của Apps Script
                     connectTimeout = 8000
@@ -226,7 +226,7 @@ object GoogleTasksManager {
                         Log.d(TAG, "Following redirect to: $redirectUrl")
                         val redirectConn = (URL(redirectUrl).openConnection() as HttpURLConnection).apply {
                             requestMethod = "GET"
-                            setRequestProperty("User-Agent", "GeminiOppoWatch/1.4.0")
+                            setRequestProperty("User-Agent", "GeminiOppoWatch/1.4.1")
                             connectTimeout = 8000
                             readTimeout = 8000
                         }
