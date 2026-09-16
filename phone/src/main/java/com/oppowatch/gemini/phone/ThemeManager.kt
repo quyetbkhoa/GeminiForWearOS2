@@ -30,7 +30,7 @@ object ThemeManager {
     private const val KEY_THEME_LEGACY = "selected_theme"
     private const val KEY_WATCH_COLOR = "watch_color_theme"
     private const val KEY_MODEL = "selected_model"
-    const val DEFAULT_MODEL = "gemini-3.8-flash"
+    const val DEFAULT_MODEL = "gemini-3.6-flash"
 
     fun getStyle(context: Context): ThemeStyle {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
@@ -112,7 +112,12 @@ object ThemeManager {
 
     fun getSelectedModel(context: Context): String {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-        return prefs.getString(KEY_MODEL, DEFAULT_MODEL) ?: DEFAULT_MODEL
+        val saved = prefs.getString(KEY_MODEL, DEFAULT_MODEL) ?: DEFAULT_MODEL
+        if (saved == "gemini-3.5-flash") {
+            setSelectedModel(context, "gemini-3.6-flash")
+            return "gemini-3.6-flash"
+        }
+        return saved
     }
 
     fun setSelectedModel(context: Context, model: String) {

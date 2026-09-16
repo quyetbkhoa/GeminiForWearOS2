@@ -153,7 +153,7 @@ class PhoneMainActivity : AppCompatActivity() {
     private lateinit var rgGeminiModels: RadioGroup
     private lateinit var rbModel38Flash: RadioButton
     private lateinit var rbModel37Flash: RadioButton
-    private lateinit var rbModel35Flash: RadioButton
+    private lateinit var rbModel36Flash: RadioButton
     private lateinit var rbModel35FlashLite: RadioButton
     private lateinit var rbModel25Flash: RadioButton
     private lateinit var rbModel31Pro: RadioButton
@@ -410,7 +410,7 @@ class PhoneMainActivity : AppCompatActivity() {
         rgGeminiModels = findViewById(R.id.rg_gemini_models)
         rbModel38Flash = findViewById(R.id.rb_model_38_flash)
         rbModel37Flash = findViewById(R.id.rb_model_37_flash)
-        rbModel35Flash = findViewById(R.id.rb_model_35_flash)
+        rbModel36Flash = findViewById(R.id.rb_model_36_flash)
         rbModel35FlashLite = findViewById(R.id.rb_model_35_flash_lite)
         rbModel25Flash = findViewById(R.id.rb_model_25_flash)
         rbModel31Pro = findViewById(R.id.rb_model_31_pro)
@@ -652,7 +652,7 @@ class PhoneMainActivity : AppCompatActivity() {
         val shortModel = when (model) {
             "gemini-3.8-flash" -> "3.8 Flash"
             "gemini-3.7-flash" -> "3.7 Flash"
-            "gemini-3.5-flash" -> "3.5 Flash"
+            "gemini-3.6-flash" -> "3.6 Flash"
             "gemini-3.5-flash-lite" -> "3.5 Lite"
             "gemini-2.5-flash" -> "2.5 Flash"
             "gemini-3.1-pro-preview" -> "3.1 Pro"
@@ -668,8 +668,8 @@ class PhoneMainActivity : AppCompatActivity() {
 
         // 3. Kiwi Manager & Update
         val currentVersion = try {
-            packageManager.getPackageInfo(packageName, 0).versionName ?: "1.4.1"
-        } catch (_: Exception) { "1.4.1" }
+            packageManager.getPackageInfo(packageName, 0).versionName ?: "1.4.2"
+        } catch (_: Exception) { "1.4.2" }
         tvHubAdbBadge.text = "v$currentVersion"
         tvHubAdbSummary.text = "Quản lý cập nhật qua Kiwi Manager • v$currentVersion"
 
@@ -940,7 +940,7 @@ class PhoneMainActivity : AppCompatActivity() {
         val radioTextColor = if (isLight) Color.parseColor("#0F172A") else Color.parseColor("#E2E8F0")
         rbModel38Flash.setTextColor(if (isLight) Color.parseColor("#B45309") else Color.parseColor("#F59E0B"))
         rbModel37Flash.setTextColor(radioTextColor)
-        rbModel35Flash.setTextColor(radioTextColor)
+        rbModel36Flash.setTextColor(radioTextColor)
         rbModel35FlashLite.setTextColor(radioTextColor)
         rbModel25Flash.setTextColor(radioTextColor)
         rbModel31Pro.setTextColor(radioTextColor)
@@ -1034,11 +1034,11 @@ class PhoneMainActivity : AppCompatActivity() {
         when (currentModel) {
             "gemini-3.8-flash" -> rbModel38Flash.isChecked = true
             "gemini-3.7-flash" -> rbModel37Flash.isChecked = true
-            "gemini-3.5-flash" -> rbModel35Flash.isChecked = true
+            "gemini-3.6-flash" -> rbModel36Flash.isChecked = true
             "gemini-3.5-flash-lite" -> rbModel35FlashLite.isChecked = true
             "gemini-2.5-flash" -> rbModel25Flash.isChecked = true
             "gemini-3.1-pro-preview" -> rbModel31Pro.isChecked = true
-            else -> rbModel38Flash.isChecked = true
+            else -> rbModel36Flash.isChecked = true
         }
         updateModelStatusText(currentModel)
 
@@ -1046,11 +1046,11 @@ class PhoneMainActivity : AppCompatActivity() {
             val (selectedId, name) = when (checkedId) {
                 R.id.rb_model_38_flash -> Pair("gemini-3.8-flash", "Gemini 3.8 Flash")
                 R.id.rb_model_37_flash -> Pair("gemini-3.7-flash", "Gemini 3.7 Flash")
-                R.id.rb_model_35_flash -> Pair("gemini-3.5-flash", "Gemini 3.5 Flash")
+                R.id.rb_model_36_flash -> Pair("gemini-3.6-flash", "Gemini 3.6 Flash")
                 R.id.rb_model_35_flash_lite -> Pair("gemini-3.5-flash-lite", "Gemini 3.5 Flash-Lite")
                 R.id.rb_model_25_flash -> Pair("gemini-2.5-flash", "Gemini 2.5 Flash")
                 R.id.rb_model_31_pro -> Pair("gemini-3.1-pro-preview", "Gemini 3.1 Pro Preview")
-                else -> Pair("gemini-3.8-flash", "Gemini 3.8 Flash")
+                else -> Pair("gemini-3.6-flash", "Gemini 3.6 Flash")
             }
             ThemeManager.setSelectedModel(this, selectedId)
             updateModelStatusText(selectedId)
@@ -1063,7 +1063,7 @@ class PhoneMainActivity : AppCompatActivity() {
         val displayName = when (modelId) {
             "gemini-3.8-flash" -> "Gemini 3.8 Flash (Mới nhất)"
             "gemini-3.7-flash" -> "Gemini 3.7 Flash"
-            "gemini-3.5-flash" -> "Gemini 3.5 Flash"
+            "gemini-3.6-flash" -> "Gemini 3.6 Flash (Nhanh & Ổn định)"
             "gemini-3.5-flash-lite" -> "Gemini 3.5 Flash-Lite"
             "gemini-2.5-flash" -> "Gemini 2.5 Flash"
             "gemini-3.1-pro-preview" -> "Gemini 3.1 Pro Preview"

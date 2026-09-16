@@ -1650,10 +1650,10 @@
                             android:paddingVertical="3dp" />
 
                         <RadioButton
-                            android:id="@+id/rb_model_35_flash"
+                            android:id="@+id/rb_model_36_flash"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:text="✨ Gemini 3.5 Flash (Ổn định, cân bằng)"
+                            android:text="⚡ Gemini 3.6 Flash (Nhanh &amp; Ổn định, Quota dồi dào)"
                             android:textColor="#E2E8F0"
                             android:textSize="10.5sp"
                             android:paddingVertical="3dp" />

@@ -45,8 +45,11 @@ object GeminiClient {
                 val prefs = context.getSharedPreferences("gemini_prefs", Context.MODE_PRIVATE)
                 val customKey = prefs.getString("custom_api_key", null)?.trim()
                 val activeApiKey = if (!customKey.isNullOrEmpty()) customKey else GeminiConfig.GEMINI_API_KEY
-                // Đọc mô hình do người dùng chọn (mặc định Gemini 3.8 Flash mới nhất)
-                val model = prefs.getString("selected_model", "gemini-3.8-flash") ?: "gemini-3.8-flash"
+                // Đọc mô hình do người dùng chọn (mặc định Gemini 3.6 Flash)
+                var model = prefs.getString("selected_model", "gemini-3.6-flash") ?: "gemini-3.6-flash"
+                if (model == "gemini-3.5-flash") {
+                    model = "gemini-3.6-flash"
+                }
                 val endpoint = "https://generativelanguage.googleapis.com/v1beta/models/$model:generateContent?key=$activeApiKey"
                 val url = URL(endpoint)
 
@@ -113,8 +116,8 @@ object GeminiClient {
                 sysObj.put("parts", sysParts)
                 rootJson.put("system_instruction", sysObj)
 
-                // 3.1: Google Search Grounding (Tra cứu thông tin, giá vàng, bóng đá, thời tiết theo thời gian thực)
-                val enableSearchGrounding = prefs.getBoolean("enable_search_grounding", true)
+                // 3.1: Google Search Grounding (Tắt mặc định để tránh lỗi quota 429 trên tài khoản Free Tier)
+                val enableSearchGrounding = prefs.getBoolean("enable_search_grounding", false)
                 if (enableSearchGrounding) {
                     val toolsArray = JSONArray()
                     toolsArray.put(JSONObject().put("google_search", JSONObject()))

@@ -54,15 +54,12 @@ class MainActivity : AppCompatActivity() {
                         tvResult.text = result
                         scrollResult.smoothScrollTo(0, 0)
                     }
-                    startAutoDimTimer()
                 }
             }
         }
     }
 
     private val mainHandler = Handler(Looper.getMainLooper())
-    private val autoDimHandler = Handler(Looper.getMainLooper())
-    private var isScreenDimmed = false
     private var touchDownTime = 0L
     private var wasRecordingWhenTouchDown = false
 
@@ -155,12 +152,12 @@ class MainActivity : AppCompatActivity() {
 
         // Hiển thị số phiên bản ứng dụng động ở góc màn hình
         val versionName = try {
-            packageManager.getPackageInfo(packageName, 0).versionName ?: "1.4.1"
-        } catch (_: Exception) { "1.4.1" }
+            packageManager.getPackageInfo(packageName, 0).versionName ?: "1.4.2"
+        } catch (_: Exception) { "1.4.2" }
         tvAppVersion.text = "v$versionName"
 
         btnCancel.setOnClickListener {
-            exitAppAndTurnOffScreen()
+            handleCancelAction()
         }
 
         recorderHelper = AudioRecorderHelper(this)
@@ -249,14 +246,13 @@ class MainActivity : AppCompatActivity() {
     }
 
     /**
-     * Nút Hủy: Thoát ngay ứng dụng và tắt/khóa màn hình đồng hồ
+     * Nút Hủy: Hủy tác vụ thu âm/xử lý đang diễn ra và thoát app về màn hình chính,
+     * để hệ thống đồng hồ tự quản lý việc tắt màn hình theo thời gian chờ bình thường.
      */
-    private fun exitAppAndTurnOffScreen() {
-        Log.d("MainActivity", "Nút Hủy được bấm: Hủy tác vụ, tắt màn hình và thoát app.")
+    private fun handleCancelAction() {
+        Log.d("MainActivity", "Nút Hủy được bấm: Hủy tác vụ và thoát app.")
         vibrateTick(80, 100)
         isUserExplicitlyCancelled = true
-
-        cancelAutoDimTimer()
 
         if (::recorderHelper.isInitialized && recorderHelper.isRecording) {
             recorderHelper.cancelRecording()
@@ -269,38 +265,10 @@ class MainActivity : AppCompatActivity() {
 
         releaseWakeLock()
 
-        // 1. Khóa / tắt màn hình qua SwipeAccessibilityService nếu có
-        var screenTurnedOff = SwipeAccessibilityService.lockScreen()
-
-        // 2. Thử qua root lệnh tắt màn hình (Power key 26 hoặc Sleep 223)
-        if (!screenTurnedOff) {
-            try {
-                Runtime.getRuntime().exec(arrayOf("su", "-c", "input keyevent 26"))
-                screenTurnedOff = true
-            } catch (_: Exception) {}
-        }
-
-        // 3. Fallback lệnh shell bình thường
-        if (!screenTurnedOff) {
-            try {
-                Runtime.getRuntime().exec("input keyevent 26")
-            } catch (_: Exception) {}
-        }
-
-        // 4. Ép độ sáng về 0 để màn hình đen hoàn toàn
-        try {
-            val lp = window.attributes
-            lp.screenBrightness = 0.0f
-            window.attributes = lp
-        } catch (_: Exception) {}
-
-        // 5. Thoát hẳn ứng dụng và dọn sạch task
-        finishAffinity()
-        finishAndRemoveTask()
+        finish()
     }
 
     override fun onDestroy() {
-        cancelAutoDimTimer()
         super.onDestroy()
         try {
             unregisterReceiver(themeReceiver)
@@ -419,66 +387,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    /**
-     * Tự động làm tối màn hình sau 10s và đen hẳn sau 3s tiếp theo khi đã hiển thị kết quả
-     */
-    private fun cancelAutoDimTimer() {
-        autoDimHandler.removeCallbacksAndMessages(null)
-        if (isScreenDimmed) {
-            isScreenDimmed = false
-            viewDimOverlay.animate().cancel()
-            viewDimOverlay.alpha = 0f
-            viewDimOverlay.visibility = View.GONE
-            try {
-                val lp = window.attributes
-                lp.screenBrightness = WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_NONE
-                window.attributes = lp
-            } catch (_: Exception) {}
-        }
-    }
-
-    private fun startAutoDimTimer() {
-        cancelAutoDimTimer()
-        // Sau 10 giây: màn hình tối dần đi
-        autoDimHandler.postDelayed({
-            if (!isFinishing && !isDestroyed) {
-                isScreenDimmed = true
-                viewDimOverlay.visibility = View.VISIBLE
-                viewDimOverlay.alpha = 0f
-                // Làm mờ dần trong 1.5s lên 85% đen
-                viewDimOverlay.animate()
-                    .alpha(0.85f)
-                    .setDuration(1500L)
-                    .start()
-
-                try {
-                    val lp = window.attributes
-                    lp.screenBrightness = 0.05f
-                    window.attributes = lp
-                } catch (_: Exception) {}
-
-                // Sau đó 3 giây tiếp theo: đen hẳn (100% đen) và tự động thoát về màn hình chính
-                autoDimHandler.postDelayed({
-                    if (!isFinishing && !isDestroyed) {
-                        viewDimOverlay.alpha = 1f
-                        try {
-                            val lp = window.attributes
-                            lp.screenBrightness = 0.01f
-                            window.attributes = lp
-                        } catch (_: Exception) {}
-                        Log.d("MainActivity", "Đã qua 10s tối dần + 3s đen hẳn -> đóng task về Watch Face")
-                        finishAndRemoveTask()
-                    }
-                }, 3000L)
-            }
-        }, 10000L)
-    }
-
     override fun dispatchTouchEvent(ev: MotionEvent?): Boolean {
-        cancelAutoDimTimer()
-        if (::tvStatus.isInitialized && tvStatus.text.startsWith("✓")) {
-            startAutoDimTimer()
-        }
         return super.dispatchTouchEvent(ev)
     }
 
@@ -554,7 +463,6 @@ class MainActivity : AppCompatActivity() {
      * Hủy bỏ toàn bộ quá trình thu âm / gọi Gemini khi trượt ngón tay ra xa - TUYỆT ĐỐI KHÔNG GỬI
      */
     private fun cancelVoiceRecording() {
-        cancelAutoDimTimer()
         isUserExplicitlyCancelled = true
         vibrateTick(80, 120)
 
@@ -640,7 +548,6 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun startVoiceRecording() {
-        cancelAutoDimTimer()
         isUserExplicitlyCancelled = false
         isScreenOffPendingExit = false
         resetVoiceWaveform()
@@ -841,7 +748,6 @@ class MainActivity : AppCompatActivity() {
                     finishAndRemoveTask()
                 } else {
                     releaseWakeLock()
-                    startAutoDimTimer()
                 }
             }
         }

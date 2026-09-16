@@ -5,6 +5,28 @@ Tất cả các thay đổi đáng chú ý của dự án **Gemini Voice Assista
 Định dạng dựa theo [Keep a Changelog](https://keepachangelog.com/vi/1.1.0/),
 phiên bản tuân theo [Semantic Versioning](https://semver.org/lang/vi/).
 
+## [v1.4.2] - 2026-09-17
+
+### ⚡ Tối ưu kết nối Gemini API & loại bỏ lỗi 429
+- **Vô hiệu hóa Google Search Grounding mặc định:**
+  - Khắc phục triệt để lỗi HTTP 429 (Resource Exhausted) trên tài khoản Google AI Studio Free Tier (vốn chưa kích hoạt hạn mức thanh toán Google Search).
+- **Thêm mô hình Gemini 3.6 Flash & loại bỏ Gemini 3.5 Flash:**
+  - Thêm lựa chọn mô hình `gemini-3.6-flash` (tốc độ cao, hạn ngạch dồi dào và ổn định).
+  - Tự động chuyển đổi các cấu hình cũ từ `gemini-3.5-flash` sang `gemini-3.6-flash`.
+  - Cập nhật bộ chọn mô hình trên ứng dụng Companion điện thoại và mặc định trên đồng hồ.
+
+### ⌚ Tối ưu màn hình đồng hồ theo hệ thống Wear OS
+- **Loại bỏ tính năng tự ép làm tối màn hình & tắt màn hình:**
+  - Gỡ bỏ hoàn toàn `autoDimHandler`, lớp phủ `view_dim_overlay` làm tối sau 10s và đen sau 3s.
+  - Loại bỏ hoàn toàn các lệnh giả lập phím Power/Sleep (`input keyevent 26`) và khóa màn hình cưỡng bức khi bấm nút Hủy.
+  - Thời gian sáng/tắt màn hình hiện tại hoàn toàn phụ thuộc vào cơ chế quản lý tự nhiên của hệ điều hành Wear OS trên đồng hồ.
+- **Nút Hủy (Cancel) thân thiện:**
+  - Khi bấm nút Hủy, ứng dụng dừng ghi âm/hủy request đang gửi và thoát về màn hình chính bình thường, không làm tắt phụt màn hình.
+- **Đồng bộ phiên bản v1.4.2:**
+  - Nâng `versionCode = 10402` và `versionName = "1.4.2"` trên cả hai module `phone` và `watch`.
+
+---
+
 ## [v1.4.1] - 2026-09-16
 
 ### 🎨 Hoàn thiện UI/UX và phát hành an toàn

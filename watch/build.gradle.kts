@@ -18,8 +18,10 @@ val missingSigningVariables = signingEnvironment
     .filterValues { it.isNullOrBlank() }
     .keys
 val hasSigningEnvironment = missingSigningVariables.isEmpty()
+val localKeystoreFile = rootProject.file("keystore/gemini.jks")
+val hasLocalKeystore = localKeystoreFile.exists()
 
-if (releaseBuildRequested && !hasSigningEnvironment) {
+if (releaseBuildRequested && !hasSigningEnvironment && !hasLocalKeystore) {
     throw GradleException(
         "Missing signing environment variable(s): ${missingSigningVariables.joinToString()}",
     )
@@ -33,8 +35,8 @@ android {
         applicationId = "com.oppowatch.gemini"
         minSdk = 26
         targetSdk = 34
-        versionCode = 10401
-        versionName = "1.4.1"
+        versionCode = 10402
+        versionName = "1.4.2"
     }
 
     lint {
@@ -51,6 +53,13 @@ android {
                 keyPassword = signingEnvironment.getValue("KEY_PASSWORD")
                 enableV1Signing = true
                 enableV2Signing = true
+            } else if (hasLocalKeystore) {
+                storeFile = localKeystoreFile
+                storePassword = "geminiwearos"
+                keyAlias = "geminikey"
+                keyPassword = "geminiwearos"
+                enableV1Signing = true
+                enableV2Signing = true
             }
         }
     }
@@ -58,11 +67,13 @@ android {
     buildTypes {
         release {
             isMinifyEnabled = false
-            signingConfig = signingConfigs.getByName("release")
+            if (hasSigningEnvironment || hasLocalKeystore) {
+                signingConfig = signingConfigs.getByName("release")
+            }
         }
         debug {
             isMinifyEnabled = false
-            if (hasSigningEnvironment) {
+            if (hasSigningEnvironment || hasLocalKeystore) {
                 signingConfig = signingConfigs.getByName("release")
             }
         }
