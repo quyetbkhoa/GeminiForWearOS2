@@ -152,8 +152,8 @@ class MainActivity : AppCompatActivity() {
 
         // Hiển thị số phiên bản ứng dụng động ở góc màn hình
         val versionName = try {
-            packageManager.getPackageInfo(packageName, 0).versionName ?: "1.4.2"
-        } catch (_: Exception) { "1.4.2" }
+            packageManager.getPackageInfo(packageName, 0).versionName ?: "1.4.3"
+        } catch (_: Exception) { "1.4.3" }
         tvAppVersion.text = "v$versionName"
 
         btnCancel.setOnClickListener {

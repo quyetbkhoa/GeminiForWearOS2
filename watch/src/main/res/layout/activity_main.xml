@@ -22,7 +22,7 @@
             android:paddingLeft="18dp"
             android:paddingRight="18dp"
             android:paddingTop="16dp"
-            android:paddingBottom="6dp">
+            android:paddingBottom="2dp">
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -54,21 +54,21 @@
             </LinearLayout>
         </ScrollView>
 
-        <!-- Bottom Control Bar: Mic (Color), Cancel (Red), Version (plain text) -->
-        <!-- Safe bottom margin 18dp to avoid screen chin cutting buttons -->
+        <!-- Bottom Control Bar: Mic (Sea Blue 48x48dp), Cancel (Red 48x48dp), Version (plain text) -->
+        <!-- Flush at bottom edge with 0dp padding/margin to maximize top content area -->
         <LinearLayout
             android:id="@+id/layout_bottom_bar"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
             android:gravity="center"
-            android:paddingLeft="16dp"
-            android:paddingRight="16dp"
-            android:paddingTop="4dp"
-            android:paddingBottom="4dp"
-            android:layout_marginBottom="16dp">
+            android:paddingLeft="12dp"
+            android:paddingRight="12dp"
+            android:paddingTop="2dp"
+            android:paddingBottom="0dp"
+            android:layout_marginBottom="0dp">
 
-            <!-- 1. Colored Record Button with Pulse Glow Ring -->
+            <!-- 1. Colored Record Button with Pulse Glow Ring (Height matches Cancel button 48dp) -->
             <FrameLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -76,16 +76,16 @@
 
                 <View
                     android:id="@+id/view_mic_pulse_ring"
-                    android:layout_width="72dp"
-                    android:layout_height="72dp"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
                     android:layout_gravity="center"
                     android:background="@drawable/bg_watch_mic_pulse_ring"
                     android:alpha="0" />
 
                 <FrameLayout
                     android:id="@+id/btn_ptt_container"
-                    android:layout_width="72dp"
-                    android:layout_height="72dp"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
                     android:layout_gravity="center"
                     android:background="@drawable/bg_watch_btn_mic_idle"
                     android:clickable="true"
@@ -94,8 +94,8 @@
 
                     <ImageView
                         android:id="@+id/iv_mic_icon"
-                        android:layout_width="32dp"
-                        android:layout_height="32dp"
+                        android:layout_width="22dp"
+                        android:layout_height="22dp"
                         android:layout_gravity="center"
                         android:src="@drawable/ic_mic"
                         android:contentDescription="@null" />
@@ -107,7 +107,7 @@
                 android:id="@+id/btn_cancel"
                 android:layout_width="48dp"
                 android:layout_height="48dp"
-                android:layout_marginEnd="14dp"
+                android:layout_marginEnd="12dp"
                 android:background="@drawable/bg_watch_btn_cancel_red"
                 android:clickable="true"
                 android:focusable="true"
@@ -127,7 +127,7 @@
                 android:id="@+id/tv_app_version"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="v1.4.2"
+                android:text="v1.4.3"
                 android:textColor="#94A3B8"
                 android:textSize="11sp"
                 android:textStyle="bold"

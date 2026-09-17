@@ -5,6 +5,20 @@ Tất cả các thay đổi đáng chú ý của dự án **Gemini Voice Assista
 Định dạng dựa theo [Keep a Changelog](https://keepachangelog.com/vi/1.1.0/),
 phiên bản tuân theo [Semantic Versioning](https://semver.org/lang/vi/).
 
+## [v1.4.3] - 2026-09-17
+
+### 🎨 Tối ưu diện tích giao diện đồng hồ & Thanh điều khiển siêu gọn
+- **Nút Micro màu xanh nước biển (Sea Blue):**
+  - Đổi màu nền nút Micro sang tone xanh nước biển chuẩn `#0284C7`, trạng thái đang ghi âm `#0EA5E9` viền `#38BDF8`.
+- **Thanh điều khiển thu gọn sát cạnh đáy đồng hồ:**
+  - Nút Micro thu gọn chiều cao về `48dp` (vừa khớp chiều cao nút Hủy đỏ `48dp`, thay vì `72dp` cồng kềnh trước đây).
+  - Loại bỏ hoàn toàn padding dưới (`0dp`) và margin dưới (`0dp`) của thanh điều khiển, đặt sát mép đáy màn hình đồng hồ.
+  - Tăng tối đa không gian cuộn dọc cho phần hiển thị văn bản trả lời phía trên.
+- **Đồng bộ phiên bản v1.4.3:**
+  - Nâng `versionCode = 10403` và `versionName = "1.4.3"` trên cả `phone` và `watch`.
+
+---
+
 ## [v1.4.2] - 2026-09-17
 
 ### ⚡ Tối ưu kết nối Gemini API & loại bỏ lỗi 429

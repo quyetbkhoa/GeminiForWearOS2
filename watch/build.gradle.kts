@@ -35,8 +35,8 @@ android {
         applicationId = "com.oppowatch.gemini"
         minSdk = 26
         targetSdk = 34
-        versionCode = 10402
-        versionName = "1.4.2"
+        versionCode = 10403
+        versionName = "1.4.3"
     }
 
     lint {
