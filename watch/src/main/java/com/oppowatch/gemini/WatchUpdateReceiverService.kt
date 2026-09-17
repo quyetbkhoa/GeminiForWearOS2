@@ -40,6 +40,13 @@ class WatchUpdateReceiverService : WearableListenerService() {
         private const val UPDATE_CHANNEL_PATH = "/watch_update_apk"
     }
 
+    override fun onCreate() {
+        super.onCreate()
+        try {
+            GeminiSyncServer.start(this)
+        } catch (_: Exception) {}
+    }
+
     override fun onChannelOpened(channel: ChannelClient.Channel) {
         super.onChannelOpened(channel)
         Log.d(TAG, "onChannelOpened: path=${channel.path}")
@@ -214,6 +221,11 @@ class WatchUpdateReceiverService : WearableListenerService() {
                     .putString("selected_model", model)
                     .apply()
                 Log.d(TAG, "Đã lưu Gemini Model đồng bộ từ điện thoại: $model")
+                val broadcast = Intent(GeminiSyncServer.ACTION_MODEL_CHANGED).apply {
+                    putExtra(GeminiSyncServer.EXTRA_MODEL, model)
+                    setPackage(packageName)
+                }
+                sendBroadcast(broadcast)
                 notifyVibrate(longArrayOf(0, 80, 60, 80))
             }
         } else if (messageEvent.path == "/app_theme_sync") {

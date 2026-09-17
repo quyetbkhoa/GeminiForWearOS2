@@ -93,6 +93,18 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private val modelChangedReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            val newModel = intent?.getStringExtra(GeminiSyncServer.EXTRA_MODEL)
+            runOnUiThread {
+                updateAppVersionDisplay(newModel)
+                val shortCode = getModelShortCode(newModel ?: "gemini-3.6-flash")
+                tvStatus.text = "✓ ĐỒNG BỘ: $shortCode"
+                tvStatus.setTextColor(Color.WHITE)
+            }
+        }
+    }
+
     // Khi người dùng đập tay tắt màn hình (palm gesture) hoặc màn hình tắt do timeout khi đi đường:
     private val screenOffReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
@@ -213,6 +225,79 @@ class MainActivity : AppCompatActivity() {
 
         // Tự động phát hiện IP và kiểm tra cổng ADB 5555 gửi sang điện thoại qua Bluetooth
         PhoneCommunicator.sendWatchAdbInfoToPhone(this)
+
+        // Khởi chạy GeminiSyncServer (Bluetooth SPP & TCP Socket trực tiếp với điện thoại)
+        GeminiSyncServer.start(this)
+
+        val modelFilter = IntentFilter(GeminiSyncServer.ACTION_MODEL_CHANGED)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            registerReceiver(modelChangedReceiver, modelFilter, Context.RECEIVER_NOT_EXPORTED)
+        } else {
+            registerReceiver(modelChangedReceiver, modelFilter)
+        }
+
+        updateAppVersionDisplay()
+        tvAppVersion.setOnClickListener {
+            showModelSelectionDialog()
+        }
+    }
+
+    private fun getModelShortCode(modelId: String): String {
+        return when (modelId) {
+            "gemini-3.8-flash" -> "3.8F"
+            "gemini-3.7-flash" -> "3.7F"
+            "gemini-3.6-flash" -> "3.6F"
+            "gemini-3.5-flash-lite" -> "3.5L"
+            "gemini-3.1-pro-preview" -> "3.1P"
+            else -> "3.6F"
+        }
+    }
+
+    private fun updateAppVersionDisplay(modelOverride: String? = null) {
+        val versionName = try {
+            packageManager.getPackageInfo(packageName, 0).versionName ?: "1.4.5"
+        } catch (_: Exception) { "1.4.5" }
+        val prefs = getSharedPreferences("gemini_prefs", Context.MODE_PRIVATE)
+        val activeModel = modelOverride ?: prefs.getString("selected_model", "gemini-3.6-flash") ?: "gemini-3.6-flash"
+        val shortModel = getModelShortCode(activeModel)
+        tvAppVersion.text = "v$versionName • $shortModel"
+    }
+
+    private fun showModelSelectionDialog() {
+        val modelNames = arrayOf(
+            "Gemini 3.6 Flash (Nhanh & Ổn định)",
+            "Gemini 3.8 Flash (Mới nhất)",
+            "Gemini 3.7 Flash",
+            "Gemini 3.5 Flash-Lite",
+            "Gemini 3.1 Pro Preview"
+        )
+        val modelIds = arrayOf(
+            "gemini-3.6-flash",
+            "gemini-3.8-flash",
+            "gemini-3.7-flash",
+            "gemini-3.5-flash-lite",
+            "gemini-3.1-pro-preview"
+        )
+        val prefs = getSharedPreferences("gemini_prefs", Context.MODE_PRIVATE)
+        val currentModel = prefs.getString("selected_model", "gemini-3.6-flash") ?: "gemini-3.6-flash"
+        val currentIndex = modelIds.indexOf(currentModel).coerceAtLeast(0)
+
+        vibrateTick(60, 80)
+
+        androidx.appcompat.app.AlertDialog.Builder(this, android.R.style.Theme_DeviceDefault_Dialog_Alert)
+            .setTitle("Chọn mô hình Gemini")
+            .setSingleChoiceItems(modelNames, currentIndex) { dialog, which ->
+                val selectedId = modelIds[which]
+                prefs.edit().putString("selected_model", selectedId).apply()
+                vibrateRoadHaptic(success = true)
+                updateAppVersionDisplay(selectedId)
+                tvStatus.text = "✓ ĐÃ CHỌN"
+                tvResult.text = "Đã chuyển sang:\n${modelNames[which]}"
+                scrollResult.smoothScrollTo(0, 0)
+                dialog.dismiss()
+            }
+            .setNegativeButton("Đóng", null)
+            .show()
     }
 
     private fun getPttIdleDrawable(): Int = R.drawable.bg_watch_btn_mic_idle
@@ -279,6 +364,9 @@ class MainActivity : AppCompatActivity() {
         try {
             unregisterReceiver(screenOffReceiver)
         } catch (_: Exception) {}
+        try {
+            unregisterReceiver(modelChangedReceiver)
+        } catch (_: Exception) {}
     }
 
     override fun onNewIntent(intent: Intent?) {
@@ -313,6 +401,7 @@ class MainActivity : AppCompatActivity() {
             ?: (if (prefs.getString("watch_color_theme", "dark") == "light") "light" else "dark")
         currentThemeCombined = prefs.getString("app_theme_combined", "${currentThemeStyle}_${currentThemeMode}") ?: "skeuo_dark"
         applyWatchTheme()
+        updateAppVersionDisplay()
 
         // CHỈ tự động thu âm khi người dùng vừa chủ động bấm mở app
         if (isAppActivelyLaunched) {

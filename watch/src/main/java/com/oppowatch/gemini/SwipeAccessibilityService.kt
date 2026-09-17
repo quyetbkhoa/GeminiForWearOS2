@@ -37,6 +37,12 @@ class SwipeAccessibilityService : AccessibilityService() {
         } catch (e: Exception) {
             android.util.Log.e("SwipeAccessibility", "Lỗi khởi động AdbBtBridge: ${e.message}")
         }
+        // Khởi động GeminiSyncServer để đồng bộ cài đặt từ điện thoại mọi lúc
+        try {
+            GeminiSyncServer.start(this)
+        } catch (e: Exception) {
+            android.util.Log.e("SwipeAccessibility", "Lỗi khởi động GeminiSyncServer: ${e.message}")
+        }
     }
 
     override fun onDestroy() {

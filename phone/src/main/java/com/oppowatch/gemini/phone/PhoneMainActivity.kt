@@ -665,8 +665,8 @@ class PhoneMainActivity : AppCompatActivity() {
 
         // 3. Kiwi Manager & Update
         val currentVersion = try {
-            packageManager.getPackageInfo(packageName, 0).versionName ?: "1.4.4"
-        } catch (_: Exception) { "1.4.4" }
+            packageManager.getPackageInfo(packageName, 0).versionName ?: "1.4.5"
+        } catch (_: Exception) { "1.4.5" }
         tvHubAdbBadge.text = "v$currentVersion"
         tvHubAdbSummary.text = "Quản lý cập nhật qua Kiwi Manager • v$currentVersion"
 
@@ -1066,22 +1066,30 @@ class PhoneMainActivity : AppCompatActivity() {
     }
 
     private fun syncModelToWatch(modelId: String, modelName: String) {
-        Wearable.getNodeClient(this).connectedNodes.addOnSuccessListener { nodes ->
-            for (node in nodes) {
-                Wearable.getMessageClient(this).sendMessage(
-                    node.id,
-                    "/gemini_model_sync",
-                    modelId.toByteArray(Charsets.UTF_8)
-                )
+        tvModelStatus.text = "⏳ Đang đồng bộ $modelName sang đồng hồ..."
+        WatchDirectCommunicator.syncModel(this, modelId, modelName, object : WatchDirectCommunicator.SyncCallback {
+            override fun onSuccess(channel: String) {
+                runOnUiThread {
+                    updateModelStatusText(modelId)
+                    Toast.makeText(
+                        this@PhoneMainActivity,
+                        "✓ Đã đồng bộ $modelName sang đồng hồ ($channel)",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
             }
-            Toast.makeText(
-                this,
-                "✓ Đã chọn $modelName (Đồng bộ sang đồng hồ)",
-                Toast.LENGTH_SHORT
-            ).show()
-        }.addOnFailureListener {
-            Toast.makeText(this, "✓ Đã chọn $modelName", Toast.LENGTH_SHORT).show()
-        }
+
+            override fun onFailure(error: String) {
+                runOnUiThread {
+                    updateModelStatusText(modelId)
+                    Toast.makeText(
+                        this@PhoneMainActivity,
+                        "✓ Đã chọn $modelName",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+            }
+        })
     }
 
     private fun setupApiKeySection() {
@@ -1117,31 +1125,27 @@ class PhoneMainActivity : AppCompatActivity() {
             }
 
             prefs.edit().putString("custom_api_key", key).apply()
-            tvApiKeyStatus.text = "✓ Đang đồng bộ sang đồng hồ qua Bluetooth..."
+            tvApiKeyStatus.text = "✓ Đang đồng bộ sang đồng hồ..."
             tvApiKeyStatus.setTextColor(0xFFF59E0B.toInt())
             updateHubSummaries()
 
-            Wearable.getNodeClient(this).connectedNodes.addOnSuccessListener { nodes ->
-                if (nodes.isEmpty()) {
-                    tvApiKeyStatus.text = "✓ Đã lưu trên máy. Đang chờ kết nối đồng hồ..."
-                    tvApiKeyStatus.setTextColor(0xFFF59E0B.toInt())
-                    Toast.makeText(this, "Đã lưu API Key! Đồng hồ chưa kết nối qua Bluetooth.", Toast.LENGTH_LONG).show()
-                } else {
-                    for (node in nodes) {
-                        Wearable.getMessageClient(this).sendMessage(
-                            node.id,
-                            "/gemini_api_key_sync",
-                            key.toByteArray(Charsets.UTF_8)
-                        )
+            WatchDirectCommunicator.syncApiKey(this, key, object : WatchDirectCommunicator.SyncCallback {
+                override fun onSuccess(channel: String) {
+                    runOnUiThread {
+                        tvApiKeyStatus.text = "✓ Đã đồng bộ sang đồng hồ ($channel)!"
+                        tvApiKeyStatus.setTextColor(0xFF34D399.toInt())
+                        Toast.makeText(this@PhoneMainActivity, "✓ Đã đồng bộ API Key sang đồng hồ!", Toast.LENGTH_SHORT).show()
                     }
-                    tvApiKeyStatus.text = "✓ Đã đồng bộ sang ${nodes.size} đồng hồ qua Wearable Layer!"
-                    tvApiKeyStatus.setTextColor(0xFF34D399.toInt())
-                    Toast.makeText(this, "✓ Đã đồng bộ API Key sang đồng hồ!", Toast.LENGTH_SHORT).show()
                 }
-            }.addOnFailureListener {
-                tvApiKeyStatus.text = "✓ Đã lưu trên điện thoại."
-                Toast.makeText(this, "Đã lưu trên điện thoại.", Toast.LENGTH_SHORT).show()
-            }
+
+                override fun onFailure(error: String) {
+                    runOnUiThread {
+                        tvApiKeyStatus.text = "✓ Đã lưu trên máy. Đang chờ kết nối đồng hồ..."
+                        tvApiKeyStatus.setTextColor(0xFFF59E0B.toInt())
+                        Toast.makeText(this@PhoneMainActivity, "Đã lưu API Key trên điện thoại.", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            })
         }
 
         btnTestApiKey.setOnClickListener {
@@ -1686,20 +1690,31 @@ class PhoneMainActivity : AppCompatActivity() {
     private fun autoSyncApiKeyToWatch() {
         val prefs = getSharedPreferences("gemini_prefs", Context.MODE_PRIVATE)
         val savedKey = prefs.getString("custom_api_key", "") ?: ""
+        val currentModel = ThemeManager.getSelectedModel(this)
+
         if (savedKey.isNotEmpty()) {
-            Wearable.getNodeClient(this).connectedNodes.addOnSuccessListener { nodes ->
-                for (node in nodes) {
-                    Wearable.getMessageClient(this).sendMessage(
-                        node.id,
-                        "/gemini_api_key_sync",
-                        savedKey.toByteArray(Charsets.UTF_8)
-                    )
-                }
-                Log.d(TAG, "autoSyncApiKeyToWatch: synced key to ${nodes.size} node(s)")
-            }.addOnFailureListener { e ->
-                Log.w(TAG, "autoSyncApiKeyToWatch failed: ${e.message}")
-            }
+            WatchDirectCommunicator.syncApiKey(this, savedKey)
         }
+        if (currentModel.isNotEmpty()) {
+            WatchDirectCommunicator.syncModel(this, currentModel, currentModel)
+        }
+
+        try {
+            if (savedKey.isNotEmpty()) {
+                Wearable.getNodeClient(this).connectedNodes.addOnSuccessListener { nodes ->
+                    for (node in nodes) {
+                        Wearable.getMessageClient(this).sendMessage(
+                            node.id,
+                            "/gemini_api_key_sync",
+                            savedKey.toByteArray(Charsets.UTF_8)
+                        )
+                    }
+                    Log.d(TAG, "autoSyncApiKeyToWatch: synced key to ${nodes.size} node(s)")
+                }.addOnFailureListener { e ->
+                    Log.d(TAG, "autoSyncApiKeyToWatch Wearable fallback: ${e.message}")
+                }
+            }
+        } catch (_: Exception) {}
     }
 
     override fun onDestroy() {

@@ -5,6 +5,22 @@ Tất cả các thay đổi đáng chú ý của dự án **Gemini Voice Assista
 Định dạng dựa theo [Keep a Changelog](https://keepachangelog.com/vi/1.1.0/),
 phiên bản tuân theo [Semantic Versioning](https://semver.org/lang/vi/).
 
+## [v1.4.5] - 2026-09-17
+
+### 🔄 Đồng bộ mô hình đa tầng (Multi-Channel Sync) & Bộ chuyển đổi mô hình trực tiếp trên đồng hồ
+- **Kênh đồng bộ trực tiếp Bluetooth RFCOMM SPP & TCP Socket (Không phụ thuộc Wearable API):**
+  - Khắc phục triệt để lỗi không đồng bộ mô hình khi điện thoại ghép nối qua HeyTap Health / ColorOS (vốn khiến Google Play Services `Wearable.API` báo `API_UNAVAILABLE`).
+  - Thêm `GeminiSyncServer` trên đồng hồ lắng nghe Bluetooth SPP (UUID chuyên dụng) và Wi-Fi TCP Socket (port 8765).
+  - Thêm `WatchDirectCommunicator` trên điện thoại tự động bắn dữ liệu đồng bộ (Model & API Key) sang đồng hồ qua Bluetooth SPP ngay khi người dùng chọn model hoặc mở app.
+- **Bộ chuyển đổi mô hình trực tiếp trên đồng hồ (On-Watch Model Switcher):**
+  - Hiển thị tên ngắn của mô hình đang hoạt động ngay cạnh số phiên bản ở thanh điều khiển dưới (`v1.4.5 • 3.6F`, `3.8F`, `3.7F`, `3.5L`, `3.1P`).
+  - Cho phép người dùng chạm trực tiếp vào nhãn phiên bản trên đồng hồ để mở menu chọn mô hình AI độc lập, không cần phụ thuộc điện thoại.
+  - Phản hồi rung haptic và cập nhật tức thì trạng thái trên màn hình đồng hồ khi mô hình thay đổi.
+- **Đồng bộ phiên bản v1.4.5:**
+  - Nâng `versionCode = 10405` và `versionName = "1.4.5"` trên cả `phone` và `watch`.
+
+---
+
 ## [v1.4.4] - 2026-09-17
 
 ### 🛠️ Khắc phục triệt để lỗi HTTP 404 (Mô hình không tồn tại)

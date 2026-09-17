@@ -122,16 +122,23 @@
                     android:contentDescription="@null" />
             </FrameLayout>
 
-            <!-- 3. App Version: Clean Plain Text (Không đóng khung button) -->
+            <!-- 3. App Version & Active Model: Clean Text, tap to switch models -->
             <TextView
                 android:id="@+id/tv_app_version"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="v1.4.4"
+                android:text="v1.4.5"
                 android:textColor="#94A3B8"
                 android:textSize="11sp"
                 android:textStyle="bold"
-                android:letterSpacing="0.04" />
+                android:letterSpacing="0.04"
+                android:clickable="true"
+                android:focusable="true"
+                android:paddingLeft="6dp"
+                android:paddingRight="6dp"
+                android:paddingTop="6dp"
+                android:paddingBottom="6dp"
+                android:contentDescription="Chạm để đổi mô hình Gemini" />
 
         </LinearLayout>
 
