@@ -1667,14 +1667,6 @@
                             android:textSize="10.5sp"
                             android:paddingVertical="3dp" />
 
-                        <RadioButton
-                            android:id="@+id/rb_model_25_flash"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:text="⚙️ Gemini 2.5 Flash (Bản dự phòng ổn định)"
-                            android:textColor="#E2E8F0"
-                            android:textSize="10.5sp"
-                            android:paddingVertical="3dp" />
 
                         <RadioButton
                             android:id="@+id/rb_model_31_pro"

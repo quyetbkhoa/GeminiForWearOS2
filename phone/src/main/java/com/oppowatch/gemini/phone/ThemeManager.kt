@@ -113,7 +113,14 @@ object ThemeManager {
     fun getSelectedModel(context: Context): String {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         val saved = prefs.getString(KEY_MODEL, DEFAULT_MODEL) ?: DEFAULT_MODEL
-        if (saved == "gemini-3.5-flash") {
+        val supported = setOf(
+            "gemini-3.6-flash",
+            "gemini-3.5-flash-lite",
+            "gemini-3.7-flash",
+            "gemini-3.8-flash",
+            "gemini-3.1-pro-preview"
+        )
+        if (!supported.contains(saved)) {
             setSelectedModel(context, "gemini-3.6-flash")
             return "gemini-3.6-flash"
         }

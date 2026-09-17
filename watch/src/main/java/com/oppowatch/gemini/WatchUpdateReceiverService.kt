@@ -197,7 +197,17 @@ class WatchUpdateReceiverService : WearableListenerService() {
                 Log.d(TAG, "Đã xóa custom Gemini API Key, khôi phục mặc định!")
             }
         } else if (messageEvent.path == "/gemini_model_sync") {
-            val model = String(messageEvent.data, Charsets.UTF_8).trim()
+            var model = String(messageEvent.data, Charsets.UTF_8).trim()
+            val supportedModels = setOf(
+                "gemini-3.6-flash",
+                "gemini-3.5-flash-lite",
+                "gemini-3.7-flash",
+                "gemini-3.8-flash",
+                "gemini-3.1-pro-preview"
+            )
+            if (!supportedModels.contains(model)) {
+                model = "gemini-3.6-flash"
+            }
             if (model.isNotEmpty()) {
                 getSharedPreferences("gemini_prefs", Context.MODE_PRIVATE)
                     .edit()

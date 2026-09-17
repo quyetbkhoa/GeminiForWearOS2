@@ -5,6 +5,19 @@ Tất cả các thay đổi đáng chú ý của dự án **Gemini Voice Assista
 Định dạng dựa theo [Keep a Changelog](https://keepachangelog.com/vi/1.1.0/),
 phiên bản tuân theo [Semantic Versioning](https://semver.org/lang/vi/).
 
+## [v1.4.4] - 2026-09-17
+
+### 🛠️ Khắc phục triệt để lỗi HTTP 404 (Mô hình không tồn tại)
+- **Tự động chuyển đổi mô hình hết hạn sang Gemini 3.6 Flash:**
+  - Google đã chính thức ngừng hỗ trợ mô hình cũ `gemini-2.5-flash` và trả về mã lỗi 404 (NOT_FOUND).
+  - Bổ sung danh sách kiểm tra an toàn (whitelist) trên cả Watch và Phone; tự động đưa mọi mô hình cũ hoặc không hợp lệ về `gemini-3.6-flash`.
+  - Cơ chế tự phục hồi: Nếu gặp phản hồi 404 từ máy chủ Google, đồng hồ tự động ghi đè cài đặt về `gemini-3.6-flash`.
+  - Loại bỏ hoàn toàn lựa chọn `Gemini 2.5 Flash` khỏi giao diện ứng dụng Companion điện thoại.
+- **Đồng bộ phiên bản v1.4.4:**
+  - Nâng `versionCode = 10404` và `versionName = "1.4.4"` trên cả `phone` và `watch`.
+
+---
+
 ## [v1.4.3] - 2026-09-17
 
 ### 🎨 Tối ưu diện tích giao diện đồng hồ & Thanh điều khiển siêu gọn

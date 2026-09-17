@@ -47,8 +47,17 @@ object GeminiClient {
                 val activeApiKey = if (!customKey.isNullOrEmpty()) customKey else GeminiConfig.GEMINI_API_KEY
                 // Đọc mô hình do người dùng chọn (mặc định Gemini 3.6 Flash)
                 var model = prefs.getString("selected_model", "gemini-3.6-flash") ?: "gemini-3.6-flash"
-                if (model == "gemini-3.5-flash") {
+                val supportedModels = setOf(
+                    "gemini-3.6-flash",
+                    "gemini-3.5-flash-lite",
+                    "gemini-3.7-flash",
+                    "gemini-3.8-flash",
+                    "gemini-3.1-pro-preview"
+                )
+                if (!supportedModels.contains(model)) {
+                    Log.w(TAG, "Mô hình '$model' không còn được Google hỗ trợ -> tự động đổi sang gemini-3.6-flash")
                     model = "gemini-3.6-flash"
+                    prefs.edit().putString("selected_model", model).apply()
                 }
                 val endpoint = "https://generativelanguage.googleapis.com/v1beta/models/$model:generateContent?key=$activeApiKey"
                 val url = URL(endpoint)
@@ -251,7 +260,12 @@ object GeminiClient {
                         }
                     } catch (_: Exception) {}
 
+                    if (responseCode == 404) {
+                        prefs.edit().putString("selected_model", "gemini-3.6-flash").apply()
+                    }
+
                     val watchDisplayText = when (responseCode) {
+                        404 -> "Lỗi 404: Mô hình '$model' đã bị Google ngừng hỗ trợ. Đã tự động đổi sang 3.6 Flash. Hãy thử lại!"
                         403 -> "Lỗi 403: Thiếu hoặc sai API Key. Hãy mở app điện thoại để đồng bộ lại Key!"
                         400 -> "Lỗi 400: Yêu cầu không hợp lệ ($errorMsg)."
                         429 -> "Lỗi 429: Đạt giới hạn gọi AI (Quota). Thử lại sau 30s."
